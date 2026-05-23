@@ -91,5 +91,5 @@ jobs:
         uses: lycheeverse/lychee-action@v1
         continue-on-error: true
         with:
-          args: --no-progress --max-redirects 5 README.md ONBOARDING.md AGENTS.md
+          args: --no-progress --max-redirects 5 README.md education/ONBOARDING.md education/TROUBLESHOOTING.md education/student-setup-guide.md instructor/instructor-setup-guide.md AGENTS.md
           fail: false

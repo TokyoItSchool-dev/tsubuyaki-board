@@ -2,7 +2,7 @@
 # 社内つぶやきボード Codex devbox
 #   - JDK 21 + Maven + Node.js 20 + @openai/codex を同梱した開発コンテナ
 #   - 受講者は WSL2 上で `bash scripts/run-codex.sh` で本コンテナに入る
-#   - 詳細は AGENTS.md と ONBOARDING.md を参照
+#   - 詳細は AGENTS.md と education/ONBOARDING.md を参照
 # =========================================================================
 FROM docker.io/library/eclipse-temurin:21-jdk-jammy
 

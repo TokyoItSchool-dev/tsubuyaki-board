@@ -1,6 +1,6 @@
 # 講師用 FAQ — 当日詰まったときの即応集
 
-受講者向け FAQ は `TROUBLESHOOTING.md`。こちらは講師が即決するための判断材料。
+受講者向け FAQ は `../education/TROUBLESHOOTING.md`。こちらは講師が即決するための判断材料。
 
 ## 環境系
 
