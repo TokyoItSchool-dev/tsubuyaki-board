@@ -1,0 +1,101 @@
+# =========================================================================
+# 社内つぶやきボード Codex devbox
+#   - JDK 21 + Maven + Node.js 20 + @openai/codex を同梱した開発コンテナ
+#   - 受講者は WSL2 上で `bash scripts/run-codex.sh` で本コンテナに入る
+#   - 詳細は AGENTS.md と education/ONBOARDING.md を参照
+# =========================================================================
+FROM docker.io/library/eclipse-temurin:21-jdk-jammy
+
+ARG CODEX_VERSION=latest
+ARG MAVEN_VERSION=3.9.9
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=ja_JP.UTF-8 \
+    LANGUAGE=ja_JP:ja \
+    LC_ALL=ja_JP.UTF-8 \
+    TZ=Asia/Tokyo
+
+# --- 基本パッケージ --------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git curl wget ca-certificates gnupg locales tzdata \
+        ripgrep fd-find jq unzip less vim-tiny sudo build-essential \
+        netcat-openbsd \
+    && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
+    && locale-gen ja_JP.UTF-8 \
+    && update-locale LANG=ja_JP.UTF-8 \
+    && ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Node.js 20 LTS + Codex CLI -------------------------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && npm install -g "@openai/codex@${CODEX_VERSION}" \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Maven (Wrapper フォールバック用) --------------------------------------
+RUN curl -fsSL "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+        -o /tmp/maven.tar.gz \
+    && tar -xzf /tmp/maven.tar.gz -C /opt \
+    && ln -s "/opt/apache-maven-${MAVEN_VERSION}" /opt/maven \
+    && ln -s /opt/maven/bin/mvn /usr/local/bin/mvn \
+    && rm -f /tmp/maven.tar.gz
+
+# --- GitHub CLI (PR 操作・任意) -------------------------------------------
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- 非 root ユーザ (WSL 側 uid=1000 と一致させてマウント時の権限事故を防ぐ)
+# NOPASSWD sudo は research 中の apt 等で必要だったが、研修ハーネス強化に伴い剥奪する。
+# 受講生がコンテナ内でパッケージ追加したい場合はコンテナ外 (WSL) で実行する。
+RUN useradd -m -u 1000 -s /bin/bash codex \
+    && mkdir -p /workspace /home/codex/.codex /home/codex/.m2 \
+    && chown -R codex:codex /workspace /home/codex
+
+# --- 研修ハーネス: rm / git / chmod / dd 等の wrapper を仕込む ---------------
+# /opt/codex-guard/bin/ に guard 本体と symlink を配置し、PATH 先頭に挿入する。
+# 詳細は containers/codex-devbox/bin/install-guards.sh を参照。
+COPY bin/ /tmp/codex-guard-src/
+RUN bash /tmp/codex-guard-src/install-guards.sh \
+    && rm -rf /tmp/codex-guard-src
+
+# --- 研修ハーネス: マウントマスクの宛先ファイルを空で先行作成 -----------------
+# run-codex.sh が /dev/null:bind:ro でマスクするファイル群を、コンテナ内に
+# 空ファイルとして先に作成しておく。bind マウントは宛先が存在しないと失敗する
+# (ディレクトリとして作られてしまう) ため。
+RUN install -d -o codex -g codex /home/codex \
+    && touch /home/codex/.bashrc \
+            /home/codex/.bash_history \
+            /home/codex/.profile \
+            /home/codex/.gitconfig \
+    && chown codex:codex \
+            /home/codex/.bashrc \
+            /home/codex/.bash_history \
+            /home/codex/.profile \
+            /home/codex/.gitconfig
+
+# PATH の先頭に codex-guard を挿入 (ENV レベル / 全シェル共通)
+ENV JAVA_HOME=/opt/java/openjdk \
+    MAVEN_HOME=/opt/maven \
+    PATH=/opt/codex-guard/bin:/opt/java/openjdk/bin:/opt/maven/bin:/usr/local/bin:/usr/bin:/bin
+
+# 注: PATH 先頭に codex-guard が入っているため、ここで素の `chmod` を呼ぶと
+#     guard 経由になり「/usr/* への chmod は禁止」で reject される。
+#     ビルド時の正規操作なので絶対パス /bin/chmod で guard をバイパスして実行する。
+#     (Codex 実行時の bypass を許す穴ではない — Codex は AGENTS.md §7.3.3 で
+#      絶対パス指定での guard 迂回を明示的に禁止している)
+COPY --chown=codex:codex entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN /bin/chmod +x /usr/local/bin/entrypoint.sh
+
+USER codex
+WORKDIR /workspace
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["bash", "-l"]

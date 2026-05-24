@@ -1,0 +1,24 @@
+# =========================================================================
+# CI / 軽量ローカル開発プロファイル: H2 メモリ DB
+# MODE=Oracle で Oracle SQL 方言をある程度吸収する。
+# 詳細は Step 4 で完成。ここでは雛形のみ。
+# =========================================================================
+spring:
+  datasource:
+    url: jdbc:h2:mem:butsubutsu;MODE=Oracle;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=true
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      # スキーマ管理は Flyway に一任。Oracle 互換 DDL (NUMBER(19) など) を
+      # H2(MODE=Oracle) で読ませると、Hibernate validate が NUMERIC↔BIGINT を
+      # 不一致と判定して失敗するため、validate ではなく none を使う。
+      ddl-auto: none
+    show-sql: false
+  flyway:
+    enabled: true
+  h2:
+    console:
+      enabled: false
