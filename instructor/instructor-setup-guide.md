@@ -175,15 +175,20 @@ Assignment 作成完了画面に表示される **Invitation URL**（`https://cl
 
 ## 6. 講師自身のキッティング
 
-受講生と同じ環境を講師マシンに構築します（質問対応・トラブル再現用）。
+受講生と同じ環境を講師マシンに構築します（質問対応・トラブル再現用）。順序は受講生ガイドと同じ「Windows キッティング → 再起動 → WSL → リポ clone」です。
 
-### 6-1. 講師リポを clone
+### 6-1. 講師リポを clone（🪟 管理者 PowerShell）
 
-```bash
-cd /mnt/c/workspace
+WSL2 機能はまだ有効化されていないので、**Windows 側の PowerShell** で clone する（受講生ガイド §4-3 と同じ流れ）：
+
+```powershell
+New-Item -ItemType Directory -Force -Path "C:\workspace" | Out-Null
+cd C:\workspace
 git clone https://github.com/<org>/tsubuyaki-board.git
 cd tsubuyaki-board
 ```
+
+> 💡 Git for Windows が未導入なら `winget install Git.Git` を先に。`setup.ps1` でも自動導入されるが、§6-1 で clone するには事前に Git が必要。
 
 ### 6-2. Windows キッティング → 受講生ガイドと同手順
 
@@ -264,12 +269,7 @@ cd /mnt/c/workspace/tsubuyaki-board
 
 ### 6-4. `OPENAI_API_KEY` 設定 → 受講生ガイドと同手順
 
-[../education/student-setup-guide.md §7-2](../education/student-setup-guide.md) のとおり。
-
-```bash
-echo 'export OPENAI_API_KEY=sk-...' >> ~/.bashrc
-source ~/.bashrc
-```
+手順本体は [../education/student-setup-guide.md §7-2](../education/student-setup-guide.md) を参照（`~/.bashrc` への追記と `source`）。
 
 **講師固有の差分**:
 - **講師自身のキー** は `~/.bashrc` へ書く（普段使い用）
@@ -457,7 +457,7 @@ rm -rf /mnt/c/workspace/.rehearsal/<assignment>-<test-account-id>
 
 - 症状: 個人カード未登録 / 残高不足 / 発行制限
 - 対処: 講師が予備キー 1 本を保持しておき、当日のみ貸与（研修終了時に rotate）
-- 予備キーの管理: 1Password / 環境変数で保持し、共有時は Slack DM 等の流出しにくい経路で渡す
+- 予備キーの管理・配布経路は [§6-4](#6-4-openai_api_key-設定--受講生ガイドと同手順) を参照
 
 ### 9-3. 受講生が main に直 push してしまった
 

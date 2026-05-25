@@ -12,7 +12,7 @@ EXERCISES.md と一緒に読む。
 | 2h-4h | 1日目 | 投稿一覧 (M1) | `GET /posts` が DB の行を表示、PR 作成 |
 | 4h-4.25h | 2日目 | ウォームアップ | 前日 PR のスモークと読み返し |
 | 4.25h-6.5h | 2日目 | 投稿作成＋バリデーション (M2/M3) | フォームから投稿登録、異常系で再表示 |
-| 6.5h-8h | 2日目 | 投稿詳細＋ヘルスチェック (M4/M5) | `GET /posts/{id}` が動き 404 ハンドリング、actuator/health 緑 |
+| 6.5h-8h | 2日目 | 投稿詳細＋ヘルスチェック (M4/M5) | `GET /posts/{id}` が動き 404 ハンドリング、actuator/health 緑、`-Pcoverage-day2` (70%) 緑 |
 | 8h-9.5h | 2日目 | リファクタ＋カバレッジ80%到達 | JaCoCo 80%、`-Pcoverage-day3` 緑 |
 | 9.5h-11.5h | 2日目 | いいね機能 (S1) | 詳細でいいね操作、冪等性、IP ハッシュ保存 |
 | 11.5h-13h | 2日目 | キーワード検索 (S2) | `?q=` で本文 LIKE 検索、空文字フォールバック |
@@ -40,22 +40,15 @@ EXERCISES.md と一緒に読む。
 
 ### 確認チェックリスト（朝一の動作確認）
 
-1. **Eclipse (Pleiades) を起動** … ワークスペースは `C:\workspace\<repo>`、Project > Build Automatically はオフ
-2. **🐧 WSL ターミナルを開く** … Windows Terminal → Ubuntu タブ、`cd /mnt/c/workspace/<repo>`
-3. **Doctor** … `bash scripts/doctor.sh`（全件、`--quick` でなく）すべて `[ OK ]` か `[WARN]`
-4. **Oracle XE 起動** … `bash scripts/start-oracle.sh` で `butsubutsu-oracle` が healthy
-5. **`OPENAI_API_KEY`** … `echo "${OPENAI_API_KEY:0:7}..."` で `sk-...` と表示される
-6. **空アプリ起動 → ヘルスチェック** …
-   ```bash
-   # タブ A:
-   ./mvnw -B -Ph2 spring-boot:run    # H2 ですぐ動く
-   # タブ B (新規 Ubuntu タブ):
-   curl -s http://localhost:8080/actuator/health
-   # → {"status":"UP"}
-   ```
-7. **初回 verify 緑** … `./mvnw -B -Ph2 verify` が BUILD SUCCESS で完了
+毎朝 🐧 WSL Ubuntu のリポルートで以下 5 観点を確認する。**手順詳細は [student-setup-guide.md §8](./student-setup-guide.md) を正本とする**（順序もここに揃える）。
 
-ここまで詳細は [student-setup-guide.md §3-§9](./student-setup-guide.md) を参照。新たな PC でセットアップし直す場合も同ガイドを使うこと。
+1. **Doctor** が `[ OK ]` または `[WARN]` のみ
+2. **Oracle XE** が `butsubutsu-oracle` で healthy
+3. **`OPENAI_API_KEY`** が先頭 7 文字確認で `sk-...` 表示
+4. **空アプリ起動 → `/actuator/health`** が `{"status":"UP"}`
+5. **`./mvnw -B -Ph2 verify`** が BUILD SUCCESS
+
+Eclipse (Pleiades) を使う場合は、ワークスペースを `C:\workspace\<repo>` にし `Project > Build Automatically` をオフにすること（ビルドは WSL の `./mvnw` 経由）。新たな PC でセットアップし直す場合も student-setup-guide §3〜§9 を再走すれば良い。
 
 ## 各日朝のウォームアップ (4-4.25時間目、13-13.25時間目)
 
@@ -74,6 +67,7 @@ git log --oneline -10                  # 前日コミットを読み返す
 ```
 ①  EXERCISES.md でこのフェーズの受入基準を読む
 ②  feature ブランチを切る  (git switch -c feature/m1-post-list)
+    ※ ブランチ操作の詳細は student-setup-guide §6 参照
 ③  codex-shell でコンテナに入り、TDD プロンプトを投げる
     (.codex/prompts/tdd-cycle.md をコピペして埋める)
 ④  Codex がテスト → 実装を回す。生成されたコードを目で読む

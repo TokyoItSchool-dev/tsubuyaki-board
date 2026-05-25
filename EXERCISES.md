@@ -8,6 +8,8 @@
 
 ### M1: 投稿一覧 `GET /posts`
 
+> 前提アセット: `Post` entity (`src/main/java/com/example/butsubutsu/domain/Post.java`) と V1 Flyway マイグレーション (`src/main/resources/db/migration/V1__init.sql`) は既に提供済。M1 ではこの上に Repository / Service / Controller を実装する。
+
 - 新着順 (created_at DESC) で最大 50 件を返す
 - ビュー: `posts/list.html`
 - 0 件なら「まだ投稿はありません」を表示
@@ -48,14 +50,17 @@
 - [ ] `PostService.findById(id)` が `Optional<Post>` を返す
 - [ ] Controller で `Optional.isEmpty()` → 404
 
-### M5: ヘルスチェック
+### M5: ヘルスチェック（回帰確認）
 
-- `/actuator/health` が UP を返す
+- `/actuator/health` が UP を返す（0-1h セットアップ確認時に既に通る想定。M4 までの実装で UP が壊れていないことを再確認する位置づけ）
 
 受入基準:
 - [ ] `./mvnw -B -Ph2 spring-boot:run` で起動した状態で `curl http://localhost:8080/actuator/health` が 200 を返す
+- [ ] M4 完了時点で `{"status":"UP"}` が変わっていないこと（DataSource 等の破壊回帰が無い）
 
-## SHOULD (8-13時間目で3つすべて必達)
+## SHOULD (9.5-13時間目で3つすべて必達)
+
+> 8h-9.5h は「リファクタ＋カバレッジ80%到達」フェーズ（[ONBOARDING.md タイムテーブル](./education/ONBOARDING.md)参照）。SHOULD はその後の 9.5h から開始する。
 
 3 つすべて (S1/S2/S3) を完走対象とする。順序は任意。
 

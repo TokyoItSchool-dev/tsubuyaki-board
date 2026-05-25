@@ -290,7 +290,7 @@ if ! ${MODE_QUICK} && section "java-smoke" "Java からの XE smoke 接続"; the
         if "${REPO_ROOT}/mvnw" -B -q -Plocal -Dtest='*Smoke*' test >/dev/null 2>&1; then
             ok "smoke テスト成功"
         else
-            warn "smoke テスト未定義 or 失敗 (受講者作成後に再実行)"
+            warn "smoke テスト未定義 or 失敗 (受講生作成後に再実行)"
         fi
     else
         warn "Oracle 未起動 or mvnw 未生成のためスキップ"

@@ -29,7 +29,7 @@ class SamplePostServiceTest {
     @DisplayName("Service_latest_未実装のとき_空リストを返す")
     void latest_returnsEmpty_byDefault() {
         // 現在の PostService.latest() は TODO 状態で空リストを返す。
-        // 受講者が実装したら、このテストは別シナリオに置き換える。
+        // 受講生が実装したら、このテストは別シナリオに置き換える。
         assertThat(postService.latest()).isEmpty();
     }
 }

@@ -99,13 +99,10 @@ codex-shell                              # devbox に入る
 
 ## OpenAI API キーの渡し方
 
-詳細は [education/student-setup-guide.md §7](./education/student-setup-guide.md)。最短は：
+正本は [education/student-setup-guide.md §7](./education/student-setup-guide.md)。要点のみ：
 
-```bash
-echo 'export OPENAI_API_KEY=sk-...' >> ~/.bashrc && source ~/.bashrc
-```
-
-`.env` は Oracle 接続用（`ORACLE_PWD`／`ORACLE_APP_PWD`）として使う。API キーは `~/.bashrc` 経由が標準。
+- `OPENAI_API_KEY` は **WSL 側 `~/.bashrc` に書く**（Windows 環境変数は WSL に伝搬しない）
+- `.env` は Oracle 接続用（`ORACLE_PWD` / `ORACLE_APP_PWD`）として使う — API キーは入れない
 
 ## 次に読むもの
 
