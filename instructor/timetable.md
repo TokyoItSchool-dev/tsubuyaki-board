@@ -4,12 +4,12 @@
 
 | 時間目 | 物理日 | フェーズ名 | 受講生の動き | 講師の動き | 想定リスク |
 |---|---|---|---|---|---|
-| 0h-1h | 1日目 | セットアップ確認 | Doctor 実行、Oracle 起動、初回 CI 緑、Eclipse 自動ビルド OFF | Doctor の NG を 1 人ずつ確認、Pleiades 文字コードを念押し | Pleiades の MS932 文字化け、Podman Desktop 未起動 |
+| 0h-1h | 1日目 | セットアップ確認 | Doctor 実行、Oracle 起動、初回 `./mvnw -B -Ph2 verify` 緑、Eclipse 自動ビルド OFF | Doctor の NG を 1 人ずつ確認、Pleiades 文字コードを念押し | Pleiades の MS932 文字化け、Podman Desktop 未起動 |
 | 1h-2h | 1日目 | 仕様読解＋プロンプト準備 | EXERCISES.md を読み込み、TDD プロンプト雛形を自分用に整える、M1 受入基準を自分の言葉で再記述 | プロンプト読み合わせ、`th:utext` 不使用など規約の念押し | EXERCISES を流し読みして要件を取り違える |
 | 2h-4h | 1日目 | 投稿一覧 (M1) | feature/m1 ブランチ、TDD で Repository → Service → Controller、PR 作成 | プロンプトのレビュー、生成コードを 1 人ずつ目視 | Codex が `findAll().subList()` で済ませて DataJpaTest が薄い |
 | 4h-4.25h | 2日目 | ウォームアップ | doctor --quick、前日 PR のスモークテストとセルフレビュー | 前日コミット品質を確認、再現性 NG を早期発見 | 前日環境差分で起動失敗 |
 | 4.25h-6.5h | 2日目 | 投稿作成＋バリデーション (M2/M3) | フォーム描画、バリデーション込みで POST 実装 | Bean Validation の手書きチェック化を阻止 | `@NotBlank` を `if (... == null)` にしがち |
-| 6.5h-8h | 2日目 | 投稿詳細＋ヘルスチェック (M4/M5) | 404 ハンドリング、`/actuator/health` 緑 | Controller での `Optional.isEmpty()` 早期 return を確認 | `orElseThrow` で 500 系を出してしまう |
+| 6.5h-8h | 2日目 | 投稿詳細＋ヘルスチェック (M4/M5) | 404 ハンドリング、`/actuator/health` 緑、`-Pcoverage-day2` (70%) 緑 | Controller での `Optional.isEmpty()` 早期 return を確認、70% gate 未達を早期検出 | `orElseThrow` で 500 系を出してしまう |
 | 8h-9.5h | 2日目 | リファクタ＋カバレッジ80%到達 | JaCoCo 確認、`-Pcoverage-day3` 緑、Service の Spring 非依存化 | 「Codex が書いたコードを 1 つ選んで日本語で説明する」5 分セッションを挟む | カバレッジ偽装テストを書きがち |
 | 9.5h-11.5h | 2日目 | いいね機能 (S1) | Flyway V2、いいねトグルの冪等性、clientHash のハッシュ保存 | IP の生保存を NG として指摘、salt のハードコード阻止 | clientHash の salt をハードコード |
 | 11.5h-13h | 2日目 | キーワード検索 (S2) | `?q=` 実装、bind 変数、空文字フォールバック | `@Query` の文字列連結を即時 NG | 文字列連結で SQL を組んで Checkstyle 警告 |
@@ -33,7 +33,7 @@ wsl -l -v                              # WSL2 + Ubuntu が出ること
 # WSL
 podman ps -a                           # butsubutsu-oracle が exited でも OK
 podman image exists codex-devbox:latest && echo OK
-echo $OPENAI_API_KEY | head -c 7      # 設定済みなら sk-... が見える
+echo "${OPENAI_API_KEY:0:7}..."        # 設定済みなら sk-... が見える（履歴に平文を残さない）
 bash /mnt/c/workspace/<repo>/scripts/doctor.sh --quick
 ```
 

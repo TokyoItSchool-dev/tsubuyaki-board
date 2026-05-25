@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Repository テストの雛形。TDD の見本として残す (削除禁止)。
  *
- * <p>受講者は本ファイルを参考にしつつ、別ファイルに自分のテストを書く。</p>
+ * <p>受講生は本ファイルを参考にしつつ、別ファイルに自分のテストを書く。</p>
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

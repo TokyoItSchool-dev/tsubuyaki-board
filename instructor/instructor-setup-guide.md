@@ -60,18 +60,11 @@ tsubuyaki-board.git                 (template 化)                       <org>/<
 新規作成する場合：
 
 1. https://github.com/account/organizations/new で「Create a free organization」または有料プラン。
-2. **Free プランは Actions の private リポ実行時間に上限あり**。受講生 10 名 × 3 日 = 累計 30 リポで CI を回すなら **Team プラン（または GitHub Education 経由）を推奨**。
-3. Organization 名（例: `acme-training-2026q2`）と請求先メールを設定。
+2. Organization 名（例: `acme-training-2026q2`）と請求先メールを設定。
 
-### 2-2. Actions の有効化
+> 本研修では GitHub Actions による CI を使わない方針（受講生・講師ともローカル `./mvnw -B -Ph2 verify` で品質ゲートを回す）。Organization のプランは Free で問題ない。
 
-Organization の **Settings > Actions > General** で以下を設定：
-
-- **Actions permissions**: 「Allow all actions and reusable workflows」
-- **Workflow permissions**: 「Read and write permissions」（必要に応じて）
-- **Allow GitHub Actions to create and approve pull requests**: チェック（任意）
-
-### 2-3. Member seat 数の確認
+### 2-2. Member seat 数の確認
 
 Free プランは無制限ですが、Team プランは seat 課金。受講生人数分の seat が確保されているか **Settings > Billing** で確認。
 
@@ -137,61 +130,11 @@ gh repo view <org>/tsubuyaki-board --json visibility,isTemplate,defaultBranchRef
 
 ---
 
-## 4. CI 初回緑化とブランチ保護
+## 4. main 直 push 禁止の運用方針
 
-ブランチ保護で `Build + Test (H2)` を required status check に指定するには、**CI 履歴に同名 check run が 1 回以上存在している必要**があります。順序が逆だと `422 Unprocessable Entity` で弾かれます。
+本研修では CI による物理ブロックは行わず、**規約遵守（AGENTS.md §3.2 / ONBOARDING.md 禁止事項）で main 直 push を禁止**します。受講生は必ず feature ブランチ + PR 経由で開発するよう、初日のキックオフで明示してください。
 
-### 4-1. CI を 1 回手動 push して緑化
-
-通常は `git push --mirror` で main が push された時点で `.github/workflows/ci.yml` がトリガされます。ブラウザで `https://github.com/<org>/tsubuyaki-board/actions` を開き、`build-test` ジョブ（job 名: `Build + Test (H2)`）が緑になるまで待機。
-
-### 4-2. main ブランチ保護を設定
-
-CI が一度緑になったら：
-
-```bash
-gh api -X PUT "repos/<org>/tsubuyaki-board/branches/main/protection" \
-    --input - <<EOF
-{
-  "required_status_checks": {
-    "strict": true,
-    "contexts": ["Build + Test (H2)"]
-  },
-  "enforce_admins": false,
-  "required_pull_request_reviews": {
-    "dismiss_stale_reviews": false,
-    "require_code_owner_reviews": false,
-    "required_approving_review_count": 0,
-    "require_last_push_approval": false
-  },
-  "restrictions": null,
-  "allow_force_pushes": false,
-  "allow_deletions": false,
-  "required_conversation_resolution": true,
-  "lock_branch": false,
-  "required_linear_history": false
-}
-EOF
-```
-
-### 4-3. 受講生個人リポへの保護伝播について
-
-**重要: branch protection は Classroom 生成リポへ自動伝播しません**。
-受講生各自のリポ main 保護は、初日朝に全員に以下を 1 行実行してもらうのが現実的です。受講生ガイドの「9. 初回 push と CI 緑化」の前に挿入推奨：
-
-```bash
-gh api -X PUT "repos/$(gh api user --jq .login)/<assignment>-$(gh api user --jq .login)/branches/main/protection" \
-    --input - <<EOF
-{
-  "required_status_checks": {"strict": true, "contexts": ["Build + Test (H2)"]},
-  "enforce_admins": false,
-  "required_pull_request_reviews": {"required_approving_review_count": 0},
-  "restrictions": null,
-  "allow_force_pushes": false,
-  "allow_deletions": false
-}
-EOF
-```
+事故が起きた場合の対処は §9-3「受講生が main に直 push してしまった」を参照。
 
 ---
 
@@ -216,7 +159,7 @@ EOF
 3. **Assignment type**: Individual
 4. **Repository visibility**: **Private**（必須）
 5. **Starter code**: 3 で作成した `<org>/tsubuyaki-board` を選択（**template repository としてマーク済の必要あり**、これが 3-4 をやる理由）
-6. **Repository permission**: Admin（受講生に branch protection 設定もさせる場合）または Write
+6. **Repository permission**: Write（本研修では受講生に branch protection を設定させないため）
 7. **Deadline**: 研修最終日の 21 時間目終了時刻
 8. **Feedback pull request**: 任意（自動作成のフィードバック PR を作成する）
 
@@ -224,23 +167,28 @@ EOF
 
 Assignment 作成完了画面に表示される **Invitation URL**（`https://classroom.github.com/a/xxxxxxxx`）をコピー。研修初日に受講生へ配布します。
 
-### 5-5. 検証（テストアカウントでリハーサル）
+### 5-5. リハーサル（テストアカウント検証）は §7 で実施
 
-別の GitHub アカウント（個人アカウントなど）で Assignment URL を踏み、自動生成された private リポを clone して `./mvnw -B -Ph2 verify` まで通るかを確認。詰まったら受講生ガイドに追記。
+テストアカウントを使った Classroom Assignment の動作確認・`./mvnw -B -Ph2 verify` の通り確認は [§7 リハーサル](#7-リハーサルテストアカウントでの-assignment-動作確認) で行います。**先に §6 で講師マシンを整備**（Temurin JDK 21 / Maven / Podman 導入）してからでないと、`./mvnw -B -Ph2 verify` が JDK 未導入で失敗します。
 
 ---
 
 ## 6. 講師自身のキッティング
 
-受講生と同じ環境を講師マシンに構築します（質問対応・トラブル再現用）。
+受講生と同じ環境を講師マシンに構築します（質問対応・トラブル再現用）。順序は受講生ガイドと同じ「Windows キッティング → 再起動 → WSL → リポ clone」です。
 
-### 6-1. 講師リポを clone
+### 6-1. 講師リポを clone（🪟 管理者 PowerShell）
 
-```bash
-cd /mnt/c/workspace
+WSL2 機能はまだ有効化されていないので、**Windows 側の PowerShell** で clone する（受講生ガイド §4-3 と同じ流れ）：
+
+```powershell
+New-Item -ItemType Directory -Force -Path "C:\workspace" | Out-Null
+cd C:\workspace
 git clone https://github.com/<org>/tsubuyaki-board.git
 cd tsubuyaki-board
 ```
+
+> 💡 Git for Windows が未導入なら `winget install Git.Git` を先に。`setup.ps1` でも自動導入されるが、§6-1 で clone するには事前に Git が必要。
 
 ### 6-2. Windows キッティング → 受講生ガイドと同手順
 
@@ -250,9 +198,17 @@ cd tsubuyaki-board
 2. `Set-ExecutionPolicy -Scope Process Bypass; .\scripts\setup.ps1`
 3. PC 再起動
 
-**講師固有の差分**: 無し（同じ）。
+**講師固有の差分**:
+- Pleiades は受講生に配布する媒体と**同じ zip** を `C:\Pleiades` に解凍してあること（配布媒体そのものの動作検証を兼ねる）。
+- `setup.ps1` 完走後、🪟 PowerShell（管理者でも通常でも可）で Windows 側 Doctor を一度回し、緑揃いを確認:
 
-### 6-3. WSL キッティング → 受講生ガイドと同手順
+  ```powershell
+  bash scripts/doctor.ps1
+  ```
+
+  期待: `Pleiades` / `WSL2` / `Podman Desktop` / `Git for Windows` / `C:\workspace` の各セクションが `[ OK ]` または `[WARN]` で揃う。`[ NG ]` があれば §6-3 へ進む前に解消する。
+
+### 6-3. WSL キッティング → 受講生ガイドと同手順 + Temurin JDK 21 検証
 
 [../education/student-setup-guide.md §5](../education/student-setup-guide.md) の手順をそのまま実施。要約：
 
@@ -260,18 +216,67 @@ cd tsubuyaki-board
 2. `cd /mnt/c/workspace/tsubuyaki-board`
 3. `bash scripts/setup-wsl.sh`
 
-**講師固有の差分**: 無し（同じ）。
+**講師固有の差分**: 無し（同じ）。ただし以降のリハーサル（§7）と Oracle 経路 verify（§6-5）が **Temurin JDK 21 に強く依存する**ため、`setup-wsl.sh` が何を入れるかを把握し、完了後に必ず検証する。
+
+#### 6-3-1. `setup-wsl.sh` が自動で入れる Temurin JDK 21
+
+`scripts/setup-wsl.sh` 内の `==> 3. Eclipse Temurin 21` ブロックが以下を自動実行する（手動操作不要）:
+
+1. Adoptium の公開鍵を `/etc/apt/keyrings/adoptium.gpg` に登録
+2. `/etc/apt/sources.list.d/adoptium.list` に `deb [signed-by=...] https://packages.adoptium.net/artifactory/deb <codename> main` を書き込み
+3. `apt-get install -y temurin-21-jdk` で Java 21 を導入
+4. `/etc/profile.d/jdk.sh` に以下を書き出し:
+   ```sh
+   export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64
+   export PATH="${JAVA_HOME}/bin:${PATH}"
+   ```
+5. `~/.bashrc` の `codex-training` ブロックから `jdk.sh` を `source` するよう追記
+
+> 受講生・講師ともに **WSL Ubuntu 22.04 (jammy)** が前提（受講生ガイド §0.5 用語ミニ辞書）。他ディストロでは codename が一致せず apt 経路がエラーになる。
+
+#### 6-3-2. Temurin JDK 21 の検証コマンド
+
+`setup-wsl.sh` 完了後、新しいシェルを開く（または `source ~/.bashrc`）してから以下を順に実行:
+
+```bash
+# 1) java コマンドが 21 を返すこと
+java --version
+# → openjdk 21.0.x 202x-xx-xx
+#    OpenJDK Runtime Environment Temurin-21.0.x+yy (build 21.0.x+yy)
+#    OpenJDK 64-Bit Server VM Temurin-21.0.x+yy (build 21.0.x+yy, mixed mode, sharing)
+
+# 2) JAVA_HOME が Temurin 21 を指していること
+echo "$JAVA_HOME"
+# → /usr/lib/jvm/temurin-21-jdk-amd64
+
+# 3) Maven Wrapper がその JDK で動くこと（pom.xml がある場所で実行）
+cd /mnt/c/workspace/tsubuyaki-board
+./mvnw -v
+# → Apache Maven 3.9.x ...
+#    Java version: 21.0.x, vendor: Eclipse Adoptium, runtime: /usr/lib/jvm/temurin-21-jdk-amd64
+```
+
+3 つすべて期待出力どおりなら、§7 のリハーサルと §6-5 のフル動作確認に進める。
+
+#### 6-3-3. JDK が見えない場合の救済
+
+| 症状 | 原因の見当 | 対処 |
+|---|---|---|
+| `java: command not found` | 新シェルに `/etc/profile.d/jdk.sh` が読み込まれていない | `source /etc/profile.d/jdk.sh` を当該セッションで実行、または新しい Windows Terminal タブで Ubuntu を開き直す |
+| `mvnw` で `JAVA_HOME is not defined correctly` | `JAVA_HOME` が空、または実体パスがズレている | `ls /usr/lib/jvm/` で実体ディレクトリ名を確認（Adoptium のアップデートで末尾が `temurin-21-jdk-amd64` 以外になる可能性）。ズレていれば `/etc/profile.d/jdk.sh` を編集 |
+| `apt-get install temurin-21-jdk` が失敗 | apt source 行が壊れている、Adoptium のキー登録に失敗 | `bash scripts/setup-wsl.sh` を再実行（idempotent 設計で 2 回目以降も安全）。それでもダメなら `cat /etc/apt/sources.list.d/adoptium.list` で source 行を確認 |
+| Ubuntu 22.04 以外で実行してしまった | codename が `jammy` でない | 本研修は Ubuntu 22.04 LTS 前提。他バージョンでの動作保証は無いため、受講生環境と揃えて再構築する |
 
 ### 6-4. `OPENAI_API_KEY` 設定 → 受講生ガイドと同手順
 
-[../education/student-setup-guide.md §7-2](../education/student-setup-guide.md) のとおり。
+手順本体は [../education/student-setup-guide.md §7-2](../education/student-setup-guide.md) を参照（`~/.bashrc` への追記と `source`）。
 
-```bash
-echo 'export OPENAI_API_KEY=sk-...' >> ~/.bashrc
-source ~/.bashrc
-```
-
-**講師固有の差分**: 受講生に貸与する**予備キー**は **`~/.bashrc` に書かない**（誤って共有・公開しないため）。予備キーは 1Password / `pass` 等のシークレットマネージャに保管し、配布時のみ手動で渡す。
+**講師固有の差分**:
+- **講師自身のキー** は `~/.bashrc` へ書く（普段使い用）
+- **受講生へ貸与する予備キー** は **`~/.bashrc` には書かない**（誤って共有・公開しないため）
+- 予備キーは 1Password / `pass` 等のシークレットマネージャに保管し、配布時のみ手動で渡す
+- 配布経路は Slack DM など流出しにくい経路を選択
+- 研修終了時に OpenAI ダッシュボードで rotate（発行し直し）
 
 ### 6-5. 動作確認（フル — 受講生より厳しめ）
 
@@ -300,27 +305,127 @@ codex-shell
 # (コンテナ内) codex --help
 ```
 
-すべて通れば講師キッティング完了。**受講生向けには H2 経路のみで OK**（Oracle はバックアップ）。
+`doctor.sh`（全件）の出力で以下が確実に揃うことを目視確認:
+
+- `== JDK ==` セクション
+  - `[ OK ] java — openjdk version "21..."`
+  - `[ OK ] JAVA_HOME — /usr/lib/jvm/temurin-21-jdk-amd64`
+- `== Maven Wrapper ==` セクション
+  - `[ OK ] mvnw 実行可能`
+  - `[ OK ] mvnw -v 成功`
+- `== Podman ==` セクション
+  - `[ OK ] podman info 成功 (rootless 含む)`
+- `== Codex devbox image ==` セクション
+  - `[ OK ] codex-devbox:latest 存在`
+
+いずれかが `[WARN]` / `[ NG ]` であれば §6-3 の救済（JDK 系）または受講生ガイド §8、[../education/TROUBLESHOOTING.md](../education/TROUBLESHOOTING.md) を参照して解消する。
+
+すべて通れば講師キッティング完了。次は §7 のリハーサル。**受講生向けには H2 経路のみで OK**（Oracle はバックアップ）。
 
 ---
 
-## 7. 当日運営フロー
+## 7. リハーサル（テストアカウントでの Assignment 動作確認）
+
+§5 で作成した Classroom Assignment が受講生視点でも正しく動くかを、**講師の業務 GitHub とは別のアカウント**で踏破して確認します。詰まったポイントは受講生ガイド / TROUBLESHOOTING への追記材料にします。
+
+### 7-0. 前提条件
+
+- §6 講師キッティングが完走し、自分のマシン上で `./mvnw -B -Ph2 verify` が **BUILD SUCCESS を返している**こと
+- §5 で Classroom Assignment 作成・招待 URL の取得が完了していること
+- WSL Ubuntu で `java --version` が `21`、`echo "$JAVA_HOME"` が `/usr/lib/jvm/temurin-21-jdk-amd64` を返すこと（§6-3-2 の検証済）
+
+> ⚠️ §6 を飛ばして本節を実施すると、`./mvnw -B -Ph2 verify` が JDK 未導入で**確実に失敗**します。先に §6 を終わらせること。
+
+### 7-1. テストアカウントを用意
+
+- 講師の業務 GitHub アカウントとは別のアカウント（個人アカウントなど）を準備
+- Organization の **seat が 1 つ消費される** 点に注意（Free プランは無制限、Team プランは課金）
+- 当該アカウントを Organization に招待し、Settings > Members で **Active** になっていること
+
+### 7-2. Assignment URL を踏んでリポ生成
+
+1. 🌐 ブラウザで GitHub からサインアウト → **テストアカウントで再サインイン**
+2. §5-4 で取得した Classroom 招待 URL（`https://classroom.github.com/a/xxxxxxxx`）を開く
+3. **Authorize GitHub Classroom** → **Accept this assignment** をクリック
+4. 30 秒〜 1 分待つと `<org>/<assignment>-<test-account-id>` という private リポが自動生成される
+5. 受講生ガイド §3-3 と同じ画面遷移であること、ファイル一覧に `AGENTS.md` / `README.md` / `EXERCISES.md` / `pom.xml` が並ぶことを確認
+
+### 7-3. 別ディレクトリへ clone（既存講師リポと衝突回避）
+
+🐧 WSL Ubuntu で実施:
+
+```bash
+# リハーサル用の一時ディレクトリを作って clone する
+mkdir -p /mnt/c/workspace/.rehearsal
+cd /mnt/c/workspace/.rehearsal
+
+# テストアカウントのリポを clone
+git clone https://github.com/<org>/<assignment>-<test-account-id>.git
+cd <assignment>-<test-account-id>
+```
+
+> 💡 `.rehearsal/` は講師マシンのローカル作業ディレクトリ。本番の講師リポ（`/mnt/c/workspace/tsubuyaki-board`）と分離しておくと、後で `rm -rf` で安全に破棄できる。
+
+### 7-4. 受講生と同じ経路で `./mvnw -B -Ph2 verify`
+
+```bash
+# 🐧 WSL Ubuntu — clone 直下で実行
+./mvnw -B -Ph2 verify
+```
+
+期待出力:
+
+```
+[INFO] BUILD SUCCESS
+[INFO] -----------------------------------
+[INFO] Total time:  XX s
+```
+
+初回は依存ライブラリの DL で 5〜10 分かかる（受講生も同様）。
+
+#### 詰まったときの確認順
+
+1. `java --version` が `21` を返すか → 違うなら §6-3 の Temurin 21 検証へ戻る
+2. `echo "$JAVA_HOME"` が `/usr/lib/jvm/temurin-21-jdk-amd64` か → 違うなら §6-3-3 救済表へ
+3. `bash scripts/doctor.sh --quick` で `[ NG ]` が無いか
+4. ネットワーク（Maven Central 疎通）が `doctor.sh` の `== ネットワーク疎通 ==` で `[ OK ]` か（初回 verify は依存 DL のため Maven Central 必須）
+5. すべて OK でも `BUILD FAILURE` になるなら **受講生ガイド／TROUBLESHOOTING に未記載のケース**。詰まったポイントをメモして [../education/student-setup-guide.md](../education/student-setup-guide.md) または [../education/TROUBLESHOOTING.md](../education/TROUBLESHOOTING.md) に追記する
+
+### 7-5. 後片付け
+
+リハーサル完了後:
+
+```bash
+# 元の講師リポへ戻る
+cd /mnt/c/workspace/tsubuyaki-board
+
+# リハーサル用 clone は破棄して構わない
+rm -rf /mnt/c/workspace/.rehearsal/<assignment>-<test-account-id>
+```
+
+- テストアカウントの GitHub リポ自体は研修期間後に削除（または `<org>` のリポ管理画面から手動 delete）
+- テストアカウントの Organization seat は研修終了後に Settings > Members から外す
+- 予備 `OPENAI_API_KEY` を Codex でも使ったなら、研修終了時に rotate（§6-4 参照）
+
+---
+
+## 8. 当日運営フロー
 
 詳細は [timetable.md](./timetable.md) と [rubric.md](./rubric.md) を参照。本ガイドではセットアップ観点のみ記述。
 
-### 7-1. 0 時間目（受講生到着〜セットアップ開始）
+### 8-1. 0 時間目（受講生到着〜セットアップ開始）
 
 - 受講生に [../education/student-setup-guide.md](../education/student-setup-guide.md) を案内（事前送付推奨）
 - Classroom Assignment URL を配布（Slack / メール / ホワイトボード）
 - Pleiades 配布媒体を回覧
 - `OPENAI_API_KEY` 未発行の受講生がいれば即座に発行サポート
 
-### 7-2. 0-1 時間目（セットアップ確認）
+### 8-2. 0-1 時間目（セットアップ確認）
 
 受講生ガイドの [§8 動作確認 5 点セット](../education/student-setup-guide.md) を全員クリアさせる。
 講師は「詰まっている受講生」を回って [../education/TROUBLESHOOTING.md](../education/TROUBLESHOOTING.md) を一緒に追う。
 
-### 7-3. PR レビューフロー（演習中）
+### 8-3. PR レビューフロー（演習中）
 
 受講生は自分の Classroom リポ内で：
 1. `feature/...` ブランチで開発
@@ -330,69 +435,59 @@ codex-shell
 
 講師は各受講生のリポを Watch し、PR ごとに 1〜2 行のレビューコメントを残します。レビューポイントは [rubric.md](./rubric.md) の 15 点ルーブリックに沿って。
 
-### 7-4. 相互レビュー（19-20 時間目）
+### 8-4. 相互レビュー（19-20 時間目）
 
 [ONBOARDING.md](../education/ONBOARDING.md#相互レビュー-19-20時間目) を参照。
 
-### 7-5. KPT＋自己採点（20-21 時間目）
+### 8-5. KPT＋自己採点（20-21 時間目）
 
 [rubric.md](./rubric.md) を配布。
 
 ---
 
-## 8. 権限プレイブック（トラブル時）
+## 9. 権限プレイブック（トラブル時）
 
-### 8-1. 受講生が Assignment を踏めない
+### 9-1. 受講生が Assignment を踏めない
 
 - 症状: Classroom 画面で「You don't have access to this assignment」
 - 原因: Organization の seat 不足、または受講生が SAML SSO 未認証
 - 対処: Settings > Members で受講生を Pending invitation から Active に。SAML 必須 Org の場合は受講生に再認証を依頼
 
-### 8-2. Actions が動かない
-
-- 症状: 受講生個人リポで push しても workflow が起動しない
-- 原因: Classroom 経由で生成されたリポは Actions がデフォルト無効の場合あり
-- 対処: 受講生に **Settings > Actions > General** で「Allow all actions」を選択させる
-
-### 8-3. 受講生の `OPENAI_API_KEY` が当日発行不能
+### 9-2. 受講生の `OPENAI_API_KEY` が当日発行不能
 
 - 症状: 個人カード未登録 / 残高不足 / 発行制限
 - 対処: 講師が予備キー 1 本を保持しておき、当日のみ貸与（研修終了時に rotate）
-- 予備キーの管理: 1Password / 環境変数で保持し、共有時は Slack DM 等の流出しにくい経路で渡す
+- 予備キーの管理・配布経路は [§6-4](#6-4-openai_api_key-設定--受講生ガイドと同手順) を参照
 
-### 8-4. branch protection 設定で 422 エラー
-
-- 症状: `gh api PUT .../protection` が `422 Unprocessable Entity`
-- 原因: `Build + Test (H2)` という名前の check run が CI 履歴に未登録
-- 対処: 一度 main に空コミットを push し、CI を緑にしてから再実行（手順 4-1 を実施）
-
-### 8-5. 受講生が main に直 push してしまった
+### 9-3. 受講生が main に直 push してしまった
 
 - 症状: 受講生個人リポの main に feature を介さず push される
-- 原因: 個人リポに branch protection が設定されていない
-- 対処: 4-3 のコマンドで保護を有効化。push 済の不正コミットは `git revert` で戻す（force push は禁止）
+- 原因: 規約違反（branch protection は本研修では設定しない方針）
+- 対処: push 済の不正コミットは `git revert` で打ち消しコミットを作って戻す（force push は禁止）。再発防止として feature ブランチ + PR 経由の徹底を再度周知
 
 ---
 
-## 9. 講師完了条件チェックリスト
+## 10. 講師完了条件チェックリスト
 
 研修開始前日までに以下が全て ✓ なら準備完了。
 
 ### Organization / リポ
-- [ ] Organization 作成済、Actions 有効化済
+- [ ] Organization 作成済
 - [ ] `<org>/tsubuyaki-board` が **private** かつ **isTemplate=true**
-- [ ] Actions タブの初回 run が緑（`Build + Test (H2)`）
-- [ ] main ブランチに保護設定（required status check, force push 禁止）
+- [ ] main 直 push 禁止規約を受講生に周知する用意ができている（CI による物理ブロックは行わない）
 
 ### Classroom
 - [ ] Classroom 作成、Organization 紐付け済
 - [ ] Assignment 作成（individual, private, template = `<org>/tsubuyaki-board`）
 - [ ] Assignment 招待 URL を取得・共有準備完了
-- [ ] テストアカウントで Assignment 参加 → clone → `./mvnw -B -Ph2 verify` 緑のリハーサル成功
+- [ ] テストアカウントで Assignment 参加 → clone → `./mvnw -B -Ph2 verify` 緑のリハーサル成功（[§7 リハーサル](#7-リハーサルテストアカウントでの-assignment-動作確認) で実施）
 
 ### 講師マシン
 - [ ] `setup.ps1` 完走、PC 再起動済
 - [ ] `setup-wsl.sh` 完走
+- [ ] WSL Ubuntu 上で `java --version` が `21` を返す（Temurin 21）
+- [ ] `echo "$JAVA_HOME"` が `/usr/lib/jvm/temurin-21-jdk-amd64`
+- [ ] `./mvnw -v` で `Java version: 21.x.x, vendor: Eclipse Adoptium` が表示される
 - [ ] `OPENAI_API_KEY` 設定済（`~/.bashrc`）
 - [ ] `bash scripts/doctor.sh`（**全件**）緑
 - [ ] `./mvnw -B -Plocal verify`（Oracle XE）緑
@@ -408,7 +503,7 @@ codex-shell
 
 ---
 
-## 10. 次に読むもの
+## 11. 次に読むもの
 
 - [timetable.md](./timetable.md) — 当日のタイムテーブル
 - [rubric.md](./rubric.md) — 15 点ルーブリック（自己採点・相互レビュー用）
