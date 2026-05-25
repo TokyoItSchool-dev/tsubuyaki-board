@@ -137,25 +137,24 @@ try {
         Write-Warning "  C:\Pleiades が見つかりません。手動配置してください。"
     }
 
-    # --- 7. OPENAI_API_KEY のヒント ------------------------------
+    # --- 7. OPENAI_API_KEY ヒント（WSL 側 ~/.bashrc が正本）-------
     Write-Host ""
     Write-Host "==> OPENAI_API_KEY" -ForegroundColor Cyan
-    $existingKey = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User")
-    if ($existingKey) {
-        Write-Host "  OPENAI_API_KEY は User 環境変数に設定済み" -ForegroundColor Green
-    } else {
-        Write-Host "  未設定。後で次のコマンドで設定してください:" -ForegroundColor Yellow
-        Write-Host "    [Environment]::SetEnvironmentVariable('OPENAI_API_KEY', 'sk-...', 'User')"
-    }
+    Write-Host "  本研修では Codex CLI を WSL Ubuntu 上で動かすため、" -ForegroundColor Yellow
+    Write-Host "  OPENAI_API_KEY は **WSL 側の ~/.bashrc に設定** します。" -ForegroundColor Yellow
+    Write-Host "  Windows 側の User 環境変数は WSL に伝搬しないため、こちらには入れません。"
+    Write-Host "  詳細手順は education/student-setup-guide.md §7 を参照。"
 
     Write-Host ""
     Write-Host "==> Windows 側セットアップ完了" -ForegroundColor Green
     Write-Host ""
-    Write-Host "次のステップ (WSL を一度起動して初期ユーザを作成した後):" -ForegroundColor Cyan
-    Write-Host "  1. リポジトリを C:\workspace 配下にクローン"
-    Write-Host "  2. wsl bash /mnt/c/workspace/<repo>/scripts/setup-wsl.sh"
-    Write-Host "  3. wsl bash /mnt/c/workspace/<repo>/scripts/doctor.sh"
+    Write-Host "次のステップ:" -ForegroundColor Cyan
+    Write-Host "  1. PC を再起動 (WSL2 機能の有効化を反映)"
+    Write-Host "  2. スタートメニュー → 'Ubuntu' を起動 → 初回ユーザ名・パスワードを設定"
+    Write-Host "  3. Ubuntu ターミナルで:  cd /mnt/c/workspace/<repo> && bash scripts/setup-wsl.sh"
+    Write-Host "  4. Ubuntu ターミナルで:  bash scripts/doctor.sh"
     Write-Host ""
+    Write-Host "詳細手順: education/student-setup-guide.md §4-5 以降"
     Write-Host "ログファイル: $logFile"
 }
 finally {
