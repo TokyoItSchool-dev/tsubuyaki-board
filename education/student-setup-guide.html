@@ -94,7 +94,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <ul>
 <li><a href="#このガイドの読み方" id="toc-このガイドの読み方">0. このガイドの読み方</a></li>
 <li><a href="#用語ミニ辞書初見の人向け" id="toc-用語ミニ辞書初見の人向け">0.5. 用語ミニ辞書（初見の人向け）</a></li>
-<li><a href="#必要なアカウント前日までに準備" id="toc-必要なアカウント前日までに準備">1. 必要なアカウント（前日までに準備）</a></li>
+<li><a href="#必要なアカウントpc前日までに準備" id="toc-必要なアカウントpc前日までに準備">1. 必要なアカウント・PC（前日までに準備）</a></li>
 <li><a href="#講師から受け取るもの" id="toc-講師から受け取るもの">2. 講師から受け取るもの</a></li>
 <li><a href="#github-classroom-assignment-に参加" id="toc-github-classroom-assignment-に参加">3. GitHub Classroom Assignment に参加</a></li>
 <li><a href="#windows-の準備-ダブルクリック中心" id="toc-windows-の準備-ダブルクリック中心">4. Windows の準備（🖱️ ダブルクリック中心）</a></li>
@@ -105,6 +105,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <li><a href="#初回-push-とローカル-verify-緑化-ubuntu-ブラウザ" id="toc-初回-push-とローカル-verify-緑化-ubuntu-ブラウザ">9. 初回 push とローカル verify 緑化（🐧 Ubuntu → 🌐 ブラウザ）</a></li>
 <li><a href="#次に読むもの" id="toc-次に読むもの">10. 次に読むもの</a></li>
 <li><a href="#完了条件チェックリスト" id="toc-完了条件チェックリスト">完了条件チェックリスト</a></li>
+<li><a href="#研修が終わったら環境の片付け最終日のみ" id="toc-研修が終わったら環境の片付け最終日のみ">研修が終わったら（環境の片付け・最終日のみ）</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -119,7 +120,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <li><strong>コマンドは上から順に実行</strong>。前ステップが成功してから次へ。</li>
 <li>期待出力と違うものが出たら、即座に隣の人か講師に確認。<strong>自己流に進めない</strong>。</li>
 <li>詳細解説は本ガイドではしません。コマンドのみ。背景は ONBOARDING.md / README.md / TROUBLESHOOTING.md を読んでください。</li>
-<li><strong>環境構築はバッチをダブルクリックするだけ</strong>で進みます。WSL や Podman のコマンドは打ちません。 リポジトリ直下の <strong><code>かんたんセットアップ</code></strong> フォルダに、番号順に並んだバッチが入っています（詳細は <a href="../かんたんセットアップ/README.md">かんたんセットアップ/README.md</a>）。</li>
+<li><strong>環境構築はバッチをダブルクリックするだけ</strong>で進みます。WSL や Podman のコマンドは打ちません。 リポジトリ直下の <strong><code>かんたんセットアップ</code></strong> フォルダに、番号順に並んだバッチが入っています。各バッチの役割は本ガイドの §4〜§8（初回セットアップ）と末尾の「研修が終わったら」で説明します。</li>
 <li>「<strong>どこで操作するか</strong>」を毎回示します。アイコン凡例：
 <ul>
 <li>🖱️ <strong>かんたんセットアップ フォルダ</strong>（エクスプローラで開いてバッチを<strong>ダブルクリック</strong>する）</li>
@@ -204,8 +205,19 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </blockquote>
 <hr />
 </section>
-<section id="必要なアカウント前日までに準備" class="level2">
-<h2>1. 必要なアカウント（前日までに準備）</h2>
+<section id="必要なアカウントpc前日までに準備" class="level2">
+<h2>1. 必要なアカウント・PC（前日までに準備）</h2>
+<section id="対象-pc-の前提" class="level3">
+<h3>1-0. 対象 PC の前提</h3>
+<ul>
+<li><strong>Windows 10 または 11（64bit）</strong> のパソコン</li>
+<li>そのパソコンの <strong>管理者</strong> として使えるアカウント（セットアップ1 バッチが管理者権限を要求します）</li>
+<li>インターネット接続</li>
+<li>ディスクの空き容量 <strong>10 GB 以上</strong>（WSL Ubuntu / Podman イメージ / Oracle データで消費します）</li>
+</ul>
+</section>
+<section id="必要なアカウント" class="level3">
+<h3>1-1. 必要なアカウント</h3>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -233,9 +245,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </tbody>
 </table>
 <blockquote>
-<p>OpenAI API キーは研修運営から配布されます。</p>
+<p>OpenAI API キーは研修運営から配布されます（<code>sk-</code> で始まる長い文字列）。</p>
 </blockquote>
 <hr />
+</section>
 </section>
 <section id="講師から受け取るもの" class="level2">
 <h2>2. 講師から受け取るもの</h2>
@@ -288,7 +301,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <li>右上の緑の「<strong>&lt; &gt; Code</strong>」ボタンをクリック → 「<strong>HTTPS</strong>」タブを選択 → 表示される URL（<code>https://github.com/&lt;org&gt;/&lt;assignment-name&gt;-&lt;your-github-id&gt;.git</code>）をコピー。</li>
 </ol>
 <blockquote>
-<p>📌 この URL は次のステップ（§4）で clone に使います。コピーしたままにしておくか、メモ帳に貼り付けておくと楽です。 📌 「You don’t have access to this assignment」と出たら → 講師に Organization の招待状況を確認してもらう（TROUBLESHOOTING のセットアップ§Q13）。</p>
+<p>📌 この URL は次のステップ（§4）で clone に使います。コピーしたままにしておくか、メモ帳に貼り付けておくと楽です。</p>
+<p>📌 「You don’t have access to this assignment」と出たら → 講師に Organization の招待状況を確認してもらう（TROUBLESHOOTING のセットアップ§Q13）。</p>
 </blockquote>
 <hr />
 </section>
@@ -300,14 +314,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </blockquote>
 <section id="pleiades-を配置" class="level3">
 <h3>4-1. Pleiades を配置</h3>
-<p>配布媒体（USB / 共有ドライブ）から zip を取得し、エクスプローラで以下に解凍：</p>
+<p><a href="https://willbrains.jp/index.html#/pleiades_distros2025.html">https://willbrains.jp/index.html#/pleiades_distros2025.html</a></p>
+<p>Pleiades All in One から 2025-12 を取得し、exeを実行して以下に解凍（設定変更なしでOK）：</p>
 <ul>
 <li>配置先: <code>C:\Pleiades</code></li>
 <li>中に <code>eclipse\eclipse.exe</code> が見える状態になっていれば OK</li>
 </ul>
-<blockquote>
-<p>💡 zip の解凍は、配布媒体上ではなく<strong>ローカルディスクに解凍してから移動</strong>しても OK。長いパスの解凍エラーを避けたい時は、まず <code>C:\Pleiades</code> 直下に解凍するのが安全。</p>
-</blockquote>
 </section>
 <section id="リポジトリを-cworkspace-配下に-clone-powershell" class="level3">
 <h3>4-2. リポジトリを <code>C:\workspace</code> 配下に clone（🪟 PowerShell）</h3>
@@ -323,8 +335,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># clone（§3-3 でコピーした URL を使う）</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>git clone https<span class="op">://</span>github<span class="op">.</span><span class="fu">com</span><span class="op">/&lt;</span>org<span class="op">&gt;/&lt;</span>assignment-name<span class="op">&gt;-&lt;</span>your-github-id<span class="op">&gt;.</span><span class="fu">git</span></span></code></pre></div>
 <blockquote>
-<p>💡 <code>git</code> コマンドが「コマンドが見つかりません」と出る場合は、Git for Windows が未導入です。<code>winget install Git.Git</code> で入れてから clone し直すか、講師に確認してください。 💡 clone 時に GitHub の認証画面（ブラウザ）が開くことがあります。指示に従ってサインインしてください。 💡 clone が終わったら、エクスプローラで <code>C:\workspace\&lt;assignment-name&gt;-&lt;your-github-id&gt;</code> を開きます。以降のセットアップはこのフォルダ内の <strong><code>かんたんセットアップ</code></strong> フォルダのバッチをダブルクリックするだけです。</p>
+<p>💡 <code>git</code> コマンドが「コマンドが見つかりません」と出る場合は、Git for Windows が未導入です。<code>winget install Git.Git</code> で入れてから clone し直すか、講師に確認してください。</p>
+<p>💡 clone 時に GitHub の認証画面（ブラウザ）が開くことがあります。指示に従ってサインインしてください。</p>
+<p>💡 clone が終わったら、エクスプローラで <code>C:\workspace\&lt;assignment-name&gt;-&lt;your-github-id&gt;</code> を開きます。以降のセットアップはこのフォルダ内の <strong><code>かんたんセットアップ</code></strong> フォルダのバッチをダブルクリックするだけです。</p>
 </blockquote>
+<p>Eclipse起動時は、ワークスペースとして <code>C:\workspace</code> を指定してください。</p>
 </section>
 <section id="セットアップ1バッチをダブルクリック" class="level3">
 <h3>4-3. 「セットアップ1」バッチをダブルクリック（🖱️）</h3>
@@ -349,7 +364,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <h3>4-4. PC を再起動</h3>
 <p>スクリプトが終わったら、画面に再起動が必要な旨が表示されます。<strong>PC を再起動</strong>してください（スタートメニュー → 電源 → 再起動）。</p>
 <blockquote>
-<p>📌 WSL 機能の有効化は再起動が必要。再起動せずに次のステップに進むと「カーネルが見つからない」エラーになります。 📌 詳細な対処は <a href="./TROUBLESHOOTING.md">TROUBLESHOOTING.md の Q1</a> を参照。</p>
+<p>📌 WSL 機能の有効化は再起動が必要。再起動せずに次のステップに進むと「カーネルが見つからない」エラーになります。</p>
+<p>📌 詳細な対処は <a href="./TROUBLESHOOTING.md">TROUBLESHOOTING.md の Q1</a> を参照。</p>
 </blockquote>
 <hr />
 </section>
@@ -367,7 +383,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <li>プロンプトが <code>ユーザ名@PCの名前:~$</code> の形になれば、Ubuntu のセットアップ完了。</li>
 </ol>
 <blockquote>
-<p>💡 ここで設定したパスワードは、後続の <code>sudo</code> で必要になります。<strong>忘れないようにメモ</strong>。 💡 パスワード入力中に「何も表示されない」のは Linux の仕様（隠して安全のため）。落ち着いてタイプして Enter してください。</p>
+<p>💡 ここで設定したパスワードは、後続の <code>sudo</code> で必要になります。<strong>忘れないようにメモ</strong>。</p>
+<p>💡 パスワード入力中に「何も表示されない」のは Linux の仕様（隠して安全のため）。落ち着いてタイプして Enter してください。<strong>弾かれたら</strong>慌てず、ゆっくり正確に打ち直してください。</p>
+<p>💡 <strong>スタートメニューに「Ubuntu」が出てこない場合</strong>は、§4-4 の PC 再起動がまだかもしれません。再起動してからもう一度探してください。</p>
 </blockquote>
 </section>
 <section id="windows-terminal-で-ubuntu-を開く推奨" class="level3">
@@ -459,7 +477,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># → feature/setup-&lt;your-name&gt;</span></span></code></pre></div>
 <p>例: <code>git switch -c feature/setup-yamada</code></p>
 <blockquote>
-<p>💡 <code>git switch -c &lt;名前&gt;</code> は「ブランチを新規作成して、そこに切り替える」操作です。<code>-c</code> 無しの <code>git switch &lt;名前&gt;</code> は既存ブランチへの切替のみ。 📌 fork は不要です。push 先は自分の Classroom リポジトリ（origin）です。 📌 ブランチ名規約・M1 以降のブランチ名は <a href="../AGENTS.md">AGENTS.md §3.2</a> と <a href="./ONBOARDING.md">ONBOARDING.md 基本ループ</a> を参照。例: M1 着手時は <code>feature/m1-post-list</code> のように <code>&lt;課題番号&gt;-&lt;要約&gt;</code> 形式で切る。</p>
+<p>💡 <code>git switch -c &lt;名前&gt;</code> は「ブランチを新規作成して、そこに切り替える」操作です。<code>-c</code> 無しの <code>git switch &lt;名前&gt;</code> は既存ブランチへの切替のみ。</p>
+<p>📌 fork は不要です。push 先は自分の Classroom リポジトリ（origin）です。</p>
+<p>📌 ブランチ名規約・M1 以降のブランチ名は <a href="../AGENTS.md">AGENTS.md §3.2</a> と <a href="./ONBOARDING.md">ONBOARDING.md 基本ループ</a> を参照。例: M1 着手時は <code>feature/m1-post-list</code> のように <code>&lt;課題番号&gt;-&lt;要約&gt;</code> 形式で切る。</p>
 </blockquote>
 <hr />
 </section>
@@ -500,7 +520,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </table>
 <p><strong>研修ではデフォルトの <code>.env</code> のまま</strong>で動作します。本番運用するなら必ず変更してください。</p>
 <blockquote>
-<p>💡 <code>.env</code> は <code>.gitignore</code> で除外済。コミットされません。 ⚠️ <strong>API キーは絶対にコミットしないこと</strong>。<code>~/.bashrc</code> はリポ外なので通常は起きませんが、<code>.env</code> などに貼り付けないよう注意。 ⚠️ 共有 PC では研修終了時に <strong>キーを rotate</strong>（OpenAI 側で発行し直し）してください。</p>
+<p>💡 <code>.env</code> は <code>.gitignore</code> で除外済。コミットされません。</p>
+<p>⚠️ <strong>API キーは絶対にコミットしないこと</strong>。<code>~/.bashrc</code> はリポ外なので通常は起きませんが、<code>.env</code> などに貼り付けないよう注意。</p>
+<p>⚠️ 共有 PC では研修終了時に <strong>キーを rotate</strong>（OpenAI 側で発行し直し）してください。</p>
 </blockquote>
 <hr />
 </section>
@@ -540,10 +562,130 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <blockquote>
 <p>💡 起動でうまくいかない場合は、まず <code>Oracle削除.bat</code> → <code>Oracle起動.bat</code> でリセット。それでもダメなら <a href="./TROUBLESHOOTING.md">TROUBLESHOOTING.md の Q7</a> を参照。</p>
 </blockquote>
+<section id="接続情報アプリdb-ツールから繋ぐとき" class="level4">
+<h4>接続情報（アプリ／DB ツールから繋ぐとき）</h4>
+<p><code>Oracle起動.bat</code> の成功時にも画面へ表示されますが、改めて控えておくと便利です。</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>項目</th>
+<th>値</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JDBC URL</td>
+<td><code>jdbc:oracle:thin:@//localhost:1521/XEPDB1</code></td>
+</tr>
+<tr>
+<td>サービス名（PDB）</td>
+<td><code>XEPDB1</code></td>
+</tr>
+<tr>
+<td>ホスト / ポート</td>
+<td><code>localhost</code> / <code>1521</code></td>
+</tr>
+<tr>
+<td>アプリ用ユーザ</td>
+<td><code>tsubuyaki</code></td>
+</tr>
+<tr>
+<td>アプリ用パスワード</td>
+<td><code>.env</code> の <code>ORACLE_APP_PWD</code>（デフォルト <code>tsubuyaki_pw</code>）</td>
+</tr>
+<tr>
+<td>管理者（SYS/SYSTEM）パスワード</td>
+<td><code>.env</code> の <code>ORACLE_PWD</code>（デフォルト <code>Training#2026</code>）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 アプリ（Spring Boot の <code>local</code> プロファイル）は上記の <code>tsubuyaki</code> ユーザで自動接続します。受講生が手で接続情報を打ち込む必要は普段ありません。</p>
+</blockquote>
+</section>
+</section>
+<section id="α.任意sqlplus-で-db-の中身を直接見る-ubuntu" class="level3">
+<h3>8-2-α.（任意）sqlplus で DB の中身を直接見る（🐧 Ubuntu）</h3>
+<blockquote>
+<p>📌 <strong>これは研修の通常フローでは不要</strong>です。「テーブルに本当にデータが入ったか」「自分の SQL がどう効くか」を<strong>自分の目で確かめたい人向け</strong>の任意手順です。飛ばして §8-3 に進んでも構いません。</p>
+</blockquote>
+<p>Oracle XE コンテナ（コンテナ名 <strong><code>tsubuyaki-oracle</code></strong>）には <strong><code>sqlplus</code> が同梱</strong>されています。WSL Ubuntu 側から <strong>コンテナに入らず <code>podman exec</code> で直接</strong>叩けます（別途インストール不要）。</p>
+<section id="アプリ用ユーザtsubuyakiで接続" class="level4">
+<h4>アプリ用ユーザ（<code>tsubuyaki</code>）で接続</h4>
+<p>本演習で使用するユーザー：tsubuyakiでSQLPLUSを実行します。起動するのに1分程かかります。</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu。-it で対話モードに入る</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec <span class="at">-it</span> tsubuyaki-oracle sqlplus tsubuyaki/tsubuyaki_pw@XEPDB1</span></code></pre></div>
+<p><code>SQL&gt;</code> プロンプトが出れば接続成功。まずは「繋がったこと」を確認します：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">user</span> <span class="kw">FROM</span> dual;   <span class="co">-- 接続中のユーザ名（TSUBUYAKI）が返れば OK</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>EXIT;</span></code></pre></div>
+<p><code>EXIT;</code>（または <code>QUIT;</code>）で sqlplus を抜け、Ubuntu のプロンプトに戻ります。</p>
+<blockquote>
+<p>📌 投稿テーブル <code>posts</code> は、<strong>アプリを Oracle（<code>local</code> プロファイル）で一度起動して Flyway マイグレーションが走った後</strong>に作られます。まだ Oracle に繋いでいない段階で <code>SELECT * FROM posts;</code> を叩くと <code>ORA-00942: 表またはビューが存在しません</code> になりますが、この時点では正常です（§8-3・§8-4 のスモークテストは H2 で動かすため Oracle のテーブルは作られません）。テーブル作成後なら <code>SELECT id, body FROM posts ORDER BY id DESC;</code> で中身を確認できます。</p>
+</blockquote>
+</section>
+<section id="管理者sysで接続したいとき" class="level4">
+<h4>管理者（SYS）で接続したいとき</h4>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># パスワードに記号(#)が含まれるのでクォートで囲む</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec <span class="at">-it</span> tsubuyaki-oracle sqlplus <span class="st">&#39;sys/Training#2026@XEPDB1&#39;</span> as sysdba</span></code></pre></div>
+</section>
+<section id="ターミナルから一発で-sql-を流す対話に入らない" class="level4">
+<h4>ターミナルから一発で SQL を流す（対話に入らない）</h4>
+<p><code>-S</code>（サイレント）＋ ヒアドキュメントで、結果だけ受け取れます：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec <span class="at">-i</span> tsubuyaki-oracle sqlplus <span class="at">-S</span> tsubuyaki/tsubuyaki_pw@XEPDB1 <span class="op">&lt;&lt;&#39;EOF&#39;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="st">SET HEADING ON FEEDBACK OFF PAGESIZE 50 LINESIZE 200</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="st">SELECT id, body FROM posts ORDER BY id DESC FETCH FIRST 5 ROWS ONLY;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="st">EXIT;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span></code></pre></div>
+</section>
+<section id="sqlplus-接続パラメータ早見表" class="level4">
+<h4>sqlplus 接続パラメータ早見表</h4>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>値</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>コンテナ名</td>
+<td><code>tsubuyaki-oracle</code></td>
+</tr>
+<tr>
+<td>接続文字列（アプリユーザ）</td>
+<td><code>tsubuyaki/tsubuyaki_pw@XEPDB1</code></td>
+</tr>
+<tr>
+<td>接続文字列（管理者）</td>
+<td><code>&#39;sys/Training#2026@XEPDB1&#39; as sysdba</code></td>
+</tr>
+<tr>
+<td>サービス名</td>
+<td><code>XEPDB1</code></td>
+</tr>
+<tr>
+<td>ポート</td>
+<td><code>1521</code></td>
+</tr>
+<tr>
+<td>抜け方</td>
+<td><code>EXIT;</code> または <code>QUIT;</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <code>.env</code> の <code>ORACLE_APP_PWD</code> / <code>ORACLE_PWD</code> を変更している場合は、上記のパスワード部分を読み替えてください。</p>
+<p>💡 <code>podman ps</code> で <code>tsubuyaki-oracle</code> が表示されない＝Oracle 未起動です。先に <code>Oracle起動.bat</code>（または <code>bash scripts/start-oracle.sh</code>）を実行してください。</p>
+</blockquote>
+</section>
 </section>
 <section id="ビルド-テストh2-で" class="level3">
 <h3>8-3. ビルド &amp; テスト（H2 で）</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./mvnw</span> <span class="at">-B</span> <span class="at">-Ph2</span> verify</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./mvnw</span> <span class="at">-B</span> <span class="at">-Ph2</span> verify</span></code></pre></div>
 <p><code>-Ph2</code> は「H2 メモリ DB プロファイルを有効化」の意味。Oracle に依存せず軽量に動かせるので、まず H2 で確認。</p>
 <p>期待出力（最後の方）:</p>
 <pre><code>[INFO] BUILD SUCCESS
@@ -551,7 +693,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 [INFO] Total time:  XX s</code></pre>
 <p>JUnit テストが全て緑、JaCoCo カバレッジレポートが <code>target/site/jacoco/index.html</code> に生成されます。</p>
 <blockquote>
-<p>💡 初回は依存ライブラリの DL で 5〜10 分かかります。 💡 <code>BUILD FAILURE</code> が出たら <a href="./TROUBLESHOOTING.md#ビルド">TROUBLESHOOTING.md Q10/Q11</a> を参照。</p>
+<p>💡 初回は依存ライブラリの DL で 5〜10 分かかります。</p>
+<p>💡 <code>BUILD FAILURE</code> が出たら <a href="./TROUBLESHOOTING.md#ビルド">TROUBLESHOOTING.md Q10/Q11</a> を参照。</p>
 </blockquote>
 </section>
 <section id="アプリ起動-ヘルスチェック" class="level3">
@@ -560,7 +703,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <section id="アプリ起動タブ-a" class="level4">
 <h4>8-4-1. アプリ起動（タブ A）</h4>
 <p>現在のターミナル（タブ A とする）でアプリを起動：</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="va">SPRING_PROFILES_ACTIVE</span><span class="op">=</span>h2 <span class="ex">./mvnw</span> spring-boot:run</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="va">SPRING_PROFILES_ACTIVE</span><span class="op">=</span>h2 <span class="ex">./mvnw</span> spring-boot:run</span></code></pre></div>
 <p><code>Started TsubuyakiApplication in X seconds</code> の行が出たら起動完了。<strong>このターミナルはアプリのログを表示し続けるので、閉じずに残しておく</strong>。</p>
 </section>
 <section id="ヘルスチェックタブ-b-新規タブ" class="level4">
@@ -571,37 +714,119 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <li>または <code>Ctrl + Shift + 1</code> 〜 <code>9</code> のような既定ショートカットが効く環境もあります</li>
 </ul>
 <p>新しいタブ（タブ B）で以下を実行：</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ホスト OS 自身のポート 8080 にアクセスする (WSL 内からも localhost で届く)</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:8080/actuator/health</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ホスト OS 自身のポート 8080 にアクセスする (WSL 内からも localhost で届く)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:8080/actuator/health</span></code></pre></div>
 <p>期待出力:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;status&quot;</span><span class="fu">:</span><span class="st">&quot;UP&quot;</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;status&quot;</span><span class="fu">:</span><span class="st">&quot;UP&quot;</span><span class="fu">}</span></span></code></pre></div>
 </section>
 <section id="アプリを停止" class="level4">
 <h4>8-4-3. アプリを停止</h4>
 <p>確認が終わったら、タブ A に戻って <strong><code>Ctrl+C</code></strong> を押してアプリを停止。タブ B はそのまま開いたままで OK（次の §8-5 で使う）。</p>
 <blockquote>
-<p>💡 「タブ A と B どっち？」を毎回意識してください。アプリを起動したタブで <code>curl</code> を打つと、アプリが Ctrl+C 待ち状態なので動きません。 💡 タブを増やせない環境では、<code>tmux</code> で画面分割するか、<code>./mvnw spring-boot:run &amp;</code> でバックグラウンド起動 → <code>kill %1</code> で停止、でも代替可能（中級者向け）。</p>
+<p>💡 「タブ A と B どっち？」を毎回意識してください。アプリを起動したタブで <code>curl</code> を打つと、アプリが Ctrl+C 待ち状態なので動きません。</p>
+<p>💡 タブを増やせない環境では、<code>tmux</code> で画面分割するか、<code>./mvnw spring-boot:run &amp;</code> でバックグラウンド起動 → <code>kill %1</code> で停止、でも代替可能（中級者向け）。</p>
 </blockquote>
 </section>
 </section>
 <section id="codex-cli-コンテナ" class="level3">
 <h3>8-5. Codex CLI（📦 コンテナ）</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu で codex-shell エイリアスを実行</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex-shell</span></span></code></pre></div>
+<p>環境構築のバッチ化とは対照的に、<strong>Codex CLI の起動はあえてバッチ化していません</strong>。<code>codex-shell</code> を自分でタイプするところから始めます。<strong>Codex を使った開発こそがこの研修の本題</strong>だからです。ここでは「起動できること」だけ確認し（スモークテスト）、実際の使い方はその下の §8-5-2 以降で説明します。</p>
+<section id="スモークテスト起動できることの確認" class="level4">
+<h4>8-5-1. スモークテスト（起動できることの確認）</h4>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu で codex-shell エイリアスを実行</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex-shell</span></span></code></pre></div>
 <p>成功すると、プロンプトが Ubuntu から <strong>📦 Codex コンテナ内</strong>に変わります：</p>
 <pre><code>codex@a3f5e7c2:/workspace$</code></pre>
 <p>コンテナの中で以下を実行：</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Codex CLI のヘルプ表示</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">--help</span></span></code></pre></div>
-<p>期待出力: Codex CLI のヘルプメッセージ（使えるサブコマンド一覧）が表示されること。</p>
-<p>コンテナから抜けるには:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="bu">exit</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># または Ctrl+D</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Codex CLI のヘルプ表示</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">--help</span></span></code></pre></div>
+<p>期待出力: Codex CLI のヘルプメッセージ（使えるサブコマンド一覧）が表示されること。ここまで出れば §8-5 は合格です。</p>
+</section>
+<section id="codex-shell-で入った後の世界" class="level4">
+<h4>8-5-2. codex-shell で入った後の世界</h4>
+<p><code>codex-shell</code> は内部で <code>scripts/run-codex.sh</code>（＝<code>codex-devbox:latest</code> イメージの <code>podman run</code>）を呼んでいます。入ると最初にバナーが出て、使える道具と安全装置の状態が分かります：</p>
+<pre><code>╔══════════════════════════════════════════════════════╗
+║  社内つぶやきボード Codex devbox                      ║
+╚══════════════════════════════════════════════════════╝
+  Codex CLI    : @openai/codex 0.x.y
+  Java         : openjdk version &quot;21.x.x&quot; ...
+  Maven        : Apache Maven 3.9.9
+  Workspace    : /workspace
+  API Key      : 設定済み (値は表示しません)
+  研修ハーネス : 有効 (rm / git / chmod / chown / dd / sudo を wrapper で監査)
+  .env         : /dev/null 上書きマウント済 (機密値は到達不能)</code></pre>
+<p>ポイント：</p>
+<ul>
+<li><strong><code>/workspace</code> がリポジトリのルートにマウント</strong>されています。コンテナ内で編集・コミットした内容は、そのままホスト側のリポ（<code>C:\workspace\...</code>）に反映されます。</li>
+<li><code>OPENAI_API_KEY</code> はコンテナに渡りますが、<strong>値は表示されません</strong>。<code>.env</code> や <code>~/.bashrc</code> 等の機密ファイルは <code>/dev/null</code> でマスクされ、Codex からは中身が見えません。</li>
+<li><code>AGENTS.md</code> や <code>.codex/</code> などの規範ファイルは <strong>読み取り専用</strong>でマウントされます（Codex が書き換えられない）。</li>
+</ul>
+</section>
+<section id="codex-で対話開発する研修の本番" class="level4">
+<h4>8-5-3. codex で対話開発する（研修の本番）</h4>
+<p>コンテナ内で <code>codex</code> を起動すると対話セッションに入り、<strong>日本語</strong>でタスクを指示できます：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">codex@a3f5e7c2:/workspace$</span> codex</span></code></pre></div>
+<p>起動したら、例えばこう指示します（M1 着手時のイメージ）：</p>
+<pre><code>GET /posts で最新 50 件を新着順に返す一覧画面を、TDD で実装してください。
+まず @WebMvcTest + MockMvc で失敗するテストを 1 本書き (RED)、
+それを通す最小実装を書き (GREEN)、最後に重複と命名を整えてください (REFACTOR)。
+完了したら ./mvnw -B -Ph2 test が緑になることを確認し、
+Conventional Commits 形式（feat(post): ...）でコミットしてください。</code></pre>
+<blockquote>
+<p>💡 毎回ゼロから書かなくても、リポジトリの <strong><code>.codex/prompts/</code></strong> に TDD サイクル用・セルフレビュー用のプロンプト雛形があります。これをコピペして埋めると安定します。</p>
+<p>💡 使用モデルは <code>gpt-5-codex</code>、応答とコミットメッセージは日本語、という方針が <code>.codex/config.toml</code> に設定済みです。</p>
+</blockquote>
+</section>
+<section id="承認モードと研修ハーネスcodex-guard" class="level4">
+<h4>8-5-4. 承認モードと研修ハーネス（Codex Guard）</h4>
+<p><strong>承認モードは <code>on-failure</code></strong>：Codex は通常は自走（実装 → <code>./mvnw</code> 実行まで自動）し、<strong>コマンドが失敗したときだけ</strong>あなたに確認を求めます。毎手順を承認したい場合は講師に相談してください。</p>
+<p><strong>研修ハーネス（Codex Guard）</strong>：コンテナ内では、研修に不要な破壊的操作が物理的にブロックされます。代表例：</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>ブロックされる操作</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>システム/カレントの再帰削除</td>
+<td><code>rm -rf /</code>、<code>rm -rf ~</code>、<code>rm -rf .</code>、<code>rm -rf /workspace</code></td>
+</tr>
+<tr>
+<td>作業ツリー破壊系 git</td>
+<td><code>git reset --hard</code>、<code>git clean -fd</code>、<code>git checkout -- .</code></td>
+</tr>
+<tr>
+<td>履歴改ざん</td>
+<td><code>git push --force</code> / <code>-f</code>、<code>git filter-branch</code></td>
+</tr>
+<tr>
+<td>権限昇格・ディスク破壊</td>
+<td><code>sudo ...</code>、<code>dd ...</code>、<code>chmod -R 777</code></td>
+</tr>
+<tr>
+<td>機密ファイル読み取り</td>
+<td><code>.env</code> / <code>*.pem</code> / <code>~/.ssh</code> 等（<code>/dev/null</code> マスク）</td>
+</tr>
+</tbody>
+</table>
+<p>ブロックされると <code>[codex-guard] ... は研修ハーネスでブロックされました</code> と出て <strong>exit code 126</strong> で止まります。<strong>同じコマンドを再試行しても通りません</strong>。破壊操作が本当に必要なときは、Codex に代替手段（<code>git reset --hard</code> の代わりに <code>git stash push -u</code> 等）を提案させるか、<strong>コンテナ外（WSL）で受講生本人が</strong>実行します。詳細は <a href="../AGENTS.md">AGENTS.md §7</a> と <a href="./TROUBLESHOOTING.md">TROUBLESHOOTING.md Q4-2/Q4-3</a>。</p>
+</section>
+<section id="コンテナから抜ける" class="level4">
+<h4>8-5-5. コンテナから抜ける</h4>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="bu">exit</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># または Ctrl+D</span></span></code></pre></div>
 <p>プロンプトが元の Ubuntu（<code>ユーザ名@PCの名前:~$</code>）に戻れば OK。</p>
 <blockquote>
-<p>💡 <code>codex-shell</code> 内では <code>/workspace</code> がリポジトリのルートにマウントされます。コンテナ内の変更はホストのリポにそのまま反映されます。 💡 「<code>OPENAI_API_KEY</code> が見つかりません」と言われたら → §7（セットアップ3 バッチ）が未完了。コンテナを抜けて再設定。</p>
+<p>💡 「<code>OPENAI_API_KEY</code> が見つかりません」と言われたら → §7（セットアップ3 バッチ）が未完了。コンテナを抜けて再設定してください。</p>
 </blockquote>
 <hr />
+</section>
 </section>
 </section>
 <section id="初回-push-とローカル-verify-緑化-ubuntu-ブラウザ" class="level2">
@@ -609,20 +834,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <p>ここまで完了したら、初回 push とローカル <code>verify</code> の緑化を確認します。本研修では GitHub Actions による CI を使わず、セットアップ完了時は <strong>ローカルで <code>./mvnw -B -Ph2 verify</code> を回して BUILD SUCCESS すること</strong>を確認します。仕上げの合否判定は <code>./mvnw -B -Ph2 -Pcoverage-day3 -Pstrict verify</code> です。</p>
 <section id="状態確認push-前" class="level3">
 <h3>9-1. 状態確認（push 前）</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 自分が今どのブランチにいるか</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> branch <span class="at">--show-current</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># → feature/setup-&lt;your-name&gt;   ← §6 で作ったブランチ名であること</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 変更ファイルが無いことを確認（このタイミングではセットアップだけで未編集のはず）</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> status</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># → nothing to commit, working tree clean</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 自分が今どのブランチにいるか</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> branch <span class="at">--show-current</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># → feature/setup-&lt;your-name&gt;   ← §6 で作ったブランチ名であること</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 変更ファイルが無いことを確認（このタイミングではセットアップだけで未編集のはず）</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> status</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># → nothing to commit, working tree clean</span></span></code></pre></div>
 <blockquote>
 <p>💡 もし <code>.env</code> や生成物が <code>Untracked files</code> に出ていても、それらは <code>.gitignore</code> で除外されている設計です。心配なら <code>cat .gitignore</code> で確認。</p>
 </blockquote>
 </section>
 <section id="push" class="level3">
 <h3>9-2. push</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin feature/setup-<span class="op">&lt;</span>your-name<span class="op">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin feature/setup-<span class="op">&lt;</span>your-name<span class="op">&gt;</span></span></code></pre></div>
 <p><code>-u origin &lt;branch&gt;</code> は「以降この feature ブランチは origin（自分の Classroom リポ）を追跡する」設定。次回からは <code>git push</code> だけで OK。</p>
 <section id="認証が要求された場合" class="level4">
 <h4>認証が要求された場合</h4>
@@ -634,8 +859,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </section>
 <section id="ローカル-verify-を緑化" class="level3">
 <h3>9-3. ローカル verify を緑化</h3>
-<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu (リポルートで)</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./mvnw</span> <span class="at">-B</span> <span class="at">-Ph2</span> verify</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu (リポルートで)</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./mvnw</span> <span class="at">-B</span> <span class="at">-Ph2</span> verify</span></code></pre></div>
 <p>以下を確認：</p>
 <ul>
 <li>最終行に <code>BUILD SUCCESS</code> が出る（所要時間は初回 3〜5 分、2 回目以降は 1〜2 分）。</li>
@@ -656,7 +881,6 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <li><strong><a href="./ONBOARDING.md">ONBOARDING.md</a></strong> — 演習 3 日間の動き方（21 時間のタイムテーブル、Codex 協働ループ、禁止事項）</li>
 <li><strong><a href="../EXERCISES.md">../EXERCISES.md</a></strong> — 機能要件（MUST / SHOULD / COULD）と受入基準</li>
 <li><strong><a href="../AGENTS.md">../AGENTS.md</a></strong> — Codex への規範書（Codex が最優先で読むファイル）</li>
-<li><strong><a href="../かんたんセットアップ/README.md">かんたんセットアップ/README.md</a></strong> — 環境構築バッチの早見表（毎日の起動・停止・リセット）</li>
 <li>詰まったら <strong><a href="./TROUBLESHOOTING.md">TROUBLESHOOTING.md</a></strong> → <code>環境チェック.bat</code>（または <code>bash scripts/doctor.sh</code>）</li>
 </ol>
 <hr />
@@ -679,6 +903,34 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <li><label><input type="checkbox"></input>初回 push 完了（feature ブランチが origin に上がっている）</label></li>
 </ul>
 <p>すべて ✓ になったら、<code>ONBOARDING.md</code> の <strong>1-2 時間目（仕様読解＋プロンプト準備）</strong> に進んでください。</p>
+<hr />
+</section>
+<section id="研修が終わったら環境の片付け最終日のみ" class="level2">
+<h2>研修が終わったら（環境の片付け・最終日のみ）</h2>
+<p>研修の最終日に、PC をきれいな状態へ戻したいときだけ使います。<code>かんたんセットアップ</code> フォルダの <strong><code>研修終了_環境削除.bat</code></strong> をダブルクリックすると、開発環境（WSL の Ubuntu-22.04）を<strong>丸ごと削除</strong>します。</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>バッチ</th>
+<th>やること</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>研修終了_環境削除.bat</code></td>
+<td>WSL の Ubuntu-22.04 を丸ごと削除。<strong>Oracle のデータ・自分が書いたコード・開発ツール・登録した API キーがすべて一緒に消えます</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>元に戻せません。</strong> 実行すると、確認のため半角で <code>delete</code> と入力するよう求められます。Windows 側のアプリや <code>C:\workspace</code> などのフォルダ自体は残ります。もう一度使うには §4（セットアップ1 バッチ）からやり直してください。</p>
+<p>⚠️ 削除前に、<strong>push し忘れた変更が無いか</strong>必ず確認してください（コンテナ内のコミットは push しないとリポに残りません）。</p>
+<p>⚠️ 共有 PC では、研修終了時に <strong>API キーを rotate</strong>（OpenAI 側で発行し直し）してください。</p>
+</blockquote>
 </section>
 </section>
 </body>
