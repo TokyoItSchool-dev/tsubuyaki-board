@@ -31,6 +31,8 @@ desktop.ini
 # Logs
 *.log
 logs/
+# かんたんセットアップ の .bat が出力するログ（logs/ で既にカバー済みだが明示）
+かんたんセットアップ/logs/
 
 # Environment / Secrets
 .env
@@ -58,3 +60,4 @@ oracle-data/
 
 # Local tooling (PlantUML jar など、各自ローカルで取得する成果物)
 tools/
+tmp/

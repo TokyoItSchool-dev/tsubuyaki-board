@@ -9,7 +9,8 @@
 #   git restore <file>     未コミット変更の破棄 (受講生が意図して使う想定)
 #   git stash push -u      安全な退避
 # 拒否:
-#   git push --force / -f / --force-with-lease (※main系のみ理想だが branch 判定が難しいため一律拒否)
+#   git push --force / -f / --force-with-lease / +<refspec> (※force は一律拒否)
+#   git push (宛先が main) / --all / --mirror   共有 main 保護 (push 先は自分の <github-id> ブランチのみ)
 #   git rm -rf / git rm -r <dir>     再帰削除
 #   git clean -fd / -fdx              untracked 削除
 #   git reset --hard                  作業ツリー破壊
@@ -68,8 +69,14 @@ case "${SUBCMD}" in
     push)
         for arg in "$@"; do
             case "${arg}" in
-                -f|--force|--force-with-lease|--force-with-lease=*)
-                    guard_reject "git push" "force push は研修ハーネスで一律禁止" "$@"
+                -f|--force|--force-with-lease|--force-with-lease=*|+*)
+                    guard_reject "git push" "force push は研修ハーネスで一律禁止 (+<refspec> 形式の強制更新も含む)" "$@"
+                    ;;
+                --all|--mirror)
+                    guard_reject "git push" "共有 main を含む一括 push (--all / --mirror) は禁止。自分の <github-id> ブランチのみ push すること" "$@"
+                    ;;
+                main|main:*|*:main|refs/heads/main|*:refs/heads/main)
+                    guard_reject "git push" "共有 main への push は禁止。push 先は自分の <github-id> ブランチのみ" "$@"
                     ;;
             esac
         done

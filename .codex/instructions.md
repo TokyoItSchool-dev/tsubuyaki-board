@@ -7,7 +7,7 @@
 1. **AGENTS.md を最優先で読む**。研修ルールはそこに集約されている。
 2. **テストを先に書く** (TDD)。RED → GREEN → REFACTOR の順を守る。
 3. **応答 / コミット / コメントはすべて日本語**。
-4. **小さなコミット**。1 PR = 1 ユースケース。200 行超えは分割。
+4. **小さなコミット**。1 コミット群 = 1 ユースケース。200 行超えは分割。
 5. **不確実なら質問する**。推測で書かず、推測時は「推測:」と明示する。
 
 ## このリポの構造
@@ -34,7 +34,7 @@
 | `src/main/resources/db/migration/**` | ✅ | ✅ (新規 V*.sql 追加) | 🟡 (既存マイグレーション削除は不可) |
 | `pom.xml` | ✅ | ✅ (依存追加) | 🛑 (削除不可) |
 | `compose.yaml`, `containers/**` | ✅ | 🟡 (要受講生確認) | 🛑 |
-| `.github/**` (PR / Issue テンプレート) | ✅ (ro マウント) | 🛑 (ハーネスで ro) | 🛑 |
+| `.github/**` (Issue テンプレート / workflows) | ✅ (ro マウント) | 🛑 (ハーネスで ro) | 🛑 |
 | `AGENTS.md` | ✅ (ro マウント) | 🛑 | 🛑 |
 | `.codex/**` (`.codex/sessions/` を除く) | ✅ (ro マウント) | 🛑 | 🛑 |
 | `instructor/**` | ✅ (ro マウント) | 🛑 | 🛑 |
@@ -49,7 +49,7 @@
 詳細は [AGENTS.md §7.5](../AGENTS.md) を参照。要点：
 
 - 破壊的コマンド (`rm -rf /`、`git rm -r`、`git reset --hard`、`git clean -fd`、
-  `git push --force`、`dd`、`sudo` 等) は **コンテナ内 wrapper が reject**
+  `git push --force`、共有 `main` への push、`dd`、`sudo` 等) は **コンテナ内 wrapper が reject**
 - 機密ファイル (`.env` 等) は **コンテナマウント層で `/dev/null` 上書き**
 - 規範ファイル (`AGENTS.md`、`.codex/`、`instructor/`、`.github/`) は **ro マウント**
 - 絶対パスや別シェルで wrapper を迂回しない。ブロックされたら再試行せず代替手段を提案、受講生に判断を仰ぐ
@@ -68,4 +68,4 @@
 - `tdd-cycle.md`: TDD サイクル 1 回を回す標準フロー
 - `controller-skeleton.md`: Controller + Service + Repository のスケルトン生成
 - `jpa-entity.md`: JPA Entity + Repository + Flyway 生成
-- `review.md`: PR 直前のセルフレビュー (XSS / SQLi / ハードコード)
+- `review.md`: push 直前のセルフレビュー (XSS / SQLi / ハードコード)

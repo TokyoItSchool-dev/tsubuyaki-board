@@ -85,7 +85,7 @@ code span.va { color: #19177c; }
 code span.vs { color: #4070a0; } 
 code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
 </style>
-  <style type="text/css">html {font-size: 12px;}body {font-family: system-ui, sans-serif;line-height: 1.7;margin: 2rem auto;padding: 0 1.5rem;max-width: 900px;}h1 {font-size: 1.9rem;font-weight: 700;border-bottom: 3px solid #444;padding-bottom: 0.3rem;margin-top: 3rem;margin-bottom: 1.5rem;}h2 {font-size: 1.6rem;font-weight: 600;border-left: 5px solid #666;padding-left: 0.6rem;margin-top: 2.5rem;margin-bottom: 1rem;}h3 {font-size: 1.3rem;font-weight: 600;border-left: 3px solid #999;padding-left: 0.5rem;margin-top: 2rem;margin-bottom: 0.8rem;}p {margin: 1rem 0;}ul, ol {padding-left: 1.5rem;margin: 1rem 0;}li {margin: 0.3rem 0;}table {width: 100%;border-collapse: collapse;margin: 1.5rem 0;table-layout: fixed;}th, td {padding: 0.5rem;border: 1px solid #ccc;text-align: left;word-wrap: break-word;overflow-wrap: break-word;white-space: normal;}th {background-color: #f0f0f0;font-weight: 600;}@media print {th {background-color: #f0f0f0 !important;-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}}code {font-family: Consolas, "Courier New", monospace;background: #f5f5f5;padding: 0.1rem 0.3rem;border-radius: 3px;}pre code {display: block;padding: 1rem;overflow-x: auto;}img {max-width: 100%;height: auto;display: block;margin: 1rem auto;}@media print {section {page-break-before: auto !important;break-before: auto !important;}h1,section > h1:first-child {page-break-before: always !important;break-before: page !important;}h1:first-of-type,section:first-of-type > h1:first-child {page-break-before: auto !important;break-before: auto !important;}h1, h2, h3 {-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}body {margin: 1cm;padding: 0;img {max-width: 100% !important;height: auto !important;page-break-inside: avoid !important;}}</style>
+  <style type="text/css">:root {--fg: #1a1a1a;--muted: #555;--accent: #1565c0;--bg: #ffffff;--surface: #f5f7fa;--border: #d8dee6;--warn-bg: #fff8e1;--warn-border: #f0c000;--code-bg: #f3f3f3; --code-fg: #222; }* {font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;box-sizing: border-box;font-size: 12px;}body {color: var(--fg);background: var(--bg);line-height: 1.8;max-width: 1280px;margin: 0 auto;padding: 2.5rem 1.5rem 6rem;}h1 {font-size: 1.9rem;border-bottom: 4px solid var(--accent);padding-bottom: 0.4rem;line-height: 1.4;}h2 {font-size: 1.4rem;margin-top: 2.6rem;padding: 0.3rem 0.7rem;background: var(--surface);border-left: 6px solid var(--accent);}h3 {font-size: 1.15rem;margin-top: 1.8rem;color: var(--accent);}p, li { font-size: 1rem; }a { color: var(--accent); }code {background: var(--surface);border: 1px solid var(--border);border-radius: 4px;padding: 0.1em 0.4em;font-family: "Consolas", "Courier New", monospace;font-size: 0.92em;}pre {background: var(--code-bg);color: var(--code-fg);padding: 1rem 1.2rem;border-radius: 8px;overflow-x: auto;}pre code { background: none; border: none; color: inherit; padding: 0; }table {border-collapse: collapse;width: 100%;margin: 1rem 0;}th, td {border: 1px solid var(--border);padding: 0.55rem 0.8rem;text-align: left;vertical-align: top;}th { background: var(--surface); }.note {background: var(--warn-bg);border: 1px solid var(--warn-border);border-radius: 8px;padding: 0.9rem 1.1rem;margin: 1.2rem 0;}.file { font-weight: 700; color: #0d47a1; }hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }ol li, ul li { margin: 0.35rem 0; }.appendix { color: var(--muted); }.appendix h2 { border-left-color: #999; }.appendix h3 { color: #444; }img {max-width: 100%;height: auto;display: block;margin: 1rem auto;}@media print {section {page-break-before: auto !important;break-before: auto !important;}h1,section > h1:first-child {page-break-before: always !important;break-before: page !important;}h1:first-of-type,section:first-of-type > h1:first-child {page-break-before: auto !important;break-before: auto !important;}h1, h2, h3 {-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}body {margin: 1cm;padding: 0;img {max-width: 100% !important;height: auto !important;page-break-inside: avoid !important;}th {background-color: #f0f0f0 !important;-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}}</style>
 </head>
 <body>
 <nav id="TOC" role="doc-toc">
@@ -136,14 +136,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </section>
 <section id="codex-の暴走系" class="level2">
 <h2>Codex の暴走系</h2>
-<section id="q.-1-人だけ-codex-が-git-push---force-main-しようとした" class="level3">
-<h3>Q. 1 人だけ Codex が <code>git push --force main</code> しようとした</h3>
-<p><strong>即決</strong>: AGENTS.md §7.3.3 の禁止コマンド一覧をその場で読ませる。本研修では GitHub branch protection は設定していない方針（<a href="./instructor-setup-guide.md">instructor-setup-guide.md §4</a>）のため、<strong>物理ブロックは無い</strong>。</p>
+<section id="q.-1-人だけ-codex-が-git-push---force-しようとした" class="level3">
+<h3>Q. 1 人だけ Codex が <code>git push --force</code> しようとした</h3>
+<p><strong>即決</strong>: AGENTS.md §7.3.3 の禁止コマンド一覧をその場で読ませる。コンテナ内 Codex の force push は Codex Guard（<code>git-guard.sh</code>）が exit 126 で拒否するが、コンテナ外の素の git は通る。Free×private のため GitHub branch protection は使えず（<a href="./instructor-setup-guide.md">instructor-setup-guide.md §4</a>）、<strong>事前の物理ブロックは無い</strong>。</p>
 <p>代わりに以下の手順で復旧：</p>
 <ol type="1">
-<li>講師は GitHub 上で当該リポの <code>Settings → Branches</code> から、必要であれば一時的に <code>Restrict force pushes</code> を ON にして二次被害を止める。</li>
-<li>GitHub 上の main に入った不正コミットを確認し、復旧は <code>git revert &lt;SHA&gt;</code> の打ち消しコミットで行う。</li>
-<li>ローカルの作業ツリーは <code>git stash push -u</code> で退避し、必要な変更だけ feature ブランチに戻す。</li>
+<li>共有 <code>main</code> に入った不正コミットがあれば、講師が手元の clone で <code>git revert &lt;SHA&gt;</code> の打ち消しコミットを作り、<code>main</code> へ push して戻す（§4 の CI 監視 Workflow が通知してくれる）。canonical なスターターは基幹リポ／講師手元にあるので、最悪は <code>main</code> の強制復元も可能。</li>
+<li>ローカルの作業ツリーは <code>git stash push -u</code> で退避し、必要な変更だけ自分の <code>&lt;github-id&gt;</code> ブランチに戻す。</li>
 <li>force push による履歴書き換えは研修手順として許可しない。AGENTS.md §7.3.3「履歴・権限改ざん禁止」を全体に再共有。</li>
 </ol>
 </section>
@@ -153,7 +152,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </section>
 <section id="q.-codex-が-disabled-を貼って-red-テストを-green-に偽装した" class="level3">
 <h3>Q. Codex が <code>@Disabled</code> を貼って RED テストを GREEN に偽装した</h3>
-<p><strong>即決</strong>: その PR をブロックし、AGENTS.md の「失敗テストに <code>@Disabled</code> を貼って通すのは絶対禁止」を引用。 当該テストの <code>@Disabled</code> を剥がしてやり直しさせる。</p>
+<p><strong>即決</strong>: そのコミットを差し戻させ、AGENTS.md の「失敗テストに <code>@Disabled</code> を貼って通すのは絶対禁止」を引用。 当該テストの <code>@Disabled</code> を剥がしてやり直しさせる。</p>
 </section>
 </section>
 <section id="評価系" class="level2">
@@ -175,7 +174,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </section>
 <section id="q.-早く終わった人がいる" class="level3">
 <h3>Q. 早く終わった人がいる</h3>
-<p><strong>対応</strong>: COULD (タグ機能 / REST API) に進ませる。 他の受講生の PR レビューを担当してもらうのもあり。</p>
+<p><strong>対応</strong>: COULD (タグ機能 / REST API) に進ませる。 他の受講生のブランチ（Compare ビュー）のレビューを担当してもらうのもあり。</p>
 </section>
 <section id="q.-想定より全体が遅い" class="level3">
 <h3>Q. 想定より全体が遅い</h3>
