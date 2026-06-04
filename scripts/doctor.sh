@@ -57,7 +57,11 @@ EOF
     esac
 done
 
-log()  { printf '%b\n' "$*" | tee -a "${LOG_FILE}"; }
+# 画面には色付きで表示し、ログファイルには ANSI エスケープを除去して記録する
+log() {
+    printf '%b\n' "$*"
+    printf '%b\n' "$*" | sed -e 's/\x1b\[[0-9;]*m//g' >> "${LOG_FILE}"
+}
 ok()   { PASS_COUNT=$((PASS_COUNT+1)); log "  ${GREEN}[ OK ]${RESET} $1${2:+ — $2}"; }
 warn() { WARN_COUNT=$((WARN_COUNT+1)); log "  ${YELLOW}[WARN]${RESET} $1${2:+ — $2}"; }
 ng()   { FAIL_COUNT=$((FAIL_COUNT+1)); log "  ${RED}[ NG ]${RESET} $1${2:+ — $2}"; }

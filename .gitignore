@@ -10,6 +10,9 @@ bin/
 # Eclipse の bin/ は除外したいが、研修ハーネスの guard スクリプトは追跡対象。
 !containers/codex-devbox/bin/
 !containers/codex-devbox/bin/**
+# かんたんセットアップの .bat が委譲する PowerShell 実体 (bin/*.ps1) も追跡対象。
+!かんたんセットアップ/bin/
+!かんたんセットアップ/bin/**
 .metadata
 *.launch
 

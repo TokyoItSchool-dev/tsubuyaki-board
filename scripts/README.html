@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+</style>
+  <style type="text/css">:root {--fg: #1a1a1a;--muted: #555;--accent: #1565c0;--bg: #ffffff;--surface: #f5f7fa;--border: #d8dee6;--warn-bg: #fff8e1;--warn-border: #f0c000;--code-bg: #f3f3f3; --code-fg: #222; }* {font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;box-sizing: border-box;font-size: 12px;}body {color: var(--fg);background: var(--bg);line-height: 1.8;max-width: 1280px;margin: 0 auto;padding: 2.5rem 1.5rem 6rem;}h1 {font-size: 1.9rem;border-bottom: 4px solid var(--accent);padding-bottom: 0.4rem;line-height: 1.4;}h2 {font-size: 1.4rem;margin-top: 2.6rem;padding: 0.3rem 0.7rem;background: var(--surface);border-left: 6px solid var(--accent);}h3 {font-size: 1.15rem;margin-top: 1.8rem;color: var(--accent);}p, li { font-size: 1rem; }a { color: var(--accent); }code {background: var(--surface);border: 1px solid var(--border);border-radius: 4px;padding: 0.1em 0.4em;font-family: "Consolas", "Courier New", monospace;font-size: 0.92em;}pre {background: var(--code-bg);color: var(--code-fg);padding: 1rem 1.2rem;border-radius: 8px;overflow-x: auto;}pre code { background: none; border: none; color: inherit; padding: 0; }table {border-collapse: collapse;width: 100%;margin: 1rem 0;}th, td {border: 1px solid var(--border);padding: 0.55rem 0.8rem;text-align: left;vertical-align: top;}th { background: var(--surface); }.note {background: var(--warn-bg);border: 1px solid var(--warn-border);border-radius: 8px;padding: 0.9rem 1.1rem;margin: 1.2rem 0;}.file { font-weight: 700; color: #0d47a1; }hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }ol li, ul li { margin: 0.35rem 0; }.appendix { color: var(--muted); }.appendix h2 { border-left-color: #999; }.appendix h3 { color: #444; }img {max-width: 100%;height: auto;display: block;margin: 1rem auto;}@media print {section {page-break-before: auto !important;break-before: auto !important;}h1,section > h1:first-child {page-break-before: always !important;break-before: page !important;}h1:first-of-type,section:first-of-type > h1:first-child {page-break-before: auto !important;break-before: auto !important;}h1, h2, h3 {-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}body {margin: 1cm;padding: 0;img {max-width: 100% !important;height: auto !important;page-break-inside: avoid !important;}th {background-color: #f0f0f0 !important;-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}}</style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#scripts-セットアップ用の内部スクリプト" id="toc-scripts-セットアップ用の内部スクリプト">scripts — セットアップ用の内部スクリプト</a>
+<ul>
+<li><a href="#バッチ-内部スクリプトの対応" id="toc-バッチ-内部スクリプトの対応">バッチ → 内部スクリプトの対応</a></li>
+<li><a href="#講師開発者向け" id="toc-講師開発者向け">講師・開発者向け</a></li>
+</ul></li>
+</ul>
+</nav>
+<section id="scripts-セットアップ用の内部スクリプト" class="level1">
+<h1>scripts — セットアップ用の内部スクリプト</h1>
+<p>このフォルダは、研修環境のキッティング・診断（Doctor）・コンテナ起動ラッパなどの <strong>内部実装スクリプト</strong>を置く場所です。普段はここを直接開く必要はありません。</p>
+<blockquote>
+<p>⚠️ <strong>受講生のみなさんへ</strong></p>
+<p>このフォルダの中身（<code>.ps1</code> / <code>.sh</code>）を<strong>ダブルクリックしたり直接実行したりしないでください</strong>。</p>
+<p>セットアップや環境チェックは、必ずリポジトリ直下の <strong>「かんたんセットアップ」フォルダにあるバッチ（<code>.bat</code>）をダブルクリック</strong>して行います。 中で何が動くかを覚える必要はありません。バッチが自動でこのフォルダのスクリプトを呼び出します。</p>
+</blockquote>
+<section id="バッチ-内部スクリプトの対応" class="level2">
+<h2>バッチ → 内部スクリプトの対応</h2>
+<p>「かんたんセットアップ」フォルダの各バッチは、裏でこのフォルダのスクリプトを実行します。</p>
+<table>
+<thead>
+<tr>
+<th>かんたんセットアップ のバッチ</th>
+<th>裏で実行されるスクリプト</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>セットアップ1_Windows準備.bat</code></td>
+<td><code>scripts/setup.ps1</code></td>
+</tr>
+<tr>
+<td><code>セットアップ2_Ubuntu準備.bat</code></td>
+<td><code>scripts/setup-wsl.sh</code></td>
+</tr>
+<tr>
+<td><code>セットアップ3_APIキー設定.bat</code></td>
+<td><code>scripts/setup-secrets.sh</code></td>
+</tr>
+<tr>
+<td><code>環境チェック.bat</code></td>
+<td><code>scripts/doctor.sh --quick</code></td>
+</tr>
+<tr>
+<td><code>Oracle起動.bat</code></td>
+<td><code>scripts/start-oracle.sh</code></td>
+</tr>
+<tr>
+<td><code>Oracle停止.bat</code></td>
+<td><code>scripts/stop-oracle.sh</code></td>
+</tr>
+<tr>
+<td><code>Oracle削除.bat</code></td>
+<td><code>scripts/stop-oracle.sh --purge</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="講師開発者向け" class="level2">
+<h2>講師・開発者向け</h2>
+<p>上表以外のスクリプトの役割は次のとおりです。</p>
+<ul>
+<li><code>scripts/doctor.ps1</code> — Windows 側（Pleiades / WSL / Podman Desktop / Git / <code>C:\workspace</code>）の診断。WSL 内部の検査は <code>scripts/doctor.sh</code> が担当。</li>
+<li><code>scripts/build-codex-image.sh</code> — Codex devbox コンテナイメージ（<code>codex-devbox:latest</code>）のビルド。<code>setup-wsl.sh</code> から自動で呼ばれる。</li>
+<li><code>scripts/run-codex.sh</code> — <code>codex-shell</code> エイリアスの実体。研修ハーネス（<code>.env</code> マスク・規範ファイル読み取り専用化など）を組み立ててコンテナを起動する。</li>
+</ul>
+<p>手動で実行する場合の手順は、以下を参照してください。</p>
+<ul>
+<li>受講生向け: <code>education/student-setup-guide.md</code></li>
+<li>講師向け: <code>instructor/instructor-setup-guide.md</code></li>
+</ul>
+</section>
+</section>
+</body>
+</html>
