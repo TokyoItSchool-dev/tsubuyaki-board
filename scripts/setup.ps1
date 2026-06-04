@@ -52,6 +52,16 @@ try {
         exit 1
     }
 
+    # --disable-interactivity は winget 1.4 以降のみ対応。古い winget では未対応
+    # フラグとしてエラーになり install が失敗するため、版数を見て付与を判断する。
+    $script:SupportsDisableInteractivity = $false
+    try {
+        $wingetVersion = ((winget --version) | Out-String) -replace '[^\d.]', ''
+        if ($wingetVersion) {
+            $script:SupportsDisableInteractivity = [version]$wingetVersion -ge [version]'1.4'
+        }
+    } catch {}
+
     function Install-IfMissing {
         param(
             [string]$Id,
@@ -64,8 +74,16 @@ try {
         }
         Write-Host "  [INSTALL] $Name ..."
         if (-not $DryRun) {
-            winget install --id $Id --silent `
-                --accept-package-agreements --accept-source-agreements
+            $wingetArgs = @(
+                "install", "--id", $Id, "--silent",
+                "--accept-package-agreements", "--accept-source-agreements"
+            )
+            # --disable-interactivity: 進捗スピナー等の制御文字が Transcript ログに
+            # 混入するのを防ぐ。winget 1.4 未満は未対応のため版数を見て付与する。
+            if ($script:SupportsDisableInteractivity) {
+                $wingetArgs += "--disable-interactivity"
+            }
+            winget @wingetArgs
         }
     }
 
