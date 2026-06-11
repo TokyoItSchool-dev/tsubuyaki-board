@@ -185,7 +185,7 @@ if ! ${MODE_HOST_CODEX}; then
 else
     echo "  --install-codex-host: Node + Codex CLI を WSL ホストに直接導入"
     if ! command -v node >/dev/null 2>&1; then
-        curl -fsSL https://deb.nodesource.com/setup_20.x | ${SUDO} bash -
+        curl -fsSL https://deb.nodesource.com/setup_22.x | ${SUDO} bash -
         ${SUDO} apt-get -q install -y --no-install-recommends nodejs
     fi
     ${SUDO} npm install -g @openai/codex@latest

@@ -23,7 +23,41 @@ if [[ "${OPENAI_API_KEY}" != sk-* ]]; then
     echo -e "${YELLOW}[codex-devbox] WARN: OPENAI_API_KEY が 'sk-' で始まっていません。形式を再確認してください。${RESET}" >&2
 fi
 
-# --- 2. git safe.directory の保険登録 (uid 不一致対策) -------------------
+# --- 2. Codex 認証 (auth.json 生成) ---------------------------------------
+# 現行 Codex CLI は OPENAI_API_KEY 環境変数を直接は認証に使わない。
+# stdin 経由で `codex login --with-api-key` に渡し、$CODEX_HOME/auth.json を生成する。
+# 毎起動で実行する (キーをローカルに書き出すだけなので冪等。キー差し替えにも追従する)。
+CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
+mkdir -p "${CODEX_HOME_DIR}"
+if printenv OPENAI_API_KEY | codex login --with-api-key >/dev/null 2>&1; then
+    AUTH_STATUS="${GREEN}auth.json 生成済み (API キー認証)${RESET}"
+else
+    AUTH_STATUS="${RED}失敗${RESET} (手動実行: printenv OPENAI_API_KEY | codex login --with-api-key)"
+    echo -e "${YELLOW}[codex-devbox] WARN: codex login に失敗しました。コンテナ内で上記コマンドを再実行してください。${RESET}" >&2
+fi
+
+# --- 3. 研修用プロジェクト設定の有効化 (trust 付与) ------------------------
+# リポ直下の .codex/config.toml (プロジェクトローカル設定) は、Codex CLI が
+# プロジェクトを trusted と認識している場合のみ読み込まれる。
+# 研修専用 CODEX_HOME の config.toml に /workspace の trust を 1 回だけ追記する。
+if ! grep -qs 'projects."/workspace"' "${CODEX_HOME_DIR}/config.toml"; then
+    cat >> "${CODEX_HOME_DIR}/config.toml" <<'TRUST'
+
+# tsubuyaki-board 研修: /workspace の .codex/config.toml を有効化 (entrypoint.sh が自動追記)
+[projects."/workspace"]
+trust_level = "trusted"
+TRUST
+fi
+
+# --- 4. 共通プロンプトをスラッシュコマンドとして同期 -----------------------
+# $CODEX_HOME/prompts/*.md は codex 内で /<ファイル名> として呼び出せる。
+# (Codex CLI はリポ側 .codex/prompts/ を自動では読まないため、起動時に同期する)
+if compgen -G "/workspace/.codex/prompts/*.md" >/dev/null 2>&1; then
+    mkdir -p "${CODEX_HOME_DIR}/prompts"
+    cp -f /workspace/.codex/prompts/*.md "${CODEX_HOME_DIR}/prompts/" 2>/dev/null || true
+fi
+
+# --- 5. git safe.directory の保険登録 (uid 不一致対策) -------------------
 # 注: PATH 先頭の codex-guard が git config --global を reject するため、
 #     ここでは実体パスを直接呼ぶ。これは entrypoint (= 起動時の正規セットアップ)
 #     なので、Codex が走り出す前に必要な操作。
@@ -38,7 +72,7 @@ if [[ -x "${REAL_GIT}" ]]; then
     "${REAL_GIT}" config --global --add safe.directory '/workspace/*' >/dev/null 2>&1 || true
 fi
 
-# --- 3. 起動バナー -------------------------------------------------------
+# --- 6. 起動バナー -------------------------------------------------------
 CODEX_VERSION_INFO="$(codex --version 2>/dev/null || echo 'unknown')"
 JAVA_LINE="$(java -version 2>&1 | head -n 1)"
 MAVEN_LINE="$(mvn -v 2>/dev/null | head -n 1 || echo 'mvn not found')"
@@ -64,12 +98,13 @@ ${GREEN}╚═══════════════════════
   ${CYAN}Maven${RESET}        : ${MAVEN_LINE}
   ${CYAN}Workspace${RESET}    : $(pwd)
   ${CYAN}API Key${RESET}      : 設定済み (値は表示しません)
+  ${CYAN}Codex 認証${RESET}   : ${AUTH_STATUS}
   ${CYAN}研修ハーネス${RESET} : ${GUARD_STATUS}
   ${CYAN}.env${RESET}         : ${ENV_STATUS}
 
 EOF
 
-# --- 4. コマンド実行 -----------------------------------------------------
+# --- 7. コマンド実行 -----------------------------------------------------
 if [[ $# -eq 0 ]]; then
     exec bash -l
 else

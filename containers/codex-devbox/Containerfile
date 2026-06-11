@@ -1,6 +1,6 @@
 # =========================================================================
 # 社内つぶやきボード Codex devbox
-#   - JDK 21 + Maven + Node.js 20 + @openai/codex を同梱した開発コンテナ
+#   - JDK 21 + Maven + Node.js 22 + @openai/codex を同梱した開発コンテナ
 #   - 受講生は WSL2 上で `bash scripts/run-codex.sh` で本コンテナに入る
 #   - 詳細は AGENTS.md と education/ONBOARDING.md を参照
 # =========================================================================
@@ -27,8 +27,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# --- Node.js 20 LTS + Codex CLI -------------------------------------------
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+# --- Node.js 22 LTS + Codex CLI -------------------------------------------
+# Node 20 は 2026-04 で EOL。Codex CLI (npm 配布) の公式要件も Node 22+ のため 22 LTS を使う。
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && npm install -g "@openai/codex@${CODEX_VERSION}" \
     && apt-get clean \

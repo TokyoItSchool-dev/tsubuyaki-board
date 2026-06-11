@@ -2,7 +2,7 @@
 # Codex devbox イメージをビルドする。
 # 使い方:
 #   bash scripts/build-codex-image.sh
-#   CODEX_VERSION=0.x.y bash scripts/build-codex-image.sh   # バージョン固定
+#   CODEX_VERSION=0.138.0 bash scripts/build-codex-image.sh   # バージョン固定 (例: 2026-06 時点の最新)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
