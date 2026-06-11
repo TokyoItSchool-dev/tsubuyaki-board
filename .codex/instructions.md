@@ -64,8 +64,10 @@
 ## 共通プロンプト集
 
 繰り返し使うプロンプトは `.codex/prompts/` 配下にある。
+コンテナ起動時に entrypoint.sh が `$CODEX_HOME/prompts/` へ同期するため、
+codex セッション内ではスラッシュコマンド (`/tdd-cycle` など) としても呼び出せる。
 
-- `tdd-cycle.md`: TDD サイクル 1 回を回す標準フロー
-- `controller-skeleton.md`: Controller + Service + Repository のスケルトン生成
-- `jpa-entity.md`: JPA Entity + Repository + Flyway 生成
-- `review.md`: push 直前のセルフレビュー (XSS / SQLi / ハードコード)
+- `tdd-cycle.md` (`/tdd-cycle`): TDD サイクル 1 回を回す標準フロー (`<<X>>` 等の穴埋めはコピペ利用を推奨)
+- `controller-skeleton.md` (`/controller-skeleton`): Controller + Service + Repository のスケルトン生成
+- `jpa-entity.md` (`/jpa-entity`): JPA Entity + Repository + Flyway 生成
+- `review.md` (`/review`): push 直前のセルフレビュー (XSS / SQLi / ハードコード)。穴埋め不要でそのまま使える

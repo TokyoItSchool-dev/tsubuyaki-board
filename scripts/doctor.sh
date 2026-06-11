@@ -253,7 +253,7 @@ if ! ${MODE_QUICK} && section "harness" "Codex 研修ハーネス"; then
         mkdir -p "${HARNESS_TMP}/.codex" "${HARNESS_TMP}/src" "${HARNESS_TMP}/target"
         printf 'harness test\n' > "${HARNESS_TMP}/AGENTS.md"
         printf '<project/>\n' > "${HARNESS_TMP}/pom.xml"
-        printf 'approval_policy = "on-failure"\n' > "${HARNESS_TMP}/.codex/config.toml"
+        printf 'approval_policy = "on-request"\n' > "${HARNESS_TMP}/.codex/config.toml"
         printf 'ORACLE_APP_PWD=secret\n' > "${HARNESS_TMP}/.env"
         printf 'SECRET=secret\n' > "${HARNESS_TMP}/secret.txt"
 
