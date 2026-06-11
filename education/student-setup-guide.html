@@ -776,17 +776,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <pre><code>╔══════════════════════════════════════════════════════╗
 ║  社内つぶやきボード Codex devbox                      ║
 ╚══════════════════════════════════════════════════════╝
-  Codex CLI    : @openai/codex 0.x.y
+  Codex CLI    : codex-cli 0.x.y
   Java         : openjdk version &quot;21.x.x&quot; ...
   Maven        : Apache Maven 3.9.9
   Workspace    : /workspace
   API Key      : 設定済み (値は表示しません)
+  Codex 認証   : auth.json 生成済み (API キー認証)
   研修ハーネス : 有効 (rm / git / chmod / chown / dd / sudo を wrapper で監査)
   .env         : /dev/null 上書きマウント済 (機密値は到達不能)</code></pre>
 <p>ポイント：</p>
 <ul>
 <li><strong><code>/workspace</code> がリポジトリのルートにマウント</strong>されています。コンテナ内で編集・コミットした内容は、そのままホスト側のリポ（<code>C:\workspace\...</code>）に反映されます。</li>
-<li><code>OPENAI_API_KEY</code> はコンテナに渡りますが、<strong>値は表示されません</strong>。<code>.env</code> や <code>~/.bashrc</code> 等の機密ファイルは <code>/dev/null</code> でマスクされ、Codex からは中身が見えません。</li>
+<li><code>OPENAI_API_KEY</code> はコンテナに渡りますが、<strong>値は表示されません</strong>。起動時に entrypoint がこのキーから Codex の認証ファイル（<code>auth.json</code>）を自動生成します（現行の Codex CLI は環境変数を直接は認証に使わないため）。<code>.env</code> や <code>~/.bashrc</code> 等の機密ファイルは <code>/dev/null</code> でマスクされ、Codex からは中身が見えません。</li>
 <li><code>AGENTS.md</code> や <code>.codex/</code> などの規範ファイルは <strong>読み取り専用</strong>でマウントされます（Codex が書き換えられない）。</li>
 </ul>
 </section>
@@ -801,13 +802,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 完了したら ./mvnw -B -Ph2 test が緑になることを確認し、
 Conventional Commits 形式（feat(post): ...）でコミットしてください。</code></pre>
 <blockquote>
-<p>💡 毎回ゼロから書かなくても、リポジトリの <strong><code>.codex/prompts/</code></strong> に TDD サイクル用・セルフレビュー用のプロンプト雛形があります。これをコピペして埋めると安定します。</p>
-<p>💡 使用モデルは <code>gpt-5-codex</code>、応答とコミットメッセージは日本語、という方針が <code>.codex/config.toml</code> に設定済みです。</p>
+<p>💡 毎回ゼロから書かなくても、リポジトリの <strong><code>.codex/prompts/</code></strong> に TDD サイクル用・セルフレビュー用のプロンプト雛形があります。これをコピペして埋めると安定します。穴埋め不要の <code>review.md</code> は、codex セッション内でスラッシュコマンド <strong><code>/review</code></strong> としても呼び出せます。</p>
+<p>💡 使用モデルは <code>gpt-5.5</code>（2026年6月時点の標準モデル）、応答とコミットメッセージは日本語、という方針が <code>.codex/config.toml</code>（と AGENTS.md）に設定済みです。</p>
 </blockquote>
 </section>
 <section id="承認モードと研修ハーネスcodex-guard" class="level4">
 <h4>8-5-4. 承認モードと研修ハーネス（Codex Guard）</h4>
-<p><strong>承認モードは <code>on-failure</code></strong>：Codex は通常は自走（実装 → <code>./mvnw</code> 実行まで自動）し、<strong>コマンドが失敗したときだけ</strong>あなたに確認を求めます。毎手順を承認したい場合は講師に相談してください。</p>
+<p><strong>承認モードは <code>on-request</code></strong>：Codex は通常は自走（実装 → <code>./mvnw</code> 実行まで自動）し、<strong>サンドボックス外の操作など承認が必要なときだけ</strong>あなたに確認を求めます。毎手順を承認したい場合は講師に相談してください。</p>
 <p><strong>研修ハーネス（Codex Guard）</strong>：コンテナ内では、研修に不要な破壊的操作が物理的にブロックされます。代表例：</p>
 <table>
 <colgroup>

@@ -49,6 +49,8 @@ codex-shell
 
 値は画面や履歴に表示しない。`~/.bashrc` に書いておくと毎回入れずに済む。
 
+コンテナ起動時に entrypoint が `OPENAI_API_KEY` から Codex の認証ファイル（`auth.json`）を自動生成する（現行の Codex CLI は環境変数を直接は認証に使わないため）。キーを差し替えた場合も `codex-shell` に入り直せば反映される。起動バナーの「Codex 認証」が「失敗」のときは、コンテナ内で `printenv OPENAI_API_KEY | codex login --with-api-key` を実行する。
+
 ### Q4-2. Codex がコマンド実行で `[codex-guard]` と出して止まる
 
 研修ハーネスがブロックした合図。**そのまま再試行しないこと**。ハーネスは「研修中に必要のない破壊的操作」を止める多層防御です。

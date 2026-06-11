@@ -24,7 +24,7 @@
 | テスト系 DB | H2（`MODE=Oracle`、メモリモード） |
 | ビルド | Maven Wrapper (`mvnw`) |
 | 静的解析 | Checkstyle 10.18 / SpotBugs 4.8 / JaCoCo 0.8.12 |
-| AI コーディング | Codex CLI (`gpt-5-codex`, Apache-2.0 / OpenAI 製) |
+| AI コーディング | Codex CLI (`gpt-5.5`, Apache-2.0 / OpenAI 製) |
 | コンテナ | Podman + `compose.yaml` |
 | 開発 OS | Windows 11 + WSL2 (Ubuntu 22.04) |
 
@@ -41,8 +41,8 @@
 | **PowerShell** (`scripts/setup.ps1`, `doctor.ps1`) | WSL 機能の有効化、Ubuntu 22.04 の導入、Windows 側の依存検査 | Windows ホスト |
 | **WSL2 Ubuntu** (`scripts/setup-wsl.sh`, `doctor.sh`) | Podman・JDK21・Maven キャッシュの初期化、`codex-shell` エイリアスの登録 | WSL2 |
 | **`tsubuyaki-oracle`** コンテナ | Oracle XE 21c の本番系 DB。ポート `1521` を WSL に publish | Podman |
-| **`codex-devbox`** コンテナ | Codex CLI と Spring Boot ビルド環境（Temurin 21 JDK + Node 20 + Maven 3.9 + GitHub CLI） | Podman |
-| **OpenAI API** (`api.openai.com`) | Codex CLI の対話先。モデルは `gpt-5-codex` | 外部クラウド |
+| **`codex-devbox`** コンテナ | Codex CLI と Spring Boot ビルド環境（Temurin 21 JDK + Node 22 + Maven 3.9 + GitHub CLI） | Podman |
+| **OpenAI API** (`api.openai.com`) | Codex CLI の対話先。モデルは `gpt-5.5` | 外部クラウド |
 
 ### ホストマウントとボリューム
 
@@ -55,7 +55,7 @@
 
 ### セキュリティ境界
 
-- Codex CLI のサンドボックスは `workspace-write`、`approval_policy` は `on-failure`（`.codex/config.toml`）。
+- Codex CLI のサンドボックスは `workspace-write`、`approval_policy` は `on-request`（`.codex/config.toml`）。
 - `ORACLE_PWD` / `ORACLE_APP_PWD` などの機密値は `[shell_environment_policy].include_only` から意図的に除外され Codex に渡らない。
 - 機密ファイル（`.env*` / `*.pem` / `~/.ssh` / `~/.bashrc` 等）の読取、破壊的 Git 操作（`reset --hard` / `push --force` / 共有 `main` への push など。push 先は自分の `<github-id>` ブランチのみ）、`sudo` は研修ハーネスで物理ブロック。リモートコード実行（`curl URL | bash`）は規範（プロンプト層）で禁止し、被害はコンテナの capability 剥奪・非 root・マスクで限定する（層別の守備範囲は [instructor/codex-guard-guide.md §2-7](../instructor/codex-guard-guide.md) 参照）。
 

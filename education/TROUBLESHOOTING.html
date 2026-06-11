@@ -136,6 +136,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/.bashrc</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">codex-shell</span></span></code></pre></div>
 <p>値は画面や履歴に表示しない。<code>~/.bashrc</code> に書いておくと毎回入れずに済む。</p>
+<p>コンテナ起動時に entrypoint が <code>OPENAI_API_KEY</code> から Codex の認証ファイル（<code>auth.json</code>）を自動生成する（現行の Codex CLI は環境変数を直接は認証に使わないため）。キーを差し替えた場合も <code>codex-shell</code> に入り直せば反映される。起動バナーの「Codex 認証」が「失敗」のときは、コンテナ内で <code>printenv OPENAI_API_KEY | codex login --with-api-key</code> を実行する。</p>
 </section>
 <section id="q4-2.-codex-がコマンド実行で-codex-guard-と出して止まる" class="level3">
 <h3>Q4-2. Codex がコマンド実行で <code>[codex-guard]</code> と出して止まる</h3>

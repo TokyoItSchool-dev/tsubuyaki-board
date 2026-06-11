@@ -59,7 +59,7 @@ podman --> oracleCt
 podman --> codexCt
 
 codex --> spring : コード生成・編集
-codex ..> openai : HTTPS\n(gpt-5-codex)
+codex ..> openai : HTTPS\n(gpt-5.5)
 mvn --> spring : ビルド / テスト
 spring --> oracle : JDBC\njdbc:oracle:thin:@//\nlocalhost:1521/XEPDB1
 spring ..> repo : Flyway\nclasspath:db/migration
@@ -71,7 +71,7 @@ oracleCt -.-> oradata : named volume
 
 note right of codexCt
   サンドボックス: workspace-write
-  approval_policy: on-failure
+  approval_policy: on-request
   機密ファイル (.env / *.pem / ~/.ssh) は
   研修ハーネスで物理ブロック
 end note
