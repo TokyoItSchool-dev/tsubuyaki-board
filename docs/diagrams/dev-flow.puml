@@ -44,7 +44,7 @@ user -> bash : codex-shell
 bash -> podman : podman run codex-devbox\n(--userns=keep-id)
 podman -> codex : 起動 (/workspace bind)
 user -> codex : 自然言語で指示
-codex -> openai : HTTPS (gpt-5-codex)
+codex -> openai : HTTPS (gpt-5.5)
 openai --> codex : 提案コード
 codex -> codex : apply_patch でファイル編集\n(sandbox: workspace-write)
 codex --> user : 変更内容を確認

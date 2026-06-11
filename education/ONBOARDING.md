@@ -70,10 +70,10 @@ git log --oneline -10                  # 前日コミットを読み返す
     ※ ブランチは student-setup-guide §6 で作成済み。課題ごとに分けたい人は
        任意で <github-id>/m1-post-list のようにサブブランチを切ってもよい
 ③  codex-shell でコンテナに入り、TDD プロンプトを投げる
-    (.codex/prompts/tdd-cycle.md をコピペして埋める)
+    (.codex/prompts/tdd-cycle.md をコピペして埋める。codex 内では /tdd-cycle でも呼べる)
 ④  Codex がテスト → 実装を回す。生成されたコードを目で読む
 ⑤  受講生が ./mvnw -B -Ph2 test を回し、緑を確認
-⑥  Codex に .codex/prompts/review.md を投げてセルフレビュー
+⑥  Codex に .codex/prompts/review.md を投げてセルフレビュー (codex 内では /review)
 ⑦  ローカルで ./mvnw -B -Ph2 verify が緑なことを確認
 ⑧  git add / commit (Conventional Commits) / push（自分のブランチへ）
     → これで 1 ユースケース完了。PR は作らない（共有 main には取り込まない）

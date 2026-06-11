@@ -1,77 +1,39 @@
 # =========================================================================
-# 社内つぶやきボード 研修用 Codex CLI 設定
+# 社内つぶやきボード 研修用 Codex CLI 設定 (プロジェクトローカル設定)
 #
-# - キー名は Codex CLI v0.x の慣例に合わせている。Codex CLI のバージョン
-#   アップで微妙にスキーマが変わる可能性があるので、`codex config --help`
-#   または公式ドキュメントを優先する。
+# - キー名は Codex CLI 0.1xx 系 (2026-06 時点) の公式スキーマに合わせている。
+#   最新仕様は公式リファレンスを正とする:
+#   https://developers.openai.com/codex/config-reference
+# - リポ直下の .codex/config.toml は「trusted なプロジェクト」でのみ読み込まれる。
+#   研修コンテナでは entrypoint.sh が研修専用 CODEX_HOME 側に
+#   `[projects."/workspace"] trust_level = "trusted"` を自動追記して有効化する。
 # - 設定変更は講師がこのファイルを編集し、共有リポの main に反映する（受講生のブランチには
 #   影響しない）。run-codex.sh は研修専用 CODEX_HOME
 #   (`~/.codex-training/tsubuyaki-board`) に履歴・認証情報を隔離する。
-# - 本設定は「Codex への約束事 (プロンプト層)」であり、最終的な物理ブロックは
+# - 本設定は「Codex への約束事 (設定層)」であり、最終的な物理ブロックは
 #   コンテナの研修ハーネス (containers/codex-devbox/bin/*-guard.sh +
 #   scripts/run-codex.sh のマスクマウント) で別途行われる。多層防御の最内殻。
+# - Codex への指示 (プロンプト層) は AGENTS.md / .codex/instructions.md に集約する。
+#   旧 `instructions` キーは現行 CLI では予約済み (機能しない) ため使用しない。
 # =========================================================================
 
 # --- 既定モデルと推論強度 -------------------------------------------------
-model = "gpt-5-codex"
+# gpt-5-codex / gpt-5.1-codex 系は deprecated (順次提供終了)。
+# 2026-06 時点の標準モデルは gpt-5.5。軽量タスク向けには gpt-5.4-mini もある。
+model = "gpt-5.5"
+# 有効値: minimal | low | medium | high | xhigh (xhigh は対応モデルのみ)
 model_reasoning_effort = "medium"
 
 # --- 承認モード -----------------------------------------------------------
-# 通常自走し、失敗時のみ受講生に確認する (講師推奨)
-# 安全最優先で運用したい講義回では `"on-request"` に切替えると毎コマンド確認になる。
-approval_policy = "on-failure"
+# 通常自走し、サンドボックス外の操作が必要なときのみ受講生に確認する (講師推奨)。
+# 旧 "on-failure" は非推奨化されたため "on-request" を使う。
+# 安全最優先で運用したい講義回は "untrusted" に切替えると、信頼済みコマンド以外が
+# 毎回確認になる。
+approval_policy = "on-request"
 
 # --- サンドボックス -------------------------------------------------------
 # /workspace 配下と Maven キャッシュは書き込み可、それ以外は read-only
 sandbox_mode = "workspace-write"
-
-# 研修初期は保守的に保存を抑制する。講師が評価・再現性のため保存を許可する
-# 場合のみ、受講生に説明した上で false に戻す。
-disable_response_storage = true
-
-# --- 既定システムプロンプト (AGENTS.md と相補) ----------------------------
-instructions = """
-あなたは Spring Boot 3.x の研修コーチです。
-
-【基本姿勢】
-- 応答とコミットメッセージは日本語で行う
-- TDD (RED → GREEN → REFACTOR) を必ず守る
-- AGENTS.md と .codex/instructions.md を最優先で参照する
-- 不明点はコードを書く前に質問する
-- セキュリティ規範 (ハードコード禁止 / SQL インジェクション保護 / XSS 保護) を破らない
-
-【研修ハーネス — 絶対遵守】
-本コンテナでは以下の操作は研修ハーネスで物理的にブロックされます。
-試行前に必ず受講生に確認してください。試行しても reject (exit 126) が返ります。
-
-1. 機密ファイルの読み取り (.env / .env.* / ~/.bashrc / ~/.bash_history /
-   ~/.ssh / *.pem / *credentials* / id_rsa / id_ed25519)
-   ※ /workspace/.env は /dev/null マウントで空に見えます。値を引き出そうとしない。
-2. 破壊的コマンド
-   - rm -rf 系で / / ~ / . / .. / システム配下 / 機密パス を指定
-   - git rm -r / git rm -rf (再帰削除)
-   - git clean -fd / -fdx
-   - git reset --hard
-   - git checkout -- . (全変更破棄)
-   - git push --force / -f / --force-with-lease
-   - 共有 main への push (git push origin main / --all / --mirror)。push 先は自分の <github-id> ブランチのみ
-   - git config --global / --system
-   - git filter-branch / update-ref --delete
-3. 権限操作
-   - chmod -R 777 (再帰フル権限)
-   - chmod / chown のシステム/機密パスへの適用
-4. システム系
-   - dd / mkfs / fdisk / mount / umount
-   - sudo (NOPASSWD であっても禁止)
-   - curl URL | bash / wget URL | sh (任意コードのリモート実行)
-5. AGENTS.md / .codex/ / instructor/ / .github/ への書き込み (これらは ro マウント)
-
-【良い行動】
-- 上記が必要に見えた時は、まず「なぜ必要か」を受講生に説明し承認を得る
-- ファイル削除は git rm <file> の単発のみ。複数ファイルは個別に
-- 変更を捨てたい時は git stash を先に提案
-- 不明な値は推測せず質問する (推測時は「推測:」と明示)
-"""
 
 # --- 環境変数のホワイトリスト ---------------------------------------------
 # 注: ORACLE_PWD / ORACLE_APP_PWD は意図的に除外 (機密値の Codex 露出を防ぐ)。
@@ -94,24 +56,16 @@ writable_roots = [
     "/home/codex/.m2",
 ]
 
-# --- 許可ネットワーク先 (Codex CLI が allowlist をサポートしない版では無視される) ---
-[network]
-allow = [
-    "repo.maven.apache.org",
-    "repo1.maven.org",
-    "plugins.gradle.org",
-    "github.com",
-    "api.github.com",
-    "objects.githubusercontent.com",
-    "raw.githubusercontent.com",
-    "api.openai.com",
-]
+# --- ネットワーク先の制限について -----------------------------------------
+# 旧版にあった独自の [network] allowlist セクションは現行 CLI のスキーマに存在しない
+# ため削除した。通信先の制限は AGENTS.md §7.2 (プロンプト層) とコンテナ層 (L1-L3) で
+# 担保する。ドメイン単位の許可リストが必要な場合は、公式の permissions プロファイル
+# (https://developers.openai.com/codex/permissions) を講師が別途検討する。
 
 # --- ツール許可 -----------------------------------------------------------
 [tools]
-shell = true
-apply_patch = true
-# 研修中は web 検索オフ (脱線防止)。仕上げフェーズ以降の応用課題で true に切り替え可。
+# 現行 CLI は web 検索が既定で有効になったため、研修中は明示的にオフ (脱線防止)。
+# 仕上げフェーズ以降の応用課題で true に切り替え可。
 web_search = false
 
 # --- 履歴 -----------------------------------------------------------------

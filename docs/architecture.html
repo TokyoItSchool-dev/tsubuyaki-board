@@ -164,7 +164,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </tr>
 <tr>
 <td>AI コーディング</td>
-<td>Codex CLI (<code>gpt-5-codex</code>, Apache-2.0 / OpenAI 製)</td>
+<td>Codex CLI (<code>gpt-5.5</code>, Apache-2.0 / OpenAI 製)</td>
 </tr>
 <tr>
 <td>コンテナ</td>
@@ -217,12 +217,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </tr>
 <tr>
 <td><strong><code>codex-devbox</code></strong> コンテナ</td>
-<td>Codex CLI と Spring Boot ビルド環境（Temurin 21 JDK + Node 20 + Maven 3.9 + GitHub CLI）</td>
+<td>Codex CLI と Spring Boot ビルド環境（Temurin 21 JDK + Node 22 + Maven 3.9 + GitHub CLI）</td>
 <td>Podman</td>
 </tr>
 <tr>
 <td><strong>OpenAI API</strong> (<code>api.openai.com</code>)</td>
-<td>Codex CLI の対話先。モデルは <code>gpt-5-codex</code></td>
+<td>Codex CLI の対話先。モデルは <code>gpt-5.5</code></td>
 <td>外部クラウド</td>
 </tr>
 </tbody>
@@ -263,7 +263,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <section id="セキュリティ境界" class="level3">
 <h3>セキュリティ境界</h3>
 <ul>
-<li>Codex CLI のサンドボックスは <code>workspace-write</code>、<code>approval_policy</code> は <code>on-failure</code>（<code>.codex/config.toml</code>）。</li>
+<li>Codex CLI のサンドボックスは <code>workspace-write</code>、<code>approval_policy</code> は <code>on-request</code>（<code>.codex/config.toml</code>）。</li>
 <li><code>ORACLE_PWD</code> / <code>ORACLE_APP_PWD</code> などの機密値は <code>[shell_environment_policy].include_only</code> から意図的に除外され Codex に渡らない。</li>
 <li>機密ファイル（<code>.env*</code> / <code>*.pem</code> / <code>~/.ssh</code> / <code>~/.bashrc</code> 等）の読取、破壊的 Git 操作（<code>reset --hard</code> / <code>push --force</code> / 共有 <code>main</code> への push など。push 先は自分の <code>&lt;github-id&gt;</code> ブランチのみ）、<code>sudo</code> は研修ハーネスで物理ブロック。リモートコード実行（<code>curl URL | bash</code>）は規範（プロンプト層）で禁止し、被害はコンテナの capability 剥奪・非 root・マスクで限定する（層別の守備範囲は <a href="../instructor/codex-guard-guide.md">instructor/codex-guard-guide.md §2-7</a> 参照）。</li>
 </ul>

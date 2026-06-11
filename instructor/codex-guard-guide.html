@@ -193,7 +193,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <h2>1. ハーネスの目的と設計思想</h2>
 <section id="何を守るのか" class="level3">
 <h3>1-1. 何を守るのか</h3>
-<p>研修では受講生が Codex CLI を <strong>自走（<code>approval_policy = &quot;on-failure&quot;</code>）</strong> させて開発する。守りたいものは 4 つ。</p>
+<p>研修では受講生が Codex CLI を <strong>自走（<code>approval_policy = &quot;on-request&quot;</code>）</strong> させて開発する。守りたいものは 4 つ。</p>
 <ol type="1">
 <li><strong>学習の場</strong> — Codex が暴走して環境を壊すと、受講生は本題（TDD と設計）ではなく復旧に時間を奪われる。</li>
 <li><strong>受講生の機密</strong> — <code>OPENAI_API_KEY</code> や DB パスワード（<code>.env</code>）が Codex のコンテキストやログに漏れない。</li>
@@ -462,19 +462,19 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </thead>
 <tbody>
 <tr>
+<td><code>model</code></td>
+<td><code>gpt-5.5</code></td>
+<td>研修標準モデル（2026-06 時点。旧 <code>gpt-5-codex</code> / <code>gpt-5.1-codex</code> 系は廃止）</td>
+</tr>
+<tr>
 <td><code>approval_policy</code></td>
-<td><code>on-failure</code></td>
-<td>通常自走、失敗時のみ受講生に確認（§3-4 で <code>on-request</code> に切替可）</td>
+<td><code>on-request</code></td>
+<td>通常自走、サンドボックス外の操作のみ受講生に確認（§3-4 で <code>untrusted</code> に切替可）。旧 <code>on-failure</code> は CLI 側で非推奨化</td>
 </tr>
 <tr>
 <td><code>sandbox_mode</code></td>
 <td><code>workspace-write</code></td>
 <td><code>/workspace</code> と Maven キャッシュのみ書き込み可、他は read-only</td>
-</tr>
-<tr>
-<td><code>disable_response_storage</code></td>
-<td><code>true</code></td>
-<td>研修初期は応答保存を抑制</td>
 </tr>
 <tr>
 <td><code>[shell_environment_policy].include_only</code></td>
@@ -487,20 +487,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <td>書き込み可能ルートを限定</td>
 </tr>
 <tr>
-<td><code>[network].allow</code></td>
-<td>Maven / GitHub / <code>api.openai.com</code> のみ</td>
-<td>想定外の通信先を絞る</td>
-</tr>
-<tr>
 <td><code>[tools].web_search</code></td>
 <td><code>false</code></td>
-<td>研修中の脱線防止（応用課題で <code>true</code> に切替可）</td>
+<td>現行 CLI は web 検索が既定有効のため明示オフ。研修中の脱線防止（応用課題で <code>true</code> に切替可）</td>
 </tr>
 </tbody>
 </table>
-<p>加えて <code>instructions</code>（<code>config.toml:33-73</code>）に研修ハーネスの禁止リストを記載し、<strong>プロンプト層からも</strong>同じ禁止を Codex に伝える。</p>
+<p>旧版の config.toml にあった <code>instructions</code> キー（禁止リストのプロンプト注入）と独自の <code>[network]</code> allowlist セクションは、現行 CLI でそれぞれ「予約済みで機能しない」「スキーマ外」のため削除した。プロンプト層の禁止リストは <strong><code>AGENTS.md</code> §7 が正本</strong>（Codex がプロジェクトの AGENTS.md を自動で読み込む）。通信先の制限は L1〜L3 のコンテナ層と規範で担保する。</p>
+<p>なお、リポ直下の <code>.codex/config.toml</code>（プロジェクトローカル設定）は <strong>trusted なプロジェクトでのみ</strong>読み込まれる。研修コンテナでは <code>entrypoint.sh</code> が研修専用 CODEX_HOME に <code>[projects."/workspace"] trust_level = "trusted"</code> を自動追記して有効化し、あわせて <code>OPENAI_API_KEY</code> から <code>auth.json</code> を生成（<code>codex login --with-api-key</code>）、<code>.codex/prompts/</code> を <code>$CODEX_HOME/prompts/</code>（スラッシュコマンド）へ同期する。</p>
 <blockquote>
-<p>💡 <code>config.toml:10-12</code> 自身が「これはプロンプト層であり、最終的な物理ブロックはコンテナの研修ハーネスで別途行われる。多層防御の最内殻」と明記している。config は約束事、物理ブロックは L1/L2/L3 という役割分担。</p>
+<p>💡 config.toml の冒頭コメント自身が「本設定は『Codex への約束事 (設定層)』であり、最終的な物理ブロックはコンテナの研修ハーネスで別途行われる。多層防御の最内殻」と明記している。config は約束事、物理ブロックは L1/L2/L3 という役割分担。</p>
 </blockquote>
 </section>
 <section id="l5-規範ドキュメント層-agents.md-7-.codexinstructions.md" class="level3">
@@ -531,16 +527,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
     R-&gt;&gt;P: podman run（--cap-drop=ALL ほか）
     P-&gt;&gt;E: ENTRYPOINT 実行
     E-&gt;&gt;E: OPENAI_API_KEY 検査（未設定なら起動中止）
+    E-&gt;&gt;E: codex login --with-api-key（auth.json 生成）
+    E-&gt;&gt;E: /workspace の trust 付与・prompts 同期
     E-&gt;&gt;E: git safe.directory 登録（実体 /usr/bin/git を直呼び）
-    E-&gt;&gt;U: 起動バナー（ハーネス有効・.env 上書き済）
+    E-&gt;&gt;U: 起動バナー（認証・ハーネス有効・.env 上書き済）
     E-&gt;&gt;S: exec bash -l（受講生が操作開始）</code></pre>
 <blockquote>
 <p>🖼️ <strong>画像版（Mermaid 非対応ビューアで図が出ない場合はこちら）</strong>: <a href="images/codex-guard/03-startup-sequence.png">起動シーケンス PNG</a></p>
 </blockquote>
 <p>ビルド時・起動時には guard を<strong>意図的にバイパスする正規操作</strong>が 2 か所ある。いずれも「Codex が走り出す前」のセットアップで、絶対パスを使う。</p>
 <ul>
-<li><code>Containerfile:94-95</code>: <code>/bin/chmod +x entrypoint.sh</code>（PATH 先頭の guard を避けるため絶対パス）。</li>
-<li><code>entrypoint.sh:27-32</code>: <code>/usr/bin/git config --global safe.directory</code>（guard が <code>config --global</code> を拒否するため実体直呼び）。</li>
+<li><code>Containerfile:95-96</code>: <code>/bin/chmod +x entrypoint.sh</code>（PATH 先頭の guard を避けるため絶対パス）。</li>
+<li><code>entrypoint.sh:60-73</code>: <code>/usr/bin/git config --global safe.directory</code>（guard が <code>config --global</code> を拒否するため実体直呼び）。</li>
 </ul>
 <blockquote>
 <p>💡 これは「ハーネスを仕込む過程でハーネス自身に引っかからない」ための回避であり、<strong>Codex に許された穴ではない</strong>。Codex が同じ絶対パス迂回をすることは <code>AGENTS.md §7.3.3</code> で明示的に禁止されている。</p>
@@ -561,7 +559,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <h2>3. 運用ガイド（講師向け）</h2>
 <section id="ハーネス有効性の確認" class="level3">
 <h3>3-1. ハーネス有効性の確認</h3>
-<p><strong>(a) 起動バナーを見る</strong>（最も簡単） 受講生が <code>codex-shell</code> でコンテナに入ると、<code>entrypoint.sh:39-63</code> のバナーが出る。次の 2 行を確認する。</p>
+<p><strong>(a) 起動バナーを見る</strong>（最も簡単） 受講生が <code>codex-shell</code> でコンテナに入ると、<code>entrypoint.sh:75-105</code> のバナーが出る。次の 2 行を確認する。</p>
 <pre><code>  研修ハーネス : 有効 (rm / git / chmod / chown / dd / sudo を wrapper で監査)
   .env         : /dev/null 上書きマウント済 (機密値は到達不能)</code></pre>
 <p>「研修ハーネス: 無効」と出る場合はイメージが guard 入りでない（古い）。<code>bash scripts/build-codex-image.sh</code> でビルドし直す。</p>
@@ -616,8 +614,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <tbody>
 <tr>
 <td><code>approval_policy</code></td>
-<td><code>on-failure</code></td>
-<td>安全最優先の回は <code>on-request</code>（毎コマンド確認）にする</td>
+<td><code>on-request</code></td>
+<td>安全最優先の回は <code>untrusted</code>（信頼済みコマンド以外を毎回確認）にする</td>
 </tr>
 <tr>
 <td><code>[tools].web_search</code></td>
@@ -625,9 +623,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <td>仕上げ・応用課題で外部調査を許す場合のみ <code>true</code></td>
 </tr>
 <tr>
-<td><code>disable_response_storage</code></td>
-<td><code>true</code></td>
-<td>評価・再現性のため保存したい場合のみ <code>false</code>（受講生に説明の上で）</td>
+<td><code>model</code></td>
+<td><code>gpt-5.5</code></td>
+<td>軽量・高速に振りたい補助タスクは <code>gpt-5.4-mini</code> も選択肢（モデル一覧は公式 Models ページを確認）</td>
 </tr>
 </tbody>
 </table>
