@@ -121,7 +121,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <section id="配布アーキテクチャ全体像" class="level2">
 <h2>配布アーキテクチャ全体像</h2>
 <pre><code>[基幹リポ (private)]          [公開リポ upstream]              [受講生ごとの fork]
-TokyoItSchool-dev/            &lt;owner&gt;/tsubuyaki-board          &lt;github-id&gt;/tsubuyaki-board
+TokyoItSchool-dev/            TokyoItSchool-dev/tsubuyaki-board          &lt;github-id&gt;/tsubuyaki-board
 tsubuyaki-board.git          (公開・main はロック)            (各自が Fork して作る)
      │                            │                                 │
      │  内容を 1 回 push          │   受講生が Fork (招待不要)       │
@@ -162,7 +162,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <tr>
 <td>公開リポの所有者権限</td>
 <td>upstream リポの公開・ブランチ保護設定</td>
-<td>個人アカウント、または Org 管理者として <code>&lt;owner&gt;/tsubuyaki-board</code> を作成・設定できる</td>
+<td>個人アカウント、または Org 管理者として <code>TokyoItSchool-dev/tsubuyaki-board</code> を作成・設定できる</td>
 </tr>
 <tr>
 <td>基幹リポへの read 権限</td>
@@ -190,7 +190,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 </section>
 <section id="研修リポの所有者ownerを決める" class="level2">
 <h2>2. 研修リポの所有者（owner）を決める</h2>
-<p>公開リポ <code>&lt;owner&gt;/tsubuyaki-board</code> を置く場所を決めます。Organization は<strong>任意</strong>です（fork モデルでは受講生の招待が不要なため、Org の請求・メンバー管理は要りません）。</p>
+<p>公開リポ <code>TokyoItSchool-dev/tsubuyaki-board</code> を置く場所を決めます。Organization は<strong>任意</strong>です（fork モデルでは受講生の招待が不要なため、Org の請求・メンバー管理は要りません）。</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -227,7 +227,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <p><strong>公開リポなら <code>main</code> のブランチ保護が Free で使えます</strong>（§4）。受講生は各自の fork で作業し、upstream には直接 push できないため、<code>main</code> は二重に守られます。</p>
 </blockquote>
 <blockquote>
-<p>💡 以降このガイドでは upstream リポを <code>&lt;owner&gt;/tsubuyaki-board</code> と表記します。配布時に実際の owner 名へ読み替えてください（受講生ガイドの <code>&lt;owner&gt;</code> と一致させる）。</p>
+<p>💡 以降このガイドでは upstream リポを <code>TokyoItSchool-dev/tsubuyaki-board</code> と表記します。配布時に実際の owner 名へ読み替えてください（受講生ガイドの <code>&lt;owner&gt;</code> と一致させる）。</p>
 </blockquote>
 <hr />
 </section>
@@ -247,18 +247,18 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <h3>3-2. 公開リポ（public）を作成</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> auth status   <span class="co"># 認証済か確認</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> repo create <span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> repo create TokyoItSchool-dev/tsubuyaki-board <span class="dt">\</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">--public</span> <span class="dt">\</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">--description</span> <span class="st">&quot;AI 駆動開発研修 (Codex × Spring Boot) 演習リポジトリ（受講生は各自 Fork して作業）&quot;</span></span></code></pre></div>
 <blockquote>
-<p>💡 既存のリポを後から公開へ切り替える場合は <code>gh repo edit &lt;owner&gt;/tsubuyaki-board --visibility public</code>（または Settings → 最下部 Danger Zone → Change visibility → Public）。</p>
+<p>💡 既存のリポを後から公開へ切り替える場合は <code>gh repo edit TokyoItSchool-dev/tsubuyaki-board --visibility public</code>（または Settings → 最下部 Danger Zone → Change visibility → Public）。</p>
 </blockquote>
 </section>
 <section id="スターター内容を公開リポへ-push" class="level3">
 <h3>3-3. スターター内容を公開リポへ push</h3>
 <p>配布したいのは「main の最新スナップショット」です。<code>--mirror</code> は使わず（基幹リポの全ブランチ・全履歴を受講生に見せる必要はない）、main を通常 push します。</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 公開リポを remote として追加（origin は基幹リポなので別名 upstream にする）</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> remote add upstream https://github.com/<span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board.git</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> remote add upstream https://github.com/TokyoItSchool-dev/tsubuyaki-board.git</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># main を公開リポへ push</span></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push upstream main</span>
@@ -271,7 +271,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 </section>
 <section id="検証" class="level3">
 <h3>3-4. 検証</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> repo view <span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board <span class="at">--json</span> visibility,defaultBranchRef</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> repo view TokyoItSchool-dev/tsubuyaki-board <span class="at">--json</span> visibility,defaultBranchRef</span></code></pre></div>
 <p>期待出力:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;visibility&quot;</span><span class="fu">:</span> <span class="st">&quot;PUBLIC&quot;</span><span class="fu">,</span></span>
@@ -295,8 +295,8 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <li>☑ <strong>Block force pushes</strong>（force push 禁止。既定で含まれることが多い）</li>
 <li>☑（任意）<strong>Do not allow bypassing the above settings</strong> / <strong>Restrict deletions</strong></li>
 </ul>
-<p><code>gh</code> で設定する例（PR 必須＝直接 push 禁止の最小構成。JSON を <code>--input</code> で渡す）:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&lt;&lt;&#39;JSON&#39;</span> <span class="kw">|</span> <span class="ex">gh</span> api <span class="at">-X</span> PUT <span class="st">&quot;repos/&lt;owner&gt;/tsubuyaki-board/branches/main/protection&quot;</span> <span class="at">--input</span> <span class="at">-</span></span>
+<p><code>gh</code> で設定する例（PR 必須＝直接 push 禁止の最小構成。JSON を <code>--input</code> で渡す）(Git Bashまたはubuntsuで実行):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&lt;&lt;&#39;JSON&#39;</span> <span class="kw">|</span> <span class="ex">gh</span> api <span class="at">-X</span> PUT <span class="st">&quot;repos/TokyoItSchool-dev/tsubuyaki-board/branches/main/protection&quot;</span> <span class="at">--input</span> <span class="at">-</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="st">{</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="st">  &quot;required_status_checks&quot;: null,</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="st">  &quot;enforce_admins&quot;: false,</span></span>
@@ -317,6 +317,9 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 </section>
 <section id="受講生に-fork-してもらう招待は不要" class="level2">
 <h2>5. 受講生に Fork してもらう（招待は不要）</h2>
+<blockquote>
+<p>ローカルのみで作業させる場合はCloneのみでOK</p>
+</blockquote>
 <p>fork モデルでは<strong>受講生の招待・collaborator 追加は一切不要</strong>です。公開リポなので、受講生は自分で Fork するだけで作業を始められます。講師がやることは「リポ URL を伝える」「ブランチ名規約と PR 作成を伝える」だけです。</p>
 <section id="受講生の-github-ユーザ名採点識別用" class="level3">
 <h3>5-1. 受講生の GitHub ユーザ名（採点・識別用）</h3>
@@ -326,7 +329,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <h3>5-2. 受講生への案内事項</h3>
 <p>研修初日に受講生へ次を伝えます（受講生ガイド §2・§3 と対応）:</p>
 <ul>
-<li><strong>研修リポ（upstream）URL</strong> <code>https://github.com/&lt;owner&gt;/tsubuyaki-board</code></li>
+<li><strong>研修リポ（upstream）URL</strong> <code>https://github.com/TokyoItSchool-dev/tsubuyaki-board</code></li>
 <li>「このリポを <strong>Fork</strong> して、自分の fork を clone すること」（招待・承認の手順は無い）</li>
 <li>「clone 後は自分の GitHub ユーザ名で <code>git switch -c &lt;github-id&gt; origin/main</code>（fork の main 起点）してから作業すること」</li>
 <li>「初回 push 後、fork のブランチ → upstream main へ <strong>Draft PR</strong> を 1 本作ること（講師レビュー用・マージしない）」</li>
@@ -349,7 +352,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <p>WSL2 機能はまだ有効化されていないので、<strong>Windows 側の PowerShell</strong> で clone する（受講生ガイド §4-2 と同じ流れ）：</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">New-Item</span> <span class="op">-</span>ItemType Directory <span class="op">-</span>Force <span class="op">-</span>Path <span class="st">&quot;C:\workspace&quot;</span> <span class="op">|</span> <span class="fu">Out-Null</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cd</span> C<span class="op">:</span>\workspace</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>git clone https<span class="op">://</span>github<span class="op">.</span><span class="fu">com</span><span class="op">/&lt;</span>owner<span class="op">&gt;/</span>tsubuyaki-board<span class="op">.</span><span class="fu">git</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>git clone https<span class="op">://</span>github<span class="op">.</span><span class="fu">com</span><span class="op">/</span>TokyoItSchool-dev<span class="op">/</span>tsubuyaki-board<span class="op">.</span><span class="fu">git</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cd</span> tsubuyaki-board</span></code></pre></div>
 <blockquote>
 <p>💡 Git for Windows が未導入なら <code>winget install Git.Git</code> を先に。<code>setup.ps1</code> でも自動導入されるが、§6-1 で clone するには事前に Git が必要。</p>
@@ -538,7 +541,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <h3>7-2. テストアカウントで Fork する</h3>
 <ol type="1">
 <li>🌐 ブラウザで GitHub からサインアウト → <strong>テストアカウントで再サインイン</strong></li>
-<li>受講生ガイド §3 と同じく、upstream <code>https://github.com/&lt;owner&gt;/tsubuyaki-board</code> を開き、右上の「<strong>Fork</strong>」でテストアカウントのアカウントへ Fork する</li>
+<li>受講生ガイド §3 と同じく、upstream <code>https://github.com/TokyoItSchool-dev/tsubuyaki-board</code> を開き、右上の「<strong>Fork</strong>」でテストアカウントのアカウントへ Fork する</li>
 <li>Fork 後 <code>https://github.com/&lt;test-account-id&gt;/tsubuyaki-board</code> が開ける／ファイル一覧に <code>AGENTS.md</code> / <code>README.md</code> / <code>EXERCISES.md</code> / <code>pom.xml</code> が並ぶことを確認</li>
 </ol>
 </section>
@@ -575,11 +578,11 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin <span class="op">&lt;</span>test-account-id<span class="op">&gt;</span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Draft PR を作成（gh が auth 済みの場合。未認証ならブラウザで Compare &amp; pull request）</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr create <span class="at">--repo</span> <span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board <span class="dt">\</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr create <span class="at">--repo</span> TokyoItSchool-dev/tsubuyaki-board <span class="dt">\</span></span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--base</span> main <span class="at">--head</span> <span class="op">&lt;</span>test-account-id<span class="op">&gt;</span>:<span class="op">&lt;</span>test-account-id<span class="op">&gt;</span> --draft <span class="at">--fill</span></span>
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># upstream main へ直接 push できないことを確認</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> remote add upstream https://github.com/<span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board.git</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> remote add upstream https://github.com/TokyoItSchool-dev/tsubuyaki-board.git</span>
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> switch main</span>
 <span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">--allow-empty</span> <span class="at">-m</span> <span class="st">&quot;test: should be rejected&quot;</span></span>
 <span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push upstream main   <span class="co"># → protected branch / 403 で拒否されれば OK</span></span>
@@ -622,7 +625,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <h3>8-1. 0 時間目（受講生到着〜セットアップ開始）</h3>
 <ul>
 <li>受講生に <a href="../education/student-setup-guide.md">../education/student-setup-guide.md</a> を案内（事前送付推奨）</li>
-<li>研修リポ（upstream）URL（<code>https://github.com/&lt;owner&gt;/tsubuyaki-board</code>）を配布（Slack / メール / ホワイトボード）。「各自 Fork して使う」ことを明示。招待・承認の作業は無い</li>
+<li>研修リポ（upstream）URL（<code>https://github.com/TokyoItSchool-dev/tsubuyaki-board</code>）を配布（Slack / メール / ホワイトボード）。「各自 Fork して使う」ことを明示。招待・承認の作業は無い</li>
 <li>Pleiades 配布媒体を回覧</li>
 <li><code>OPENAI_API_KEY</code> 未発行の受講生がいれば即座に発行サポート</li>
 </ul>
@@ -655,7 +658,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <h3>9-1. 受講生が Fork / clone できない</h3>
 <ul>
 <li>症状: upstream を開けない、Fork できない、自分の fork を clone すると 404 / 認証エラー</li>
-<li>原因: upstream が public になっていない、clone 先が upstream（<code>&lt;owner&gt;/...</code>）のまま、PAT のスコープ／失効</li>
+<li>原因: upstream が public になっていない、clone 先が upstream（<code>TokyoItSchool-dev/...</code>）のまま、PAT のスコープ／失効</li>
 <li>対処: §3-4 で upstream の <code>visibility</code> が <code>PUBLIC</code> か確認。受講生には「Fork してから<strong>自分の fork</strong>（<code>&lt;github-id&gt;/...</code>）を clone」「PAT は <code>public_repo</code> スコープ」を案内（受講生ガイド <a href="../education/TROUBLESHOOTING.md">Q13</a>）</li>
 </ul>
 </section>
@@ -683,7 +686,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <section id="公開リポ-ブランチ保護" class="level3">
 <h3>公開リポ / ブランチ保護</h3>
 <ul class="task-list">
-<li><label><input type="checkbox"></input><code>&lt;owner&gt;/tsubuyaki-board</code> を <strong>public</strong> で作成済（§3）</label></li>
+<li><label><input type="checkbox"></input><code>TokyoItSchool-dev/tsubuyaki-board</code> を <strong>public</strong> で作成済（§3）</label></li>
 <li><label><input type="checkbox"></input>基幹リポの main を公開リポへ push 済（スターターが見える）</label></li>
 <li><label><input type="checkbox"></input>upstream <code>main</code> をブランチ保護でロック済（§4。PR 必須＝直接 push 禁止。厳格さは講師裁量）</label></li>
 <li><label><input type="checkbox"></input><code>main</code> 保護（ブランチ保護＋ Codex Guard の 2 層）を理解し、受講生周知（Fork → ブランチ → push → PR）の用意ができている</label></li>
@@ -717,7 +720,7 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <h3>配布物</h3>
 <ul class="task-list">
 <li><label><input type="checkbox"></input>Pleiades 配布媒体準備（USB / 共有ドライブ）</label></li>
-<li><label><input type="checkbox"></input>研修リポ（upstream）URL（<code>https://github.com/&lt;owner&gt;/tsubuyaki-board</code>）を受講生案内に記載（「各自 Fork」の旨も）</label></li>
+<li><label><input type="checkbox"></input>研修リポ（upstream）URL（<code>https://github.com/TokyoItSchool-dev/tsubuyaki-board</code>）を受講生案内に記載（「各自 Fork」の旨も）</label></li>
 <li><label><input type="checkbox"></input>予備 OPENAI_API_KEY を 1 本保持</label></li>
 </ul>
 <p>すべて ✓ なら、研修当日は受講生対応に集中できます。</p>
@@ -730,13 +733,13 @@ tsubuyaki-board.git          (公開・main はロック)            (各自が 
 <ul>
 <li><p><strong>PR を close し、upstream はそのまま次期研修へ再利用</strong>: upstream の <code>main</code> は無傷なので、受講生の Draft PR を close するだけで次期研修にそのまま使えます。受講生の fork は各自の所有物なので、講師が消す必要はありません。</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># upstream に紐づく open PR を一覧</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr list <span class="at">--repo</span> <span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board <span class="at">--state</span> open</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr list <span class="at">--repo</span> TokyoItSchool-dev/tsubuyaki-board <span class="at">--state</span> open</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 個別に close（マージはしない）</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr close <span class="at">--repo</span> <span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board <span class="op">&lt;</span>PR番号<span class="op">&gt;</span></span></code></pre></div></li>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr close <span class="at">--repo</span> TokyoItSchool-dev/tsubuyaki-board <span class="op">&lt;</span>PR番号<span class="op">&gt;</span></span></code></pre></div></li>
 <li><p><strong>受講生に fork 削除を案内（任意）</strong>: 残したくない受講生は各自の fork（<code>&lt;github-id&gt;/tsubuyaki-board</code>）を削除（Settings → 最下部 Danger Zone → Delete this repository）。講師側から他人の fork は削除できません。</p></li>
 <li><p><strong>upstream リポごと削除</strong>: 次期研修で作り直す場合。</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> repo delete <span class="op">&lt;</span>owner<span class="op">&gt;</span>/tsubuyaki-board <span class="at">--yes</span></span></code></pre></div></li>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> repo delete TokyoItSchool-dev/tsubuyaki-board <span class="at">--yes</span></span></code></pre></div></li>
 </ul>
 <blockquote>
 <p>⚠️ 削除前に、成果物（受講生の PR / fork）を保全する必要がないか確認してください。採点・記録が済んでから片付けます。受講生の fork は各自の所有物なので、講師が一括削除はできません（必要なら各自に依頼）。</p>

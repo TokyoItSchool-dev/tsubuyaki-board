@@ -257,18 +257,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <h3>Q13. Fork できない / 自分の fork が見つからない / PR が作れない</h3>
 <p><strong>Fork できない・自分の fork が見当たらない:</strong></p>
 <ul>
-<li>ブラウザで研修リポ（upstream <code>https://github.com/&lt;owner&gt;/tsubuyaki-board</code>）を開き、右上の「<strong>Fork</strong>」を押したか。公開リポなので招待は不要</li>
+<li>ブラウザで研修リポ（upstream <code>https://github.com/TokyoItSchool-dev/tsubuyaki-board</code>）を開き、右上の「<strong>Fork</strong>」を押したか。公開リポなので招待は不要</li>
 <li>Fork 後の URL は <code>https://github.com/&lt;github-id&gt;/tsubuyaki-board</code>。自分のアバター →「Your repositories」にも出る</li>
 <li>「You already have a fork」と出る場合はすでに Fork 済み。その既存 fork をそのまま使えばよい（再 Fork 不要）</li>
 </ul>
 <p><strong>自分の fork を clone できない（404 / 認証エラー）:</strong></p>
 <ul>
-<li>clone 先が <strong>自分の fork（<code>&lt;github-id&gt;/...</code>）</strong> の URL か（upstream <code>&lt;owner&gt;/...</code> ではない）。<code>git remote -v</code> で確認</li>
+<li>clone 先が <strong>自分の fork（<code>&lt;github-id&gt;/...</code>）</strong> の URL か（upstream <code>TokyoItSchool-dev/...</code> ではない）。<code>git remote -v</code> で確認</li>
 <li>ユーザ名は GitHub ユーザ名、パスワードは PAT（<code>ghp_...</code>）か（<a href="./student-setup-guide.md">student-setup-guide §3-3</a>。<code>public_repo</code> スコープ・未失効を確認）</li>
 </ul>
 <p><strong>PR が作れない / 向きがおかしい:</strong></p>
 <ul>
-<li>PR の <strong>base</strong> が <code>&lt;owner&gt;/tsubuyaki-board</code> の <code>main</code>、<strong>compare</strong> が <code>&lt;github-id&gt;/tsubuyaki-board</code> の <code>&lt;github-id&gt;</code> ブランチになっているか（<a href="./student-setup-guide.md">student-setup-guide §9-4</a>）</li>
+<li>PR の <strong>base</strong> が <code>TokyoItSchool-dev/tsubuyaki-board</code> の <code>main</code>、<strong>compare</strong> が <code>&lt;github-id&gt;/tsubuyaki-board</code> の <code>&lt;github-id&gt;</code> ブランチになっているか（<a href="./student-setup-guide.md">student-setup-guide §9-4</a>）</li>
 <li>先に fork へ push してあるか（push 済みのブランチでないと PR の compare に出ない）</li>
 <li>それでもダメなら講師に <strong>自分の GitHub ID と fork の URL</strong> を伝えて確認してもらう</li>
 </ul>

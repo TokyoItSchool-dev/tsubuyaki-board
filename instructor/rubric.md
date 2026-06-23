@@ -49,7 +49,7 @@
 ```
 受講生: <name> (GitHub: <github-id>)
 ブランチ: <github-id>（fork: <github-id>/tsubuyaki-board）
-PR: https://github.com/<owner>/tsubuyaki-board/pull/<PR番号>
+PR: https://github.com/TokyoItSchool-dev/tsubuyaki-board/pull/<PR番号>
 
 A. 機能 [_/6]  A1[ ] A2[ ] A3[ ] A4[ ] A5[ ] A6[ ]
 B. テスト [_/5] B1[ ] B2[ ] B3[ ] B4[ ] B5[ ]
