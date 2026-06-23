@@ -198,18 +198,18 @@ git stash pop              # コンフリクトしたら手動マージ
 
 **Fork できない・自分の fork が見当たらない:**
 
-- ブラウザで研修リポ（upstream `https://github.com/<owner>/tsubuyaki-board`）を開き、右上の「**Fork**」を押したか。公開リポなので招待は不要
+- ブラウザで研修リポ（upstream `https://github.com/TokyoItSchool-dev/tsubuyaki-board`）を開き、右上の「**Fork**」を押したか。公開リポなので招待は不要
 - Fork 後の URL は `https://github.com/<github-id>/tsubuyaki-board`。自分のアバター →「Your repositories」にも出る
 - 「You already have a fork」と出る場合はすでに Fork 済み。その既存 fork をそのまま使えばよい（再 Fork 不要）
 
 **自分の fork を clone できない（404 / 認証エラー）:**
 
-- clone 先が **自分の fork（`<github-id>/...`）** の URL か（upstream `<owner>/...` ではない）。`git remote -v` で確認
+- clone 先が **自分の fork（`<github-id>/...`）** の URL か（upstream `TokyoItSchool-dev/...` ではない）。`git remote -v` で確認
 - ユーザ名は GitHub ユーザ名、パスワードは PAT（`ghp_...`）か（[student-setup-guide §3-3](./student-setup-guide.md)。`public_repo` スコープ・未失効を確認）
 
 **PR が作れない / 向きがおかしい:**
 
-- PR の **base** が `<owner>/tsubuyaki-board` の `main`、**compare** が `<github-id>/tsubuyaki-board` の `<github-id>` ブランチになっているか（[student-setup-guide §9-4](./student-setup-guide.md)）
+- PR の **base** が `TokyoItSchool-dev/tsubuyaki-board` の `main`、**compare** が `<github-id>/tsubuyaki-board` の `<github-id>` ブランチになっているか（[student-setup-guide §9-4](./student-setup-guide.md)）
 - 先に fork へ push してあるか（push 済みのブランチでないと PR の compare に出ない）
 - それでもダメなら講師に **自分の GitHub ID と fork の URL** を伝えて確認してもらう
 
