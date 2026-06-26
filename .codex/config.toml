@@ -41,6 +41,15 @@ sandbox_mode = "workspace-write"
 [shell_environment_policy]
 inherit = "core"
 include_only = [
+    "PATH",
+    "PSModulePath",
+    "USERPROFILE",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "TEMP",
+    "TMP",
+    "SystemRoot",
+    "ComSpec",
     "JAVA_HOME",
     "MAVEN_OPTS",
     "TZ",
