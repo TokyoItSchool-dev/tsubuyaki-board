@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,6 +26,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostLikeRepository postLikeRepository;
 
     @InjectMocks
     private PostService postService;
@@ -63,5 +69,38 @@ class PostServiceTest {
 
         assertThat(actual).containsSame(post);
         verify(postRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("いいね_toggleLike_未いいねなら保存する")
+    void toggleLike_whenNotLiked_savesLike() {
+        given(postLikeRepository.findByPostIdAndClientHash(1L, "abcd1234")).willReturn(Optional.empty());
+
+        postService.toggleLike(1L, "abcd1234");
+
+        verify(postLikeRepository).save(any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("いいね_toggleLike_既にいいね済みなら削除する")
+    void toggleLike_whenAlreadyLiked_deletesLike() {
+        PostLike like = new PostLike(1L, "abcd1234", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postLikeRepository.findByPostIdAndClientHash(1L, "abcd1234")).willReturn(Optional.of(like));
+
+        postService.toggleLike(1L, "abcd1234");
+
+        verify(postLikeRepository).delete(like);
+        verify(postLikeRepository, never()).save(any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("いいね_countLikes_Repositoryの件数を返す")
+    void countLikes_returnsRepositoryCount() {
+        given(postLikeRepository.countByPostId(1L)).willReturn(3L);
+
+        long count = postService.countLikes(1L);
+
+        assertThat(count).isEqualTo(3L);
+        verify(postLikeRepository).countByPostId(1L);
     }
 }
