@@ -12,19 +12,47 @@
 
 ---
 
-## プロンプト 1
+## プロンプト 1(サンプル)
 
-**フェーズ**:
+**フェーズ**: サンプルデータ(シーダー)の追加
 
 **プロンプト本文**:
 
 ```
-
+src\main\resources\db\migration\V1__init.sql に基づくH2用のシーダーを作成し、実行する。テストデータとして10個程度のシードデータを作成。H2で起動時に自動投入する。
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+
+```
+• 提案どおり、H2 プロファイル起動時だけ seed が自動適用される構成にしました。
+
+  差分:
+
+  - src/main/resources/application-h2.yml:20: H2 の Flyway location に classpath:db/seed/h2 を追加。
+  - src/main/resources/db/seed/h2/R__seed_posts_h2.sql:6: posts に 10 件投入する H2 専用 repeatable migration を追加。posts_seq は次
+    ID が 11 になるよう更新。
+
+  - src/test/resources/application-h2.yml:17: テストは空 DB 前提を維持するため seed location を外す設定を追加。
+  - src/test/java/com/example/tsubuyaki/db/H2SeedMigrationTest.java:18: seed 適用で 10 件入ることと、次 sequence 値が 11 になることを
+    検証。
+
+  検証:
+
+  - .\mvnw -B -Dmaven.repo.local=C:/home/codex/.m2/repository -Dtest=H2SeedMigrationTest test 成功
+  - .\mvnw -B -Dmaven.repo.local=C:/home/codex/.m2/repository -Ph2 spring-boot:run "-Dspring-boot.run.arguments=--spring.main.web-
+    application-type=none" 成功。ログで Migrating schema "PUBLIC" with repeatable migration "seed posts h2" を確認。
+
+  - .\mvnw -B -Dmaven.repo.local=C:/home/codex/.m2/repository -Ph2 verify 成功。警告: Rule violated for bundle tsubuyaki-board: lines
+    covered ratio is 0.48, but expected minimum is 0.60。日本語要約: 現在のカバレッジは 48% で 60% 未満ですが、このプロファイルでは
+    fail 設定ではないためビルドは成功しています。
+```
 
 **振り返り**:
+
+シーダーは追加できた。
+検証方法を指定しなかったためハーネスであらかじめ定義された検証方法を自動的に起動した。
+CI検証は成功しているが、実際に画面表示の確認はできていない(未実装のため)。
 
 ---
 

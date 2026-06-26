@@ -791,7 +791,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </section>
 <section id="codex-cli-コンテナ" class="level3">
 <h3>8-5. Codex CLI（📦 コンテナ）</h3>
-<p>環境構築のバッチ化とは対照的に、<strong>Codex CLI の起動はあえてバッチ化していません</strong>。<code>codex-shell</code> を自分でタイプするところから始めます。<strong>Codex を使った開発こそがこの研修の本題</strong>だからです。ここでは「起動できること」だけ確認し（スモークテスト）、実際の使い方はその下の §8-5-2 以降で説明します。</p>
+<p>環境構築のバッチ化とは対照的に、<strong>Codex CLI の起動はあえてバッチ化していません</strong>。<code>codex-shell</code> を自分でタイプするところから始めます。<strong>Codex を使った開発こそがこの研修の本題</strong>だからです。ここでは「起動できること」だけ確認します。モデル設定、Plan Mode、resume、スラッシュコマンド、<code>@</code> によるファイル指定などの基本操作は <a href="../docs/codex-cli-basics.md">Codex CLI 基本操作ガイド</a> を参照してください。</p>
 <section id="スモークテスト起動できることの確認" class="level4">
 <h4>8-5-1. スモークテスト（起動できることの確認）</h4>
 <div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu で codex-shell エイリアスを実行</span></span>
@@ -802,6 +802,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Codex CLI のヘルプ表示</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">--help</span></span></code></pre></div>
 <p>期待出力: Codex CLI のヘルプメッセージ（使えるサブコマンド一覧）が表示されること。ここまで出れば §8-5 は合格です。</p>
+<blockquote>
+<p>💡 以降の演習で Codex を使うときは、<a href="../docs/codex-cli-basics.md">Codex CLI 基本操作ガイド</a> の「1 フェーズあたりの基本ループ」に沿って進めます。</p>
+</blockquote>
 </section>
 <section id="codex-shell-で入った後の世界" class="level4">
 <h4>8-5-2. codex-shell で入った後の世界</h4>
