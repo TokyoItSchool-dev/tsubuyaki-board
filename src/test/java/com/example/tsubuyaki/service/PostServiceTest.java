@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,5 +51,17 @@ class PostServiceTest {
         assertThat(created.getBody()).isEqualTo("投稿テスト");
         assertThat(created.getCreatedAt()).isNotNull();
         verify(postRepository).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_findById_Repositoryの検索結果を返す")
+    void findById_returnsRepositoryResult() {
+        Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+
+        Optional<Post> actual = postService.findById(1L);
+
+        assertThat(actual).containsSame(post);
+        verify(postRepository).findById(1L);
     }
 }

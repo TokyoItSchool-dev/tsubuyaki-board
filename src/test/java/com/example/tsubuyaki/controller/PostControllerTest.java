@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -94,5 +95,28 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts"));
 
         verify(postService).create("alice", "投稿テスト");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_GET_posts_id_posts_detailを表示する")
+    void detail_whenPostExists_rendersDetailView() throws Exception {
+        Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("詳細本文")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_GET_posts_id_存在しないidは404を返す")
+    void detail_whenPostDoesNotExist_returnsNotFound() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 }
