@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -77,6 +78,17 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿をクリック_posts_idへの詳細リンクを表示する")
+    void list_whenPostsExist_showsDetailLink() throws Exception {
+        Post post = postWithId(1L, "alice", "本文です", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/1\"")));
+    }
+
+    @Test
     @DisplayName("投稿フォーム_GET_posts_new_postsFormを積んでposts/formを表示する")
     void newForm_addsPostFormAndRendersForm() throws Exception {
         mockMvc.perform(get("/posts/new"))
@@ -118,5 +130,13 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    private static Post postWithId(Long id, String author, String body, Instant createdAt) throws Exception {
+        Post post = new Post(author, body, createdAt);
+        Field idField = Post.class.getDeclaredField("id");
+        idField.setAccessible(true);
+        idField.set(post, id);
+        return post;
     }
 }
