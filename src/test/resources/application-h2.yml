@@ -1,0 +1,21 @@
+# =========================================================================
+# テスト用 H2 プロファイル
+# main の application-h2.yml はローカル起動用 seed を読む。
+# テストでは DB を空から始めるため、Flyway location は V1 のみに固定する。
+# =========================================================================
+spring:
+  datasource:
+    url: jdbc:h2:mem:tsubuyaki;MODE=Oracle;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=true
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  flyway:
+    locations: classpath:db/migration
+  h2:
+    console:
+      enabled: false

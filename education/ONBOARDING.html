@@ -275,86 +275,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </section>
 <section id="codex-との協働-1-19時間目" class="level2">
 <h2>Codex との協働 (1-19時間目)</h2>
-<section id="フェーズあたりの基本ループ" class="level3">
-<h3>1 フェーズあたりの基本ループ</h3>
-<pre><code>①  EXERCISES.md でこのフェーズの受入基準を読む
-②  自分の作業ブランチ &lt;github-id&gt; にいることを確認 (git branch --show-current)
-    ※ ブランチは student-setup-guide §6 で作成済み。課題ごとに分けたい人は
-       任意で &lt;github-id&gt;/m1-post-list のようにサブブランチを切ってもよい
-③  codex-shell でコンテナに入り、TDD プロンプトを投げる
-    (.codex/prompts/tdd-cycle.md をコピペして埋める。codex 内では /tdd-cycle でも呼べる)
-④  Codex がテスト → 実装を回す。生成されたコードを目で読む
-⑤  受講生が ./mvnw -B -Ph2 test を回し、緑を確認
-⑥  Codex に .codex/prompts/review.md を投げてセルフレビュー (codex 内では /review)
-⑦  ローカルで ./mvnw -B -Ph2 verify が緑なことを確認
-⑧  git add / commit (Conventional Commits) / push（自分の fork のブランチへ）
-    → fork に push すると §9-4 で作った PR の差分が自動更新される。これで 1 ユースケース完了
-       （PR は講師レビュー用。マージはしない / upstream main には取り込まない）</code></pre>
-</section>
-<section id="git-操作の具体例" class="level3">
-<h3>git 操作の具体例</h3>
-<p>⑦〜⑧に対応。「Codex 任せにせず、自分の手で実行する」のが原則。コミット履歴は受講生自身の名前で残す。</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu (リポルートで)</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. 何が変わったか確認</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> status</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> diff                          <span class="co"># 内容を読んで「自分で説明できる」か自問</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. ステージング (ファイル単位)</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/main/java/com/example/tsubuyaki/controller/PostController.java</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/test/java/com/example/tsubuyaki/controller/PostControllerTest.java</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># (まとめて: git add src/  でも可。ただし意図しないファイルを巻き込みやすい)</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. ステージ済みの内容を再確認</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> diff <span class="at">--staged</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Conventional Commits 形式でコミット (AGENTS.md §3.3)</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">&quot;feat(post): GET /posts で最新50件を新着順に返す&quot;</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. push</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push                          <span class="co"># §9-2 で -u 済みなのでブランチ名省略可</span></span></code></pre></div>
-<section id="push-したら-1-ユースケース完了⑧" class="level4">
-<h4>push したら 1 ユースケース完了（⑧）</h4>
-<p>本研修では、<strong>自分の fork のブランチに push した時点で 1 ユースケース完了</strong>です。push すると、講師レビュー用の PR（student-setup-guide §9-4 で作成）の差分が自動更新されます。upstream の <code>main</code> には誰もマージしません（<code>main</code> はスターターのまま温存）。</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># push 前にローカルで verify が緑であることを必ず確認</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./mvnw</span> <span class="at">-B</span> <span class="at">-Ph2</span> verify</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 自分の fork のブランチへ push（§9-2 で -u 済みならブランチ名は省略可）</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push</span></code></pre></div>
-</section>
-<section id="コミット前-pr-セルフチェックの観点" class="level4">
-<h4>コミット前 &amp; PR セルフチェックの観点</h4>
-<p>各ユースケースを push する前（および PR の説明欄を更新するとき）に、以下の観点で自己点検します。仕上げ（17-19h）と相互レビュー（19-20h）でもこの観点を使います。</p>
-<ul>
-<li><strong>実装した MUST / SHOULD / COULD</strong>: どの受入基準（M1〜／S1〜／C1〜）を満たしたか言えるか</li>
-<li><strong>テスト結果</strong>: <code>./mvnw -B -Ph2 verify</code> が緑か、JaCoCo カバレッジは何 % か</li>
-<li><strong>Codex に出した主要プロンプト</strong>: 効いた／効かなかったプロンプトを <code>docs/prompts-i-used.md</code> に控える</li>
-<li><strong>ハマったポイントと対処</strong>: 例「H2 で <code>SYSDATE</code> が動かず <code>Instant.now()</code> に修正」</li>
-<li><strong>次やるなら何</strong>: もう 1 日あれば取り組みたいことを 1〜3 行</li>
-</ul>
-</section>
-<section id="自分の変更を-pr-で見返す" class="level4">
-<h4>自分の変更を PR で見返す</h4>
-<p>§9-4 で作った PR を開くと、スターター（upstream の main）からの自分の全変更が「<strong>Files changed</strong>」タブに diff で出ます。相互レビュー（19-20h）ではこの <strong>PR の画面</strong>を共有し、各行・各コミットにコメントを付け合います。</p>
-<blockquote>
-<p>💡 PR をまだ作っていない人は <a href="./student-setup-guide.md">student-setup-guide.md §9-4</a> で作成してください。fork の <code>&lt;github-id&gt;</code> ブランチ → upstream main の Draft PR です。</p>
-<p>💡 コミットメッセージや差分量の規約は AGENTS.md §3 を必ず参照。</p>
-<p>💡 push 前に間違いに気づいた場合の戻し方は <a href="./TROUBLESHOOTING.md#git-操作の安全ガイド">TROUBLESHOOTING.md の Git 安全ガイド</a> を参照。</p>
-</blockquote>
-</section>
-</section>
-<section id="codex-への良い指示の作り方" class="level3">
-<h3>Codex への良い指示の作り方</h3>
-<pre><code>NG: 「いい感じに作って」
-NG: 「テストも書いて」
-OK: 「`GET /posts` の Controller を、最新 50 件を新着順で返す要件で、
-     PostControllerTest を @WebMvcTest で書いて RED → 実装で GREEN → リファクタの順で。
-     model 属性は &quot;posts&quot; にする。`th:utext` は使わない。」</code></pre>
-</section>
-<section id="使ったプロンプトの記録-17-19時間目で整備" class="level3">
-<h3>使ったプロンプトの記録 (17-19時間目で整備)</h3>
-<p>各フェーズで Codex に出した主要なプロンプトと、その評価（効いた／効かなかった）を <code>docs/prompts-i-used.md</code> に残す。仕上げフェーズで最低 3 件を確定させる。</p>
-</section>
+<p>Codex CLI の起動、モデル / effort の使い分け、Plan Mode、resume、スラッシュコマンド、 <code>@</code> によるファイル指定、1 フェーズあたりの基本ループ、git 操作、セルフチェックは <a href="../docs/codex-cli-basics.md">Codex CLI 基本操作ガイド</a> を参照する。</p>
+<p>演習中は、各フェーズで Codex に出した主要プロンプトと、その評価（効いた／効かなかった）を <code>docs/prompts-i-used.md</code> に残す。仕上げフェーズで最低 3 件を確定させる。</p>
 </section>
 <section id="成果まとめ-相互レビューkpt-19-21時間目" class="level2">
 <h2>成果まとめ — 相互レビュー＋KPT (19-21時間目)</h2>

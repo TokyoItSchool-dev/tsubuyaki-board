@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>codex-cli-basics</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+  <style type="text/css">:root {--fg: #1a1a1a;--muted: #555;--accent: #1565c0;--bg: #ffffff;--surface: #f5f7fa;--border: #d8dee6;--warn-bg: #fff8e1;--warn-border: #f0c000;--code-bg: #f3f3f3; --code-fg: #222; }* {font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;box-sizing: border-box;font-size: 12px;}body {color: var(--fg);background: var(--bg);line-height: 1.8;max-width: 1280px;margin: 0 auto;padding: 2.5rem 1.5rem 6rem;}h1 {font-size: 1.9rem;border-bottom: 4px solid var(--accent);padding-bottom: 0.4rem;line-height: 1.4;}h2 {font-size: 1.4rem;margin-top: 2.6rem;padding: 0.3rem 0.7rem;background: var(--surface);border-left: 6px solid var(--accent);}h3 {font-size: 1.15rem;margin-top: 1.8rem;color: var(--accent);}p, li { font-size: 1rem; }a { color: var(--accent); }code {background: var(--surface);border: 1px solid var(--border);border-radius: 4px;padding: 0.1em 0.4em;font-family: "Consolas", "Courier New", monospace;font-size: 0.92em;}pre {background: var(--code-bg);color: var(--code-fg);padding: 1rem 1.2rem;border-radius: 8px;overflow-x: auto;}pre code { background: none; border: none; color: inherit; padding: 0; }table {border-collapse: collapse;width: 100%;margin: 1rem 0;}th, td {border: 1px solid var(--border);padding: 0.55rem 0.8rem;text-align: left;vertical-align: top;}th { background: var(--surface); }.note {background: var(--warn-bg);border: 1px solid var(--warn-border);border-radius: 8px;padding: 0.9rem 1.1rem;margin: 1.2rem 0;}.file { font-weight: 700; color: #0d47a1; }hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }ol li, ul li { margin: 0.35rem 0; }.appendix { color: var(--muted); }.appendix h2 { border-left-color: #999; }.appendix h3 { color: #444; }img {max-width: 100%;height: auto;display: block;margin: 1rem auto;}@media print {section {page-break-before: auto !important;break-before: auto !important;}h1,section > h1:first-child {page-break-before: always !important;break-before: page !important;}h1:first-of-type,section:first-of-type > h1:first-child {page-break-before: auto !important;break-before: auto !important;}h1, h2, h3 {-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}body {margin: 1cm;padding: 0;img {max-width: 100% !important;height: auto !important;page-break-inside: avoid !important;}th {background-color: #f0f0f0 !important;-webkit-print-color-adjust: exact !important;print-color-adjust: exact !important;}}</style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#codex-cli-基本操作ガイド" id="toc-codex-cli-基本操作ガイド">Codex CLI 基本操作ガイド</a>
+<ul>
+<li><a href="#起動する" id="toc-起動する">1. 起動する</a></li>
+<li><a href="#モデルと-effort" id="toc-モデルと-effort">2. モデルと effort</a></li>
+<li><a href="#plan-mode" id="toc-plan-mode">3. Plan Mode</a></li>
+<li><a href="#resume-で前回の続きを開く" id="toc-resume-で前回の続きを開く">4. resume で前回の続きを開く</a></li>
+<li><a href="#基本スラッシュコマンド" id="toc-基本スラッシュコマンド">5. 基本スラッシュコマンド</a></li>
+<li><a href="#研修用プロンプト" id="toc-研修用プロンプト">6. 研修用プロンプト</a></li>
+<li><a href="#と-mention-でファイルを指定する" id="toc-と-mention-でファイルを指定する">7. <code>@</code> と <code>/mention</code> でファイルを指定する</a></li>
+<li><a href="#良い依頼文の型" id="toc-良い依頼文の型">8. 良い依頼文の型</a></li>
+<li><a href="#フェーズあたりの基本ループ" id="toc-フェーズあたりの基本ループ">9. 1 フェーズあたりの基本ループ</a></li>
+<li><a href="#git-操作の基本" id="toc-git-操作の基本">10. git 操作の基本</a></li>
+<li><a href="#コミット前と-pr-のセルフチェック" id="toc-コミット前と-pr-のセルフチェック">11. コミット前と PR のセルフチェック</a></li>
+<li><a href="#停止する" id="toc-停止する">12. 停止する</a></li>
+<li><a href="#困ったとき" id="toc-困ったとき">13. 困ったとき</a></li>
+</ul></li>
+</ul>
+</nav>
+<section id="codex-cli-基本操作ガイド" class="level1">
+<h1>Codex CLI 基本操作ガイド</h1>
+<p>この文書は、研修中に Codex CLI を使って開発を進めるための操作メモです。 初回セットアップは <a href="../education/student-setup-guide.md">受講生向けセットアップガイド</a> を正本とし、 ここでは <code>codex-shell</code> が使える状態になった後の操作を扱います。</p>
+<section id="起動する" class="level2">
+<h2>1. 起動する</h2>
+<p>Codex は WSL Ubuntu から起動します。Windows の PowerShell ではなく、Ubuntu ターミナルを使ってください。</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 WSL Ubuntu</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /mnt/c/workspace/tsubuyaki-board</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">codex-shell</span></span></code></pre></div>
+<p>成功すると、プロンプトが Codex devbox コンテナ内に変わります。</p>
+<pre class="text"><code>codex@a3f5e7c2:/workspace$</code></pre>
+<p>コンテナに入ったら、リポジトリのルートで <code>codex</code> を起動します。</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 📦 Codex コンテナ内</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span></span></code></pre></div>
+<p>CLI 自体のヘルプを見たいときは、対話セッションに入る前に次を実行します。</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">--help</span></span></code></pre></div>
+</section>
+<section id="モデルと-effort" class="level2">
+<h2>2. モデルと effort</h2>
+<p>この研修リポジトリでは <code>.codex/config.toml</code> に既定モデルと reasoning effort が設定済みです。 通常は変更せず、そのまま使います。</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode toml"><code class="sourceCode toml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">model</span> <span class="op">=</span> <span class="st">&quot;gpt-5.5&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dt">model_reasoning_effort</span> <span class="op">=</span> <span class="st">&quot;medium&quot;</span></span></code></pre></div>
+<p>一時的に別モデルで起動したいときは <code>-m</code> を使います。</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">-m</span> gpt-5.5</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">-m</span> gpt-5.4-mini</span></code></pre></div>
+<p>一時的に effort も変えたいときは、<code>-c</code> で設定を上書きします。</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">-c</span> <span class="st">&#39;model_reasoning_effort=&quot;low&quot;&#39;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">-c</span> <span class="st">&#39;model_reasoning_effort=&quot;high&quot;&#39;</span></span></code></pre></div>
+<p>起動後に切り替える場合は、Codex セッション内で <code>/model</code> を使います。対応するモデルでは reasoning effort も選べます。切り替え後は <code>/status</code> で現在の設定を確認できます。</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>設定</th>
+<th>使う場面</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpt-5.5</code></td>
+<td>研修の基本。実装、設計、テスト、レビューを一通り任せるとき</td>
+</tr>
+<tr>
+<td><code>gpt-5.4-mini</code></td>
+<td>軽い調査、読み取り中心の確認、速さを優先したいとき</td>
+</tr>
+<tr>
+<td><code>medium</code> effort</td>
+<td>研修の基本。通常の TDD 実装、リファクタ、レビュー</td>
+</tr>
+<tr>
+<td><code>low</code> effort</td>
+<td>単純な説明、短い確認、差分の要約など</td>
+</tr>
+<tr>
+<td><code>high</code> effort</td>
+<td>複雑なバグ調査、設計判断、境界値やセキュリティ観点のレビュー</td>
+</tr>
+<tr>
+<td><code>xhigh</code> effort</td>
+<td>講師指示がある深い調査や、仕上げ前の重要レビューに限定</td>
+</tr>
+</tbody>
+</table>
+<p>effort を上げると品質が上がる可能性がありますが、応答時間と token 使用量も増えます。迷ったら <code>gpt-5.5</code> + <code>medium</code> のまま進めます。</p>
+</section>
+<section id="plan-mode" class="level2">
+<h2>3. Plan Mode</h2>
+<p>実装前に方針を確認したいときは <code>/plan</code> を使います。</p>
+<pre class="text"><code>/plan GET /posts の一覧画面を TDD で実装する計画を作ってください。</code></pre>
+<p>Plan Mode では、Codex にいきなりファイル編集させず、実装手順・触るファイル・テスト方針を先に整理させます。 次の場面で使うと効果的です。</p>
+<ul>
+<li>初めて触る機能に入る前</li>
+<li>どのクラスを触るべきか迷うとき</li>
+<li>変更範囲が Controller / Service / Repository にまたがるとき</li>
+<li>失敗した実装を立て直すとき</li>
+</ul>
+<p>計画に納得したら、通常の依頼として「この計画で実装してください」と続けます。計画に違和感があれば、実装前に修正を指示します。</p>
+</section>
+<section id="resume-で前回の続きを開く" class="level2">
+<h2>4. resume で前回の続きを開く</h2>
+<p>Codex は会話履歴を保存します。前回と同じ課題を続けるときは、新しいセッションを始めるより <code>resume</code> を優先します。</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 最近のセッション一覧から選ぶ</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> resume</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 現在のリポジトリで直近のセッションを開く</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> resume <span class="at">--last</span></span></code></pre></div>
+<p>Codex セッション内にいる場合は <code>/resume</code> でも再開できます。</p>
+<pre class="text"><code>/resume</code></pre>
+<p>使い分けは次の通りです。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>使う場面</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>codex resume</code></td>
+<td>前回の続きを選んで再開したい</td>
+</tr>
+<tr>
+<td><code>codex resume --last</code></td>
+<td>直前のセッションにすぐ戻りたい</td>
+</tr>
+<tr>
+<td><code>/resume</code></td>
+<td>Codex 起動中に別の保存済みセッションへ切り替えたい</td>
+</tr>
+<tr>
+<td><code>/new</code></td>
+<td>別の課題に移り、前の文脈を引き継ぎたくない</td>
+</tr>
+</tbody>
+</table>
+<p>同じファイルを複数セッションで同時に編集させると差分が衝突しやすくなります。1 つのユースケースは、できるだけ 1 つのセッションで進めてください。</p>
+</section>
+<section id="基本スラッシュコマンド" class="level2">
+<h2>5. 基本スラッシュコマンド</h2>
+<p>Codex セッション内で <code>/</code> を入力すると、使えるスラッシュコマンドを検索できます。研修でよく使うものは以下です。</p>
+<table>
+<thead>
+<tr>
+<th>コマンド</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/status</code></td>
+<td>モデル、承認モード、作業ディレクトリ、token 使用状況を確認</td>
+</tr>
+<tr>
+<td><code>/model</code></td>
+<td>セッション中にモデルを切り替える</td>
+</tr>
+<tr>
+<td><code>/plan</code></td>
+<td>実装前に計画を作らせる</td>
+</tr>
+<tr>
+<td><code>/resume</code></td>
+<td>保存済みセッションを再開する</td>
+</tr>
+<tr>
+<td><code>/diff</code></td>
+<td>Codex が作った差分を確認する</td>
+</tr>
+<tr>
+<td><code>/review</code></td>
+<td>作業ツリーをレビューさせる</td>
+</tr>
+<tr>
+<td><code>/compact</code></td>
+<td>長くなった会話を要約して文脈を軽くする</td>
+</tr>
+<tr>
+<td><code>/new</code></td>
+<td>同じ CLI 内で新しい会話を始める</td>
+</tr>
+<tr>
+<td><code>/quit</code></td>
+<td>Codex CLI を終了する</td>
+</tr>
+<tr>
+<td><code>/exit</code></td>
+<td><code>/quit</code> と同じ。Codex CLI を終了する</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="研修用プロンプト" class="level2">
+<h2>6. 研修用プロンプト</h2>
+<p>リポジトリの <code>.codex/prompts/</code> には、研修用のプロンプト雛形があります。 Codex コンテナ起動時に同期されるため、Codex セッション内ではスラッシュコマンドとして呼び出せます。</p>
+<table>
+<thead>
+<tr>
+<th>コマンド</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/tdd-cycle</code></td>
+<td>RED → GREEN → REFACTOR を 1 ユースケースで回す</td>
+</tr>
+<tr>
+<td><code>/controller-skeleton</code></td>
+<td>Controller / Service / Repository の雛形を作る</td>
+</tr>
+<tr>
+<td><code>/jpa-entity</code></td>
+<td>JPA Entity / Repository / Flyway / Repository テストを作る</td>
+</tr>
+<tr>
+<td><code>/review</code></td>
+<td>push 前に XSS / SQLi / ハードコード観点でセルフレビューする</td>
+</tr>
+</tbody>
+</table>
+<p>穴埋めが必要なプロンプトは、<code>.codex/prompts/*.md</code> の中身を読んでから使います。<code>/review</code> は穴埋めなしでも使えます。</p>
+</section>
+<section id="と-mention-でファイルを指定する" class="level2">
+<h2>7. <code>@</code> と <code>/mention</code> でファイルを指定する</h2>
+<p>Codex CLI では、IDE のように開いているファイルが自動で全部伝わるわけではありません。 読んでほしいファイルは <code>@</code> または <code>/mention</code> で明示します。</p>
+<pre class="text"><code>@education/EXERCISES.md の M1 を読み、@src/main/java/com/example/tsubuyaki/controller/PostController.java に必要な変更を提案してください。</code></pre>
+<pre class="text"><code>/mention src/main/resources/templates/posts/index.html</code></pre>
+<p>使い方の目安です。</p>
+<ul>
+<li>要件を読ませる: <code>@education/EXERCISES.md</code></li>
+<li>既存実装を読ませる: <code>@src/main/java/...</code></li>
+<li>テンプレートを確認させる: <code>@src/main/resources/templates/...</code></li>
+<li>エラー全文が長い: まずエラーを貼り、必要なファイルを <code>@</code> で添える</li>
+</ul>
+</section>
+<section id="良い依頼文の型" class="level2">
+<h2>8. 良い依頼文の型</h2>
+<p>Codex への指示は、次の 4 点を入れると安定します。</p>
+<ul>
+<li><strong>ゴール</strong>: 何を実現したいか</li>
+<li><strong>対象</strong>: どの要件・ファイル・画面を扱うか</li>
+<li><strong>制約</strong>: TDD、H2、XSS 禁止、<code>th:text</code> 使用など</li>
+<li><strong>完了条件</strong>: どのテストやコマンドが緑なら完了か</li>
+</ul>
+<p>例:</p>
+<pre class="text"><code>GET /posts の一覧画面を TDD で実装してください。
+@education/EXERCISES.md の M1 を受入基準とし、
+まず @WebMvcTest + MockMvc で失敗するテストを 1 本書いてください。
+Thymeleaf では th:utext を使わず th:text を使ってください。
+完了条件は ./mvnw -B -Ph2 test が緑になることです。</code></pre>
+<p>避ける指示:</p>
+<pre class="text"><code>いい感じに作って
+テストも書いて
+全部直して</code></pre>
+</section>
+<section id="フェーズあたりの基本ループ" class="level2">
+<h2>9. 1 フェーズあたりの基本ループ</h2>
+<p>演習中は、1 ユースケースを次の流れで進めます。</p>
+<pre class="text"><code>1. EXERCISES.md でこのフェーズの受入基準を読む
+2. 自分の作業ブランチ &lt;github-id&gt; にいることを確認する
+3. codex-shell でコンテナに入り、Codex を起動する
+4. /plan または /tdd-cycle で TDD の進め方を固める
+5. Codex が RED → GREEN → REFACTOR を回す
+6. 生成されたコードを受講生が読む
+7. ./mvnw -B -Ph2 test を回して緑を確認する
+8. /review でセルフレビューする
+9. ./mvnw -B -Ph2 verify を回して緑を確認する
+10. git add / commit / push する</code></pre>
+<p>ブランチは <a href="../education/student-setup-guide.md">受講生向けセットアップガイド §6</a> で作成した <code>&lt;github-id&gt;</code> ブランチを使います。 課題ごとに分けたい人だけ、任意で <code>&lt;github-id&gt;/m1-post-list</code> のようなサブブランチを切ります。</p>
+</section>
+<section id="git-操作の基本" class="level2">
+<h2>10. git 操作の基本</h2>
+<p>コミット履歴は受講生自身の名前で残します。Codex に任せきりにせず、差分を読んでからコミットしてください。</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 🐧 Ubuntu または 📦 Codex コンテナ内のリポジトリルート</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> status</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> diff</span></code></pre></div>
+<p>内容を説明できることを確認してから、ファイル単位でステージングします。</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/main/java/com/example/tsubuyaki/controller/PostController.java</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/test/java/com/example/tsubuyaki/controller/PostControllerTest.java</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> diff <span class="at">--staged</span></span></code></pre></div>
+<p>コミットメッセージは Conventional Commits 形式にします。</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">&quot;feat(post): GET /posts で最新50件を新着順に返す&quot;</span></span></code></pre></div>
+<p>push 前には必ず <code>verify</code> を緑にします。</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./mvnw</span> <span class="at">-B</span> <span class="at">-Ph2</span> verify</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push</span></code></pre></div>
+<p>自分の fork のブランチに push した時点で 1 ユースケース完了です。 push すると、初回セットアップ時に作成した講師レビュー用 PR の差分が自動更新されます。 upstream の <code>main</code> にはマージしません。</p>
+</section>
+<section id="コミット前と-pr-のセルフチェック" class="level2">
+<h2>11. コミット前と PR のセルフチェック</h2>
+<p>各ユースケースを push する前に、以下を確認します。</p>
+<ul>
+<li>実装した MUST / SHOULD / COULD の受入基準を説明できる</li>
+<li><code>./mvnw -B -Ph2 verify</code> が緑</li>
+<li>JaCoCo カバレッジの現在値を把握している</li>
+<li>主要プロンプトを <code>docs/prompts-i-used.md</code> に控えている</li>
+<li>XSS / SQLi / ハードコード観点で <code>/review</code> 済み</li>
+<li>次にやることを 1〜3 行で説明できる</li>
+</ul>
+<p>PR の「Files changed」タブを開くと、スターターからの自分の全変更を確認できます。 相互レビューではこの PR 画面を共有し、各行・各コミットにコメントを付け合います。</p>
+</section>
+<section id="停止する" class="level2">
+<h2>12. 停止する</h2>
+<p>Codex CLI を終了するときは、セッション内で次のどちらかを入力します。</p>
+<pre class="text"><code>/quit
+/exit</code></pre>
+<p>Codex が処理中で止めたい場合は <code>Ctrl+C</code> を使います。停止後は、必要なら <code>git status</code> で途中差分を確認します。</p>
+<p>Codex devbox コンテナから Ubuntu に戻るには、コンテナのシェルで次を実行します。</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="bu">exit</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># または Ctrl+D</span></span></code></pre></div>
+</section>
+<section id="困ったとき" class="level2">
+<h2>13. 困ったとき</h2>
+<p>まず状態を確認します。</p>
+<pre class="text"><code>/status</code></pre>
+<p>Codex CLI 自体の使い方を確認します。</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="ex">codex</span> <span class="at">--help</span></span></code></pre></div>
+<p>環境異常を疑うときは、WSL Ubuntu のリポジトリルートで Doctor を実行します。</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/doctor.sh</span></code></pre></div>
+<p>エラーが解消しない場合は、<a href="../education/TROUBLESHOOTING.md">TROUBLESHOOTING.md</a> を確認し、講師に次の 4 点を伝えます。</p>
+<ul>
+<li>何をしようとしているか</li>
+<li>何を試したか</li>
+<li>何が起きたか</li>
+<li>どのファイル / どの行か</li>
+</ul>
+</section>
+</section>
+</body>
+</html>
