@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -36,5 +37,18 @@ class PostServiceTest {
 
         assertThat(actual).isSameAs(repositoryResult);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿登録_create_投稿者と本文をPostとして保存する")
+    void create_savesPostWithAuthorAndBody() {
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        Post created = postService.create("alice", "投稿テスト");
+
+        assertThat(created.getAuthor()).isEqualTo("alice");
+        assertThat(created.getBody()).isEqualTo("投稿テスト");
+        assertThat(created.getCreatedAt()).isNotNull();
+        verify(postRepository).save(any(Post.class));
     }
 }

@@ -16,9 +16,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -70,5 +73,26 @@ class PostControllerTest {
         assertThat(html).contains("alice", "本文です", "2026-05-23 19:15");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("本文です"));
         assertThat(html.indexOf("本文です")).isLessThan(html.indexOf("2026-05-23 19:15"));
+    }
+
+    @Test
+    @DisplayName("投稿フォーム_GET_posts_new_postsFormを積んでposts/formを表示する")
+    void newForm_addsPostFormAndRendersForm() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeExists("postForm"));
+    }
+
+    @Test
+    @DisplayName("投稿登録_正常入力_Serviceで保存して投稿一覧へリダイレクトする")
+    void create_whenValid_savesAndRedirectsToPosts() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "投稿テスト"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "投稿テスト");
     }
 }
