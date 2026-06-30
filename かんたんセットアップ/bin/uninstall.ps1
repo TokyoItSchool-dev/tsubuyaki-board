@@ -6,16 +6,13 @@
 
 Write-Banner -Color "Yellow" -Lines @(
     " ★重要な注意 — この操作は元に戻せません。",
-    "",
     " WSL の Ubuntu-22.04 を「丸ごと」削除します。",
     " 次のものがすべて一緒に消えます:",
     "   ・Oracle のデータ（作成した表やデータ）",
     "   ・あなたが書いたコードのうち Ubuntu 内に置いたもの",
     "   ・JDK / Maven / Podman / Codex などの開発ツール",
     "   ・OPENAI_API_KEY などの設定",
-    "",
     " （Windows 側のアプリや C:\workspace などのフォルダは残ります）",
-    "",
     " もう一度この環境を使うには「セットアップ1_Windows準備.bat」から",
     " やり直すことになります。"
 )
