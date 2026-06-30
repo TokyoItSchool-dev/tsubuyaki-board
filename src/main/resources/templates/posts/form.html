@@ -16,12 +16,12 @@
     <form th:action="@{/posts}" th:object="${postForm}" method="post">
         <div>
             <label for="author">投稿者</label>
-            <input type="text" id="author" th:field="*{author}" maxlength="30" required>
+            <input type="text" id="author" th:field="*{author}">
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
         <div>
-            <label for="body">本文 (280 文字まで)</label>
-            <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
+            <label for="body">本文</label>
+            <textarea id="body" th:field="*{body}" rows="4"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
         <button type="submit">投稿</button>
