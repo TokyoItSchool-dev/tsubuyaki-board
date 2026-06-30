@@ -58,36 +58,124 @@ CI検証は成功しているが、実際に画面表示の確認はできてい
 
 ## プロンプト 2
 
-**フェーズ**:
+**フェーズ**:M1: 投稿一覧
 
 **プロンプト本文**:
 
 ```
+投稿一覧表示機能（GET /posts ）を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+- 新着順 (created_at DESC) で最大 50 件を返す
+- ビュー: posts/list.html
+- 0 件なら「まだ投稿はありません」を表示
+- model.posts 属性に List を積む
+- 更新ボタンを設ける。押すとページをリロードする。
+- 投稿者,内容,投稿日の順に表示する。
+- 内容は、適度な文字数で折り返す
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- 0件の場合に画面に「まだ投稿はありません」を表示できていること
+- 51件以上の投稿がある場合に、新着50件しか表示されないこと
+- 更新ボタンがあり、押すとposts/ にリクエストすること
+- 投稿は「投稿者,内容,投稿日の順に表示できていること
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+- 前提アセット: `Post` entity (`src/main/java/com/example/tsubuyaki/domain/Post.java`) と V1 Flyway マイグレーション (`src/main/resources/db/migration/V1__init.sql`) は既に提供済。M1 ではこの上に Repository / Service / Controller を実装する。
 
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+
+**結果**: 効いた
+以下内容
+commit f8057d5e1b4b3e6fff046d209e748be64abe3a8f
+  Author: Codex <codex@example.com>
+  Date:   Tue Jun 30 16:24:32 2026 +0900
+
+      feat(post): 投稿一覧表示を実装
+
+  差分概要:
+
+  5 files changed, 77 insertions(+), 7 deletions(-)
+
+  src/main/java/com/example/tsubuyaki/repository/PostRepository.java
+  src/main/java/com/example/tsubuyaki/service/PostService.java
+  src/main/resources/static/css/app.css
+  src/main/resources/templates/posts/list.html
+  src/test/java/com/example/tsubuyaki/controller/PostListFeatureTest.java
+
+  主な内容:
+
+  - PostRepository に findTop50ByOrderByCreatedAtDesc() を追加
+  - PostService.latest() を空リスト返却から Repository 呼び出しへ変更
+  - posts/list.html に更新ボタンと投稿者→内容→投稿日順の表示を追加
+  - app.css に本文折り返し補強を追加
+  - PostListFeatureTest を新規追加し、空表示・新着50件・更新ボタン・表示順を検証
 
 **振り返り**:
+
+投稿一覧表示機能は追加出来た。
+ソースについては、posts/list.htmlのposts/list.html の空表示文言が仕様通りでは無かったため、
+プロンプト3にて修正を実施した。
+また、「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
 
 ---
 
 ## プロンプト 3
 
+**フェーズ**:M1: 投稿一覧：文言修正
+
+**プロンプト本文**:
+
+```
+ posts/list.html について、０件時の「まだ投稿はありません。」以外の
+  記載があるため、修正し、Conventional Commits でコミットしてくださ
+  い。
+```
+
+**結果**: 効いた
+
+```
+以下変更結果
+ 確認:
+
+  - ./mvnw -B -Ph2 -Dtest=PostListFeatureTest test 成功
+  - コミット: 9652eb6 fix(post): 空の投稿一覧メッセージを修正
+
+  スコープ外の既存未コミット変更は触っていません。ブランチ d-fujie は
+  origin/d-fujie より 2 コミット ahead です。
+```
+
+**振り返り**:
+
+当該の文言修正が完了した。
+また、テストについては、指示しなかったが、CodeXが判断し、テスト実施を行っていた。
+今後のプロンプトでは、テスト実施を必ず盛り込む。
+
+---
+
+## プロンプト 4 以降
 **フェーズ**:
 
 **プロンプト本文**:
 
 ```
-
 ```
 
 **結果**: 効いた / 部分的に効いた / 効かなかった
 
 **振り返り**:
-
----
-
-## プロンプト 4 以降
 
 3 件目以降も追加可能。書ければ書くほど良い。
