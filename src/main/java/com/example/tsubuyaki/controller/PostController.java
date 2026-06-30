@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class PostController {
 
+    private static final int LATEST_POST_LIMIT = 50;
+
     private final PostService postService;
 
     public PostController(PostService postService) {
@@ -17,7 +19,7 @@ public class PostController {
 
     @GetMapping({ "/", "/posts" })
     public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+        model.addAttribute("posts", postService.latest(LATEST_POST_LIMIT));
         return "posts/list";
     }
 
