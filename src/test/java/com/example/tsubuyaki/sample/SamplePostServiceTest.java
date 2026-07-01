@@ -26,10 +26,8 @@ class SamplePostServiceTest {
     private PostService postService;
 
     @Test
-    @DisplayName("Service_latest_未実装のとき_空リストを返す")
-    void latest_returnsEmpty_byDefault() {
-        // 現在の PostService.latest() は TODO 状態で空リストを返す。
-        // 受講生が実装したら、このテストは別シナリオに置き換える。
-        assertThat(postService.latest()).isEmpty();
+    @DisplayName("Service_latest50_Repositoryが空のとき_空リストを返す")
+    void latest50_returnsEmptyWhenRepositoryReturnsEmpty() {
+        assertThat(postService.latest50()).isEmpty();
     }
 }
