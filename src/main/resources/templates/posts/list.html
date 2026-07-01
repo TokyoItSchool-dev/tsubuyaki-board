@@ -26,7 +26,7 @@
     <section>
         <p th:if="${#lists.isEmpty(posts) and !searched}">まだ投稿はありません。</p>
         <p th:if="${#lists.isEmpty(posts) and searched}">条件に一致する結果が見つかりませんでした。</p>
-        <article class="post" th:each="post : ${posts}">
+        <article class="post" th:each="post : ${posts}" th:style="|background-color: ${post.backgroundColor};|">
             <header>
                 <a class="post__author" th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.author}">投稿者</a>
             </header>

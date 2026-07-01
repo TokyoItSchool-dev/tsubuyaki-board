@@ -29,14 +29,22 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "background_color", length = 7)
+    private String backgroundColor;
+
     protected Post() {
         // JPA
     }
 
     public Post(String author, String body, LocalDateTime createdAt) {
+        this(author, body, createdAt, PostBackgroundColor.DEFAULT);
+    }
+
+    public Post(String author, String body, LocalDateTime createdAt, String backgroundColor) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
+        this.backgroundColor = backgroundColor;
     }
 
     public Long getId() {
@@ -53,6 +61,10 @@ public class Post {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getBackgroundColor() {
+        return PostBackgroundColor.normalize(backgroundColor);
     }
 
     @Override

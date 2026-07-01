@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.PostBackgroundColor;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,8 +77,8 @@ class PostCreateFeatureTest {
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
 
-        verify(postService).create("a", "b");
-        verify(postService).create(maxAuthor, maxBody);
+        verify(postService).create("a", "b", PostBackgroundColor.DEFAULT);
+        verify(postService).create(maxAuthor, maxBody, PostBackgroundColor.DEFAULT);
         verifyNoMoreInteractions(postService);
     }
 }

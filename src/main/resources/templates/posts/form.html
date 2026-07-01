@@ -15,7 +15,7 @@
 
     <form th:action="@{/posts}" th:object="${postForm}" method="post">
         <div>
-            <label for="author">投稿者</label>
+            <label class="required-label" for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
@@ -24,6 +24,13 @@
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
+        <fieldset class="color-palette">
+            <legend>背景色</legend>
+            <label class="color-palette__item" th:each="color : ${postForm.backgroundColors}">
+                <input type="radio" th:field="*{backgroundColor}" th:value="${color}">
+                <span class="color-palette__swatch" th:style="|background-color: ${color};|"></span>
+            </label>
+        </fieldset>
         <button type="submit">投稿</button>
     </form>
 </main>

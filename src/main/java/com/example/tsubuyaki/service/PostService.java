@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostBackgroundColor;
 import com.example.tsubuyaki.domain.PostLike;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
@@ -34,7 +35,12 @@ public class PostService {
 
     @Transactional
     public void create(String author, String body) {
-        repository.save(new Post(author, body, LocalDateTime.now()));
+        create(author, body, PostBackgroundColor.DEFAULT);
+    }
+
+    @Transactional
+    public void create(String author, String body, String backgroundColor) {
+        repository.save(new Post(author, body, LocalDateTime.now(), backgroundColor));
     }
 
     public Optional<PostView> findById(Long id) {
@@ -64,7 +70,8 @@ public class PostService {
                 post.getAuthor(),
                 post.getBody(),
                 post.getCreatedAt(),
-                likeRepository.countByPostId(post.getId()));
+                likeRepository.countByPostId(post.getId()),
+                post.getBackgroundColor());
     }
 
     private List<PostView> toViews(List<Post> posts) {

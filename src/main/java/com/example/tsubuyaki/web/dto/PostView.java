@@ -9,13 +9,21 @@ public class PostView {
     private final String body;
     private final LocalDateTime createdAt;
     private final long likeCount;
+    private final String backgroundColor;
 
-    public PostView(Long id, String author, String body, LocalDateTime createdAt, long likeCount) {
+    public PostView(
+            Long id,
+            String author,
+            String body,
+            LocalDateTime createdAt,
+            long likeCount,
+            String backgroundColor) {
         this.id = id;
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
         this.likeCount = likeCount;
+        this.backgroundColor = backgroundColor;
     }
 
     public Long getId() {
@@ -36,5 +44,9 @@ public class PostView {
 
     public long getLikeCount() {
         return likeCount;
+    }
+
+    public String getBackgroundColor() {
+        return backgroundColor;
     }
 }
