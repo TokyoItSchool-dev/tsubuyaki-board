@@ -82,11 +82,23 @@ h1 {
 }
 
 .post {
+    display: block;
     padding: 1rem;
     border: 1px solid var(--color-border);
     border-radius: 8px;
     margin-bottom: 0.75rem;
     background: white;
+}
+
+.post--link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.post--link:hover,
+.post--link:focus-visible {
+    border-color: #4b5563;
 }
 
 .post__author {
@@ -104,6 +116,41 @@ h1 {
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;
+}
+
+.post-detail-nav {
+    margin-bottom: 1.75rem;
+}
+
+.post-detail {
+    background: transparent;
+}
+
+.post-detail__author {
+    margin: 0 0 0.75rem;
+    font-weight: 600;
+}
+
+.post-detail__body-box {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: white;
+}
+
+.post-detail__body {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.post-detail__created-at {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    text-align: right;
 }
 
 @media (max-width: 640px) {

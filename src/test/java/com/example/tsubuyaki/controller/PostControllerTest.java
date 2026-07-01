@@ -8,11 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -73,7 +75,8 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する")
     void 投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する() throws Exception {
-        Post post = new Post(
+        Post post = postWithId(
+                42L,
                 "alice",
                 "本文は長くても画面上で折り返して表示する",
                 Instant.parse("2026-05-23T10:15:00Z"));
@@ -87,6 +90,91 @@ class PostControllerTest {
         assertThat(html).contains("alice", "本文は長くても画面上で折り返して表示する", "2026-05-23");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("本文は長くても画面上で折り返して表示する"));
         assertThat(html.indexOf("本文は長くても画面上で折り返して表示する")).isLessThan(html.indexOf("2026-05-23"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿枠にカーソルを合わせた場合_枠色変更用クラスを適用する")
+    void 投稿一覧_投稿枠にカーソルを合わせた場合_枠色変更用クラスを適用する() throws Exception {
+        Post post = postWithId(42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post post--link\"")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿枠内のどこを押下しても_対象の詳細URLへ遷移する")
+    void 投稿一覧_投稿枠内のどこを押下しても_対象の詳細Urlへ遷移する() throws Exception {
+        Post post = postWithId(42L, "alice", "リンク対象の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.latest()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        int linkStart = html.indexOf("<a class=\"post post--link\" href=\"/posts/42\"");
+        int author = html.indexOf("alice");
+        int body = html.indexOf("リンク対象の本文");
+        int createdAt = html.indexOf("2026-05-23");
+        int linkEnd = html.indexOf("</a>", createdAt);
+
+        assertThat(linkStart).isNotNegative();
+        assertThat(linkStart).isLessThan(author);
+        assertThat(author).isLessThan(body);
+        assertThat(body).isLessThan(createdAt);
+        assertThat(createdAt).isLessThan(linkEnd);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在する投稿idの場合_ステータス200で詳細画面を表示する")
+    void 投稿詳細_存在する投稿Idの場合_ステータス200で詳細画面を表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在する投稿idの場合_投稿者内容投稿日を表示する")
+    void 投稿詳細_存在する投稿Idの場合_投稿者内容投稿日を表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("alice")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("詳細の本文")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("2026-05-23")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在する投稿idの場合_詳細用レイアウトクラスを表示し本文ラベルは表示しない")
+    void 投稿詳細_存在する投稿Idの場合_詳細用レイアウトクラスを表示し本文ラベルは表示しない() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail-nav\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者：")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("本文："))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail__body-box\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail__created-at\"")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しない投稿idの場合_404を返す")
+    void 投稿詳細_存在しない投稿Idの場合_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -210,5 +298,11 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts"));
 
         verify(postService).create("alice", "本文");
+    }
+
+    private static Post postWithId(Long id, String author, String body, Instant createdAt) {
+        Post post = new Post(author, body, createdAt);
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
     }
 }
