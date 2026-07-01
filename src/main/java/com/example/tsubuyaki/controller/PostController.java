@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.ClientHashGenerator;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -17,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class PostController {
 
     private final PostService postService;
+    private final ClientHashGenerator clientHashGenerator = new ClientHashGenerator();
 
     public PostController(PostService postService) {
         this.postService = postService;
@@ -32,6 +35,7 @@ public class PostController {
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("post", postService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("likeCount", postService.countLikes(id));
         return "posts/detail";
     }
 
@@ -50,5 +54,10 @@ public class PostController {
         return "redirect:/posts";
     }
 
-    // 演習中に追加するエンドポイント:
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        String clientHash = clientHashGenerator.generate(request.getRemoteAddr(), request.getHeader("User-Agent"));
+        postService.toggleLike(id, clientHash);
+        return "redirect:/posts/" + id;
+    }
 }
