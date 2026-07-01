@@ -10,7 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +33,7 @@ class SamplePostServiceTest {
     @Test
     @DisplayName("Service_latest_Repositoryから最新投稿を取得する")
     void latest_returnsPostsFromRepository() {
-        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "hello", LocalDateTime.parse("2026-05-23T10:00:00"));
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
 
         assertThat(postService.latest()).containsExactly(post);

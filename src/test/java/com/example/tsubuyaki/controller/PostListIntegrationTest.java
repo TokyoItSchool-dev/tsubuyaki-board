@@ -12,7 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,10 +57,10 @@ class PostListIntegrationTest {
     @Test
     @DisplayName("投稿一覧_51件あるとき_新着50件だけを表示する")
     void 投稿一覧_51件あるとき_新着50件だけを表示する() throws Exception {
-        Instant base = Instant.parse("2026-06-01T00:00:00Z");
+        LocalDateTime base = LocalDateTime.parse("2026-06-01T09:00:00");
         for (int i = 1; i <= 51; i++) {
             String sequence = "%03d".formatted(i);
-            postRepository.save(new Post("user-" + sequence, "本文-" + sequence, base.plusSeconds(i)));
+            postRepository.save(new Post("user-" + sequence, "本文-" + sequence, base.plusMinutes(i)));
         }
 
         MvcResult result = mockMvc.perform(get("/posts"))
@@ -92,7 +92,7 @@ class PostListIntegrationTest {
         postRepository.save(new Post(
                 "alice",
                 "M1の投稿一覧を実装します",
-                Instant.parse("2026-06-01T00:30:00Z")));
+                LocalDateTime.parse("2026-06-01T09:30:00")));
 
         MvcResult result = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
