@@ -61,11 +61,21 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body) {
-        Post post = new Post(author.trim(), body.trim(), Instant.now());
+        return create(author, body, null);
+    }
+
+    @Transactional
+    public Post create(String author, String body, String avatarColor) {
+        Post post = new Post(author.trim(), body.trim(), blankToNull(avatarColor), Instant.now());
         return repository.save(post);
     }
 
     private static String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private static String blankToNull(String value) {
+        String trimmedValue = nullToEmpty(value).trim();
+        return trimmedValue.isEmpty() ? null : trimmedValue;
     }
 }
