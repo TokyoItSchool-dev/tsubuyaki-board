@@ -16,10 +16,12 @@ import java.util.List;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -79,5 +81,17 @@ class PostControllerTest {
                 .andExpect(model().attributeHasFieldErrors("postForm", "author", "body"))
                 .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")))
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
+    }
+
+    @Test
+    @DisplayName("投稿作成_入力が正しいとき_Serviceで登録し投稿一覧へリダイレクトする")
+    void 投稿作成_入力が正しいとき_Serviceで登録し投稿一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "はじめての投稿"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).createPost("alice", "はじめての投稿");
     }
 }
