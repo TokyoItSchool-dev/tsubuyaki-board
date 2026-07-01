@@ -47,4 +47,20 @@ class PostRepositoryTest {
                         "body10", "body9", "body8", "body7", "body6",
                         "body5", "body4", "body3", "body2", "body1");
     }
+
+    @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿のみ新着順で返す")
+    void 投稿検索_本文にキーワードを含む投稿のみ新着順で返す() {
+        postRepository.save(new Post("alice", "Java の研修メモです",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        postRepository.save(new Post("bob", "Spring Boot の検索実装です",
+                LocalDateTime.parse("2026-05-23T10:01:00")));
+        postRepository.save(new Post("carol", "検索とは関係ない投稿です",
+                LocalDateTime.parse("2026-05-23T10:02:00")));
+
+        List<Post> actual = postRepository.findByBodyContainingOrderByCreatedAtDesc("検索");
+
+        assertThat(actual).extracting(Post::getBody)
+                .containsExactly("検索とは関係ない投稿です", "Spring Boot の検索実装です");
+    }
 }

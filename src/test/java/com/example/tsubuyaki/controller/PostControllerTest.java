@@ -54,7 +54,52 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attributeExists("posts"))
+                .andExpect(model().attribute("q", ""))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_q未指定_通常一覧をビューに渡す")
+    void 投稿一覧_q未指定_通常一覧をビューに渡す() throws Exception {
+        List<Post> posts = List.of(new Post("alice", "通常一覧です",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postService.latest()).willReturn(posts);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", ""));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_q空文字_通常一覧をビューに渡す")
+    void 投稿一覧_q空文字_通常一覧をビューに渡す() throws Exception {
+        List<Post> posts = List.of(new Post("alice", "通常一覧です",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postService.latest()).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", " "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", ""));
+    }
+
+    @Test
+    @DisplayName("投稿検索_q指定_検索結果をビューに渡す")
+    void 投稿検索_q指定_検索結果をビューに渡す() throws Exception {
+        List<Post> posts = List.of(new Post("alice", "検索対象です",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postService.search("検索")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", "検索"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", "検索"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"q\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"検索\"")));
     }
 
     @Test

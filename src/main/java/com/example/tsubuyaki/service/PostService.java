@@ -23,6 +23,10 @@ public class PostService {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    public List<Post> search(String keyword) {
+        return repository.findByBodyContainingOrderByCreatedAtDesc(keyword);
+    }
+
     public Optional<Post> findById(Long id) {
         return repository.findById(id);
     }

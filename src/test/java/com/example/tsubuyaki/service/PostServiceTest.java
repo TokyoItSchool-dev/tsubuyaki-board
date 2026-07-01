@@ -31,4 +31,14 @@ class PostServiceTest {
 
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
     }
+
+    @Test
+    @DisplayName("投稿検索_search_本文キーワードでRepositoryを検索する")
+    void 投稿検索_search_本文キーワードでRepositoryを検索する() {
+        given(postRepository.findByBodyContainingOrderByCreatedAtDesc("検索")).willReturn(Collections.emptyList());
+
+        postService.search("検索");
+
+        verify(postRepository).findByBodyContainingOrderByCreatedAtDesc("検索");
+    }
 }

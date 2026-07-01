@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.NoSuchElementException;
@@ -33,8 +34,10 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String q, Model model) {
+        String keyword = normalizeKeyword(q);
+        model.addAttribute("posts", keyword.isEmpty() ? postService.latest() : postService.search(keyword));
+        model.addAttribute("q", keyword);
         return "posts/list";
     }
 
@@ -73,5 +76,9 @@ public class PostController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         return "redirect:/posts/" + id;
+    }
+
+    private static String normalizeKeyword(String q) {
+        return q == null ? "" : q.trim();
     }
 }
