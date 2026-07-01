@@ -714,6 +714,72 @@ Red: src/test/java/com/example/tsubuyaki/controller/PostLikeFeatureTest.java の
 
 ## プロンプト 11
 
+**フェーズ**:S2: キーワード検索
+
+**プロンプト本文**:
+
+```
+キーワード検索機能（GET /posts?q=xxx ）を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+- 投稿一覧画面（posts/list.html）の上部（更新ボタンの下）に、検索ボックスおよび検索ボタンを横並びで追加する
+- GET /posts?q=xxx で本文をLIKE検索する（部分一致とする）
+- 検索結果の投稿を新着順 (created_at DESC) で最大 50 件を返し、投稿一覧画面（posts/list.html）に反映する
+- 各画面項目（ヘッダー、更新ボタン、検索部、投稿一覧部）が見やすいよう、間隔を調整する
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- 投稿一覧画面（posts/list.html）の上部に検索ボックスおよび検索ボタンを配置され、GET /posts?q=xxx にリクエストすること
+- 検索ボックスが空（スペースのみの場合も含む）の場合に検索ボタンが押下された場合、posts/ にリクエストすること
+- 検索結果が0件の場合に画面に「条件に一致する結果が見つかりませんでした。」を表示できていること
+- 51件以上の投稿がある場合に、新着50件しか表示されないこと
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+
+```
+
+**結果**: 効いた
+
+  Red: src/test/java/com/example/tsubuyaki/controller/PostListFeatureTest.java に検索受入テストを 1 本追加し、検索
+  フォーム未実装で失敗確認しました。
+
+  主な変更:
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java: GET /posts?q=... を受け、空白 trim 後に通常
+    一覧/検索を切り替え
+
+  - src/main/java/com/example/tsubuyaki/repository/PostRepository.java, src/main/java/com/example/tsubuyaki/
+    service/PostService.java: 本文部分一致を新着順最大 50 件で取得
+
+  - src/main/resources/templates/posts/list.html, src/main/resources/static/css/app.css: 更新ボタン下に横並び検索
+    フォーム、0 件メッセージ、間隔調整を追加
+
+  検証:
+  ./mvnw -B -Ph2 test は Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 で成功。
+
+  コミット:
+  bb5f5ca feat(search): 投稿本文のキーワード検索を追加
+
+**振り返り**:
+キーワード検索の実装について完了した。
+ソースについても、当該箇所の実装、WEBアプリも動いていることが確認出来た。
+また、各画面項目について、項目間の間隔修正を実施、反映されていることを確認出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+
+
+## プロンプト 12
+
 **フェーズ**:
 
 **プロンプト本文**:
