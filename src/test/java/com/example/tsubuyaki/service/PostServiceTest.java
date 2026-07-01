@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
@@ -37,8 +38,8 @@ class PostServiceTest {
     @DisplayName("投稿一覧_取得時_Repositoryの最新50件を返す")
     void 投稿一覧_取得時_Repositoryの最新50件を返す() {
         List<Post> posts = List.of(
-                new Post("suzuki", "new", Instant.parse("2026-06-26T10:00:00Z")),
-                new Post("tanaka", "old", Instant.parse("2026-06-26T09:00:00Z")));
+                new Post("suzuki", "new", LocalDateTime.of(2026, 6, 26, 10, 0)),
+                new Post("tanaka", "old", LocalDateTime.of(2026, 6, 26, 9, 0)));
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> actual = postService.latest();
@@ -57,6 +58,6 @@ class PostServiceTest {
         Post saved = captor.getValue();
         assertThat(saved.getAuthor()).isEqualTo("suzuki");
         assertThat(saved.getBody()).isEqualTo("本文");
-        assertThat(saved.getCreatedAt()).isEqualTo(Instant.parse("2026-06-26T01:23:45Z"));
+        assertThat(saved.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 6, 26, 10, 23, 45));
     }
 }

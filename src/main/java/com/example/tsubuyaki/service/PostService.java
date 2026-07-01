@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -26,6 +27,6 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body) {
-        return repository.save(new Post(author, body, clock.instant()));
+        return repository.save(new Post(author, body, LocalDateTime.now(clock)));
     }
 }

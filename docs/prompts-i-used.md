@@ -154,3 +154,63 @@ Implement the plan.
 `POST /posts` の成功・失敗条件を `@WebMvcTest + MockMvc` で先に固定し、Service 保存時刻も固定 `Clock` で検証した。
 author/body は前後空白を trim し、空文字・空白のみ・最大長超過をエラーにできた。
 `./mvnw -B -Ph2 test` と `./mvnw -B -Ph2 verify` はどちらも成功した。
+
+---
+
+## プロンプト 8
+
+**フェーズ**: 投稿登録後の Oracle 日時エラー修正
+
+**プロンプト本文**:
+
+```
+新規投稿ページで投稿者と本文を入力した後、投稿ボタンを押下すると ORA-18716 が発生する。
+```
+
+**結果**: 効いた
+
+**振り返り**:
+
+Oracle の `created_at TIMESTAMP(6)` はタイムゾーンなしの型なので、Java 側の `Post.createdAt` を
+`Instant` から `LocalDateTime` に変更した。投稿作成時刻も `LocalDateTime.now(clock)` で保存し、
+既存の Controller / Service / Repository テストを同じ型に合わせた。
+`./mvnw -B -Ph2 test` と `./mvnw -B -Ph2 verify` はどちらも成功した。
+
+---
+
+## プロンプト 9
+
+**フェーズ**: 投稿登録フォームのブラウザ側バリデーション無効化
+
+**プロンプト本文**:
+
+```
+投稿登録のバリデーションがブラウザ側のチェックにより実行されています。
+```
+
+**結果**: 効いた
+
+**振り返り**:
+
+`@WebMvcTest + MockMvc` でフォーム HTML が `novalidate` を持ち、`required` / `maxlength` を持たないことを先に検証した。
+`posts/form.html` はブラウザ標準バリデーションを無効化し、投稿登録の制約は Controller の Bean Validation で処理する形にした。
+`./mvnw -B -Ph2 test` と `./mvnw -B -Ph2 verify` はどちらも成功した。
+
+---
+
+## プロンプト 10
+
+**フェーズ**: 既存実装コミット
+
+**プロンプト本文**:
+
+```
+Implement the plan.
+```
+
+**結果**: 効いた
+
+**振り返り**:
+
+Oracle 日時修正とブラウザ標準バリデーション無効化の差分を対象に、未関連の `secret` 系セットアップファイルを除外してコミットした。
+コミット前に `./mvnw -B -Ph2 test` と `./mvnw -B -Ph2 verify` がどちらも成功した。

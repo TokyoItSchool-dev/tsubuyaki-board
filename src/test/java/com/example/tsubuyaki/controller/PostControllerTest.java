@@ -10,7 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -65,7 +65,7 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する")
     void 投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する() throws Exception {
         given(postService.latest()).willReturn(List.of(
-                new Post("suzuki", "表示順を確認します", Instant.parse("2026-06-26T01:00:00Z"))));
+                new Post("suzuki", "表示順を確認します", LocalDateTime.of(2026, 6, 26, 10, 0))));
 
         String html = mockMvc.perform(get("/posts/"))
                 .andExpect(status().isOk())
@@ -86,7 +86,7 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeExists("postForm"))
-                .andExpect(content().string(containsString("<form action=\"/posts\" method=\"post\">")))
+                .andExpect(content().string(containsString("<form action=\"/posts\" method=\"post\" novalidate>")))
                 .andReturn()
                 .getModelAndView()
                 .getModel()
@@ -94,6 +94,19 @@ class PostControllerTest {
 
         assertThat(postForm.getAuthor()).isEmpty();
         assertThat(postForm.getBody()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿作成フォーム_表示時_ブラウザ標準バリデーションを無効にする")
+    void 投稿作成フォーム_表示時_ブラウザ標準バリデーションを無効にする() throws Exception {
+        String html = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("<form action=\"/posts\" method=\"post\" novalidate>");
+        assertThat(html).doesNotContain(" required", "maxlength=\"");
     }
 
     @Test
