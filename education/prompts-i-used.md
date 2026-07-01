@@ -518,6 +518,7 @@ Oracle 実行時に一覧表示で発生する ORA-18716 を TDD で修正して
 **振り返り**:
 本エラーについて、修正されていることを確認
 ソースについても、当該箇所が修正され、WEBアプリも動いていることが確認出来た。
+また、「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
 M4: 投稿詳細の表示方法がないため、プロンプト8にて追加する
 
 
@@ -577,9 +578,141 @@ M4: 投稿詳細の表示方法がないため、プロンプト8にて追加す
 
 本内容について、修正されていることを確認
 ソースについても、当該箇所が修正され、WEBアプリも動いていることが確認出来た。
+また、「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
 
 
 ## プロンプト 9
+
+**フェーズ**:S1: いいね
+
+**プロンプト本文**:
+
+```
+いいね機能（POST /posts/{id}/likes ）を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+- 投稿一覧画面（posts/list.html）の各投稿にいいねトグルを表示する
+- 同一 clientHash (= ハッシュ化された IP + UA、SHA-256 の先頭 8 文字) が再度押したら解除
+- 詳細画面（posts/detail.html）で総いいね数と Like ボタン（いいねトグル）を表示する
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- 投稿一覧画面（posts/list.html）の各投稿にいいねトグルがあり、/posts/{id}/likes にリクエストすること
+- 詳細画面（posts/detail.html）で総いいね数と Like ボタン（いいねトグル）があり、があり、Like ボタンが/posts/{id}/likes にリクエストすること
+- 同一 clientHashにいいね がされていない状態で押したら、当該clientHashが登録されること
+- 同一 clientHashにいいね がされている状態で押したら、当該clientHashが解除されること
+- /posts/{id}/likes のidが存在しない場合は、404を返すこと。
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 部分的に効いた
+Red は PostLikeFeatureTest 1 本を先に追加し、一覧/詳細の Like フォーム、同一 clientHash の登録・解除、存在しない
+  id の 404 を固定しました。その後 Green 実装と小さな Refactor を行い、./mvnw -B -Ph2 test は Tests run: 11,
+  Failures: 0, Errors: 0, Skipped: 0 で成功しています。
+
+  コミット:
+  1332eaa feat(like): 投稿にいいねトグルを追加
+
+  主な変更:
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java: POST /posts/{id}/likes と clientHash 生成を
+    追加
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java: 同一 clientHash のいいね登録/解除を実装
+  - src/main/java/com/example/tsubuyaki/domain/PostLike.java, src/main/java/com/example/tsubuyaki/repository/
+    PostLikeRepository.java, src/main/resources/db/migration/V2__create_post_likes.sql: いいね永続化を追加
+
+  - src/main/resources/templates/posts/list.html, src/main/resources/templates/posts/detail.html: Like トグルと総い
+    いね数を表示
+
+  - src/test/java/com/example/tsubuyaki/controller/PostLikeFeatureTest.java: 受入基準テストを追加
+  
+
+**振り返り**:
+いいね機能は追加出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+実装内容については、「いいね」ボタン押下時に、posts/detail.htmlに強制的に遷移してしまう実装となってしまっている
+そのため、プロンプト 10にて修正を行う
+
+
+## プロンプト 10
+
+**フェーズ**:S1: いいね：修正
+
+**プロンプト本文**:
+
+```
+いいね機能（POST /posts/{id}/likes ）の修正について TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+背景:
+- 投稿一覧画面（posts/list.html）および詳細画面（posts/detail.html）に配置されたいいねトグルについて、押下時に詳細画面（posts/detail.html）に遷移してしまう。
+
+修正方針:
+- 投稿一覧画面（posts/list.html）のいいねトグルを押下：/posts/{id}/likesにリクエストされる、画面はposts/list.htmlのままとする。
+- 詳細画面（posts/detail.html）のいいねトグルを押下：/posts/{id}/likesにリクエストされる、画面はposts/detail.htmlのままとする。（現状仕様と同等）
+
+受入基準:
+以下の観点のテストを用意してから本機能の実装を行う。
+- 投稿一覧画面（posts/list.html）の各投稿にいいねトグルがあり、/posts/{id}/likes にリクエストし、画面はposts/list.htmlのままとすること
+- 詳細画面（posts/detail.html）で総いいね数と Like ボタン（いいねトグル）があり、があり、Like ボタンが/posts/{id}/likes にリクエストし、画面はposts/detail.htmlのままとすること
+- 同一 clientHashにいいね がされていない状態で押したら、当該clientHashが登録されること
+- 同一 clientHashにいいね がされている状態で押したら、当該clientHashが解除されること
+- /posts/{id}/likes のidが存在しない場合は、404を返すこと。
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+
+```
+
+**結果**: 効いた
+Red: src/test/java/com/example/tsubuyaki/controller/PostLikeFeatureTest.java の 1 テストを更新し、一覧からの Like
+  は /posts に戻る、詳細からの Like は /posts/{id} に戻る期待値で失敗確認しました。
+
+  Green/Refactor:
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java: returnTo パラメータで戻り先を list/detail
+    に分岐
+
+  - src/main/resources/templates/posts/list.html: Like フォームに returnTo=list を追加
+  - src/main/resources/templates/posts/detail.html: Like フォームに returnTo=detail を追加
+
+  検証:
+  ./mvnw -B -Ph2 test は Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 で成功。
+
+  コミット:
+  5ed1b90 feat(like): いいね後に押下元画面へ戻す
+
+
+**振り返り**:
+いいね機能の修正について完了した。
+ソースについても、当該箇所の修正、WEBアプリも動いていることが確認出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+
+
+## プロンプト 11
 
 **フェーズ**:
 
