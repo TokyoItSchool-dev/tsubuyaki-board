@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,8 +9,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.BDDMockito.given;
@@ -38,5 +42,34 @@ class PostControllerTest {
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", empty()))
                 .andExpect(content().string(containsString(">まだ投稿はありません<")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_表示時_更新ボタンはpostsスラッシュへGETリクエストする")
+    void 投稿一覧_表示時_更新ボタンはpostsスラッシュへGetリクエストする() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<form class=\"post-list__refresh\" method=\"get\" action=\"/posts/\">")))
+                .andExpect(content().string(containsString("<button type=\"submit\">更新</button>")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する")
+    void 投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する() throws Exception {
+        given(postService.latest()).willReturn(List.of(
+                new Post("suzuki", "表示順を確認します", Instant.parse("2026-06-26T01:00:00Z"))));
+
+        String html = mockMvc.perform(get("/posts/"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("suzuki", "表示順を確認します", "2026-06-26 10:00");
+        assertThat(html.indexOf("suzuki")).isLessThan(html.indexOf("表示順を確認します"));
+        assertThat(html.indexOf("表示順を確認します")).isLessThan(html.indexOf("2026-06-26 10:00"));
     }
 }
