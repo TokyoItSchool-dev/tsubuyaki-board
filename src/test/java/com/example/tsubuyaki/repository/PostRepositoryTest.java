@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +25,7 @@ class PostRepositoryTest {
     @Test
     @DisplayName("投稿一覧_51件以上の投稿_新着50件だけをcreated_at降順で返す")
     void 投稿一覧_51件以上の投稿_新着50件だけをCreatedAt降順で返す() {
-        Instant base = Instant.parse("2026-06-26T00:00:00Z");
+        LocalDateTime base = LocalDateTime.parse("2026-06-26T00:00:00");
         List<Post> posts = new ArrayList<>();
         for (int i = 1; i <= 51; i++) {
             posts.add(new Post("user-" + i, "body-" + i, base.plusSeconds(i)));

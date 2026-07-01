@@ -11,16 +11,21 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -37,8 +42,8 @@ class PostControllerTest {
     @DisplayName("投稿一覧_GET_posts_model_postsにListを積みposts_listビューを返す")
     void 投稿一覧_GETPosts_modelPostsにListを積みPostsListビューを返す() throws Exception {
         List<Post> latestPosts = List.of(
-                new Post("alice", "新しい投稿", Instant.parse("2026-06-26T10:00:00Z")),
-                new Post("bob", "古い投稿", Instant.parse("2026-06-26T09:00:00Z")));
+                new Post("alice", "新しい投稿", LocalDateTime.parse("2026-06-26T10:00:00")),
+                new Post("bob", "古い投稿", LocalDateTime.parse("2026-06-26T09:00:00")));
         given(postService.latest()).willReturn(latestPosts);
 
         mockMvc.perform(get("/posts"))
@@ -78,7 +83,7 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿カード_投稿者_内容_投稿日の順に表示する")
     void 投稿一覧_投稿カード_投稿者_内容_投稿日の順に表示する() throws Exception {
         given(postService.latest()).willReturn(List.of(
-                new Post("alice", "順序を確認する本文", Instant.parse("2026-06-26T10:00:00Z"))));
+                new Post("alice", "順序を確認する本文", LocalDateTime.parse("2026-06-26T10:00:00"))));
 
         MvcResult result = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -104,5 +109,172 @@ class PostControllerTest {
         PostForm postForm = (PostForm) postFormAttribute;
         assertThat(postForm.getAuthor()).isNull();
         assertThat(postForm.getBody()).isNull();
+    }
+
+    @Test
+    @DisplayName("投稿フォーム_初期表示_required属性を出力しない")
+    void 投稿フォーム_初期表示_required属性を出力しない() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).doesNotContain(" required", "required=");
+    }
+
+    @Test
+    @DisplayName("投稿登録_authorが空の場合_エラーとなりフォームを再表示する")
+    void 投稿登録_authorが空の場合_エラーとなりフォームを再表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "")
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名を入力してください")));
+    }
+
+    @Test
+    @DisplayName("投稿登録_authorが空白のみの場合_エラーとなる")
+    void 投稿登録_authorが空白のみの場合_エラーとなる() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "   ")
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名を入力してください")));
+
+        then(postService).should(never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_authorが全角空白のみの場合_エラーとなる")
+    void 投稿登録_authorが全角空白のみの場合_エラーとなる() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "　　")
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名を入力してください")));
+
+        then(postService).should(never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_authorが30文字の場合_エラーにならずリダイレクトする")
+    void 投稿登録_authorが30文字の場合_エラーにならずリダイレクトする() throws Exception {
+        String author = "a".repeat(30);
+
+        mockMvc.perform(post("/posts")
+                        .param("author", author)
+                        .param("body", "本文です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+    }
+
+    @Test
+    @DisplayName("投稿登録_authorが31文字の場合_エラーとなる")
+    void 投稿登録_authorが31文字の場合_エラーとなる() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "a".repeat(31))
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名は 30 文字以内で入力してください")));
+    }
+
+    @Test
+    @DisplayName("投稿登録_bodyが空の場合_エラーとなりフォームを再表示する")
+    void 投稿登録_bodyが空の場合_エラーとなりフォームを再表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文を入力してください")));
+    }
+
+    @Test
+    @DisplayName("投稿登録_bodyが空白のみの場合_エラーとなる")
+    void 投稿登録_bodyが空白のみの場合_エラーとなる() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文を入力してください")));
+
+        then(postService).should(never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_bodyが全角空白のみの場合_エラーとなる")
+    void 投稿登録_bodyが全角空白のみの場合_エラーとなる() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "　　"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文を入力してください")));
+
+        then(postService).should(never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_bodyが280文字の場合_エラーにならずリダイレクトする")
+    void 投稿登録_bodyが280文字の場合_エラーにならずリダイレクトする() throws Exception {
+        String body = "b".repeat(280);
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", body))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+    }
+
+    @Test
+    @DisplayName("投稿登録_bodyが281文字の場合_エラーとなる")
+    void 投稿登録_bodyが281文字の場合_エラーとなる() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "b".repeat(281)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文は 280 文字以内で入力してください")));
+    }
+
+    @Test
+    @DisplayName("投稿登録_正常な入力の場合_投稿を保存してpostsへリダイレクトする")
+    void 投稿登録_正常な入力の場合_投稿を保存してPostsへリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "今日の共有です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        then(postService).should().create("alice", "今日の共有です");
+    }
+
+    @Test
+    @DisplayName("投稿登録_バリデーションエラー時_入力値postFormを保持する")
+    void 投稿登録_バリデーションエラー時_入力値PostFormを保持する() throws Exception {
+        MvcResult result = mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeExists("postForm"))
+                .andReturn();
+
+        PostForm postForm = (PostForm) result.getModelAndView().getModel().get("postForm");
+        assertThat(postForm.getAuthor()).isEqualTo("alice");
+        assertThat(postForm.getBody()).isEmpty();
     }
 }
