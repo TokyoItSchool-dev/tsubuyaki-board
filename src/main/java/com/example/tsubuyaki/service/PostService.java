@@ -25,9 +25,11 @@ public class PostService {
     }
 
     public List<PostView> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc().stream()
-                .map(this::toView)
-                .toList();
+        return toViews(repository.findTop50ByOrderByCreatedAtDesc());
+    }
+
+    public List<PostView> searchByBody(String keyword) {
+        return toViews(repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword));
     }
 
     @Transactional
@@ -63,5 +65,11 @@ public class PostService {
                 post.getBody(),
                 post.getCreatedAt(),
                 likeRepository.countByPostId(post.getId()));
+    }
+
+    private List<PostView> toViews(List<Post> posts) {
+        return posts.stream()
+                .map(this::toView)
+                .toList();
     }
 }

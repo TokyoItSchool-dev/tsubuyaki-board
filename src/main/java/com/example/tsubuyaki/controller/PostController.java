@@ -34,8 +34,13 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+        String normalizedQuery = normalizeQuery(query);
+        boolean searched = !normalizedQuery.isEmpty();
+
+        model.addAttribute("posts", searched ? postService.searchByBody(normalizedQuery) : postService.latest());
+        model.addAttribute("query", normalizedQuery);
+        model.addAttribute("searched", searched);
         return "posts/list";
     }
 
@@ -77,6 +82,13 @@ public class PostController {
             return "redirect:/posts";
         }
         return "redirect:/posts/" + id;
+    }
+
+    private String normalizeQuery(String query) {
+        if (query == null) {
+            return "";
+        }
+        return query.trim();
     }
 
     private String clientHash(HttpServletRequest request) {

@@ -17,9 +17,15 @@
     <form class="post-list__refresh" method="get" th:action="@{/posts}">
         <button type="submit">更新</button>
     </form>
+    <form class="post-search" method="get" th:action="@{/posts}" data-empty-action="/posts"
+          onsubmit="if (this.q.value.trim() === '') { this.q.disabled = true; }">
+        <input class="post-search__input" type="search" name="q" th:value="${query}" placeholder="本文を検索">
+        <button class="post-search__button" type="submit">検索</button>
+    </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。</p>
+        <p th:if="${#lists.isEmpty(posts) and !searched}">まだ投稿はありません。</p>
+        <p th:if="${#lists.isEmpty(posts) and searched}">条件に一致する結果が見つかりませんでした。</p>
         <article class="post" th:each="post : ${posts}">
             <header>
                 <a class="post__author" th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.author}">投稿者</a>

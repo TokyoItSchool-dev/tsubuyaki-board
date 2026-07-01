@@ -66,4 +66,66 @@ class PostListFeatureTest {
         assertThat(html).contains("href=\"/posts/" + latestPostId + "\"");
         assertThat(html).containsSubsequence("user50", "body50", "2026-05-23 18:50");
     }
+
+    @Test
+    @DisplayName("投稿検索_GET_posts_q_検索フォームと空検索と0件表示と新着50件制限を満たす")
+    void 投稿検索_GET_posts_q_検索フォームと空検索と0件表示と新着50件制限を満たす() throws Exception {
+        postRepository.deleteAll();
+        LocalDateTime base = LocalDateTime.of(2026, 5, 24, 9, 0);
+        for (int i = 0; i < 51; i++) {
+            postRepository.save(new Post("match-user" + i, "検索対象 body" + i, base.plusMinutes(i)));
+        }
+        postRepository.save(new Post("other-user", "関係ない本文", base.plusHours(2)));
+        postRepository.flush();
+
+        String listHtml = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attributeExists("posts"))
+                .andExpect(model().attribute("query", ""))
+                .andExpect(content().string(containsString("class=\"post-search\"")))
+                .andExpect(content().string(containsString("action=\"/posts\"")))
+                .andExpect(content().string(containsString("method=\"get\"")))
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("検索")))
+                .andExpect(content().string(containsString("data-empty-action=\"/posts\"")))
+                .andExpect(content().string(containsString("this.q.disabled = true")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(listHtml).containsSubsequence(
+                "post-list__refresh",
+                "更新",
+                "post-search",
+                "name=\"q\"",
+                "検索",
+                "post");
+
+        mockMvc.perform(get("/posts").param("q", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("query", ""))
+                .andExpect(model().attribute("searched", false))
+                .andExpect(content().string(containsString("other-user")));
+
+        String searchHtml = mockMvc.perform(get("/posts").param("q", "検索対象"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attributeExists("posts"))
+                .andExpect(model().attribute("query", "検索対象"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(searchHtml).contains("match-user50", "body50", "2026-05-24 09:50");
+        assertThat(searchHtml).doesNotContain("match-user0", "body0", "other-user", "関係ない本文");
+        assertThat(searchHtml).containsSubsequence("match-user50", "match-user49", "match-user48");
+
+        mockMvc.perform(get("/posts").param("q", "該当なし"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("query", "該当なし"))
+                .andExpect(content().string(containsString("条件に一致する結果が見つかりませんでした。")));
+    }
 }
