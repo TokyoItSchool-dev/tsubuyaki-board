@@ -125,6 +125,13 @@ class PostControllerTest {
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"));
 
         mockMvc.perform(post("/posts")
+                        .param("author", "　　")
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"));
+
+        mockMvc.perform(post("/posts")
                         .param("author", "a".repeat(31))
                         .param("body", "本文です"))
                 .andExpect(status().isOk())
@@ -134,6 +141,13 @@ class PostControllerTest {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
                         .param("body", "あ".repeat(281)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "　　"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"));
