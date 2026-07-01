@@ -60,7 +60,7 @@ class PostControllerListTest {
     @DisplayName("投稿一覧_投稿は投稿者内容投稿日の順に表示する")
     void list_rendersAuthorBodyCreatedAtInOrder() throws Exception {
         given(postService.search(null)).willReturn(List.of(
-                new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"))
+                new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "red")
         ));
 
         String html = mockMvc.perform(get("/posts"))
@@ -70,6 +70,7 @@ class PostControllerListTest {
                 .getContentAsString();
 
         assertThat(html).contains("alice", "朝の共有です", "2026-05-23 19:00");
+        assertThat(html).contains("avatar--red");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("朝の共有です"));
         assertThat(html.indexOf("朝の共有です")).isLessThan(html.indexOf("2026-05-23 19:00"));
     }
@@ -78,7 +79,7 @@ class PostControllerListTest {
     @DisplayName("投稿検索_GET_posts_q指定_絞り込み結果をmodelに設定し入力値を保持する")
     void list_whenQueryProvided_setsFilteredPostsAndKeepsQuery() throws Exception {
         List<Post> posts = List.of(
-                new Post("alice", "検索対象の投稿", Instant.parse("2026-05-23T10:00:00Z"))
+                new Post("alice", "検索対象の投稿", Instant.parse("2026-05-23T10:00:00Z"), "green")
         );
         given(postService.search("検索対象")).willReturn(posts);
         given(postService.hasSearchQuery("検索対象")).willReturn(true);
@@ -91,7 +92,8 @@ class PostControllerListTest {
                 .andExpect(model().attribute("searched", true))
                 .andExpect(content().string(containsString("name=\"q\"")))
                 .andExpect(content().string(containsString("value=\"検索対象\"")))
-                .andExpect(content().string(containsString("検索対象の投稿")));
+                .andExpect(content().string(containsString("検索対象の投稿")))
+                .andExpect(content().string(containsString("avatar--green")));
     }
 
     @Test

@@ -70,6 +70,40 @@ h1 {
     font-weight: 600;
 }
 
+.post__author-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.avatar {
+    display: inline-block;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+}
+
+.avatar--red {
+    background: #ef4444;
+}
+
+.avatar--blue {
+    background: #3b82f6;
+}
+
+.avatar--green {
+    background: #22c55e;
+}
+
+.avatar--yellow {
+    background: #facc15;
+}
+
+.avatar--gray {
+    background: #9ca3af;
+}
+
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;

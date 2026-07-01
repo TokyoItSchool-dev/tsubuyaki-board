@@ -48,7 +48,7 @@ public class PostController {
         if (bindingResult.hasErrors()) {
             return "posts/form";
         }
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.avatarColorOrDefault());
         return "redirect:/posts";
     }
 

@@ -15,6 +15,8 @@ import java.util.Objects;
 @Table(name = "posts")
 public class Post {
 
+    public static final String DEFAULT_AVATAR_COLOR = "gray";
+
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "posts_seq_gen")
@@ -29,14 +31,22 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "avatar_color", length = 20, nullable = false)
+    private String avatarColor;
+
     protected Post() {
         // JPA
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, body, createdAt, DEFAULT_AVATAR_COLOR);
+    }
+
+    public Post(String author, String body, Instant createdAt, String avatarColor) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
+        this.avatarColor = normalizeAvatarColor(avatarColor);
     }
 
     public Long getId() {
@@ -53,6 +63,17 @@ public class Post {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    private static String normalizeAvatarColor(String avatarColor) {
+        if (avatarColor == null || avatarColor.isBlank()) {
+            return DEFAULT_AVATAR_COLOR;
+        }
+        return avatarColor;
     }
 
     @Override

@@ -123,6 +123,32 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿作成_create_アバター色を指定すると選択した色を保存する")
+    void create_whenAvatarColorSelected_savesSelectedColor() {
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        postService.create("alice", "朝の共有です", "blue");
+
+        verify(postRepository).save(argThat(post ->
+                "alice".equals(post.getAuthor())
+                        && "朝の共有です".equals(post.getBody())
+                        && "blue".equals(post.getAvatarColor())));
+    }
+
+    @Test
+    @DisplayName("投稿作成_create_アバター色未選択ならデフォルト色を保存する")
+    void create_whenAvatarColorNotSelected_savesDefaultColor() {
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        postService.create("alice", "朝の共有です", null);
+
+        verify(postRepository).save(argThat(post ->
+                "alice".equals(post.getAuthor())
+                        && "朝の共有です".equals(post.getBody())
+                        && "gray".equals(post.getAvatarColor())));
+    }
+
+    @Test
     @DisplayName("投稿詳細_findById_RepositoryからIDで投稿を取得して返す")
     void findById_returnsPostFromRepository() {
         Post expectedPost = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"));

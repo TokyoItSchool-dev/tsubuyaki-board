@@ -39,7 +39,7 @@ class PostControllerDetailTest {
     @Test
     @DisplayName("投稿詳細_存在するID_detail画面を表示し対象投稿を渡す")
     void detail_whenPostExists_returnsDetailViewWithPost() throws Exception {
-        Post post = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "blue");
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postService.countLikes(1L)).willReturn(3L);
 
@@ -49,6 +49,7 @@ class PostControllerDetailTest {
                 .andExpect(model().attribute("post", sameInstance(post)))
                 .andExpect(model().attribute("likeCount", 3L))
                 .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("avatar--blue")))
                 .andExpect(content().string(containsString("朝の共有です")))
                 .andExpect(content().string(containsString("2026-05-23 19:00")))
                 .andExpect(content().string(containsString("3 likes")))
