@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -39,6 +40,47 @@ class PostServiceTest {
 
         assertThat(actual).isSameAs(expected);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿詳細_IDを指定したとき_RepositoryのfindByIdを使う")
+    void findById_IDを指定したとき_RepositoryのfindByIdを使う() {
+        Optional<Post> expected = Optional.of(new Post(
+                "alice",
+                "詳細表示の本文です",
+                Instant.parse("2026-06-30T10:00:00Z")));
+        given(postRepository.findById(10L)).willReturn(expected);
+
+        Optional<Post> actual = postService.findById(10L);
+
+        assertThat(actual).isSameAs(expected);
+        verify(postRepository).findById(10L);
+    }
+
+    @Test
+    @DisplayName("いいね_未登録のとき_いいねを登録する")
+    void toggleLike_未登録のとき_いいねを登録する() {
+        postService.toggleLike(10L, "abc12345");
+
+        assertThat(postService.countLikes(10L)).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("いいね_登録済みのとき_いいねを削除する")
+    void toggleLike_登録済みのとき_いいねを削除する() {
+        postService.toggleLike(10L, "abc12345");
+        postService.toggleLike(10L, "abc12345");
+
+        assertThat(postService.countLikes(10L)).isZero();
+    }
+
+    @Test
+    @DisplayName("いいね_別ユーザーが押したとき_件数が増える")
+    void toggleLike_別ユーザーが押したとき_件数が増える() {
+        postService.toggleLike(10L, "abc12345");
+        postService.toggleLike(10L, "def67890");
+
+        assertThat(postService.countLikes(10L)).isEqualTo(2L);
     }
 
     @Test

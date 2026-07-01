@@ -1,15 +1,17 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
-import com.example.tsubuyaki.domain.PostLike;
-import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Transactional(readOnly = true)
@@ -17,11 +19,10 @@ public class PostService {
 
     private final PostRepository repository;
 
-    private final PostLikeRepository postLikeRepository;
+    private final Map<Long, Set<String>> likedClientHashesByPostId = new ConcurrentHashMap<>();
 
-    public PostService(PostRepository repository, PostLikeRepository postLikeRepository) {
+    public PostService(PostRepository repository) {
         this.repository = repository;
-        this.postLikeRepository = postLikeRepository;
     }
 
     public List<Post> findLatest50() {
@@ -33,15 +34,20 @@ public class PostService {
     }
 
     public long countLikes(Long postId) {
-        return postLikeRepository.countByPostId(postId);
+        return likedClientHashesByPostId.getOrDefault(postId, Collections.emptySet()).size();
     }
 
-    @Transactional
     public void toggleLike(Long postId, String clientHash) {
-        postLikeRepository.findByPostIdAndClientHash(postId, clientHash)
-                .ifPresentOrElse(
-                        postLikeRepository::delete,
-                        () -> postLikeRepository.save(new PostLike(postId, clientHash, Instant.now())));
+        likedClientHashesByPostId.compute(postId, (id, clientHashes) -> {
+            Set<String> updatedClientHashes = clientHashes;
+            if (updatedClientHashes == null) {
+                updatedClientHashes = ConcurrentHashMap.newKeySet();
+            }
+            if (!updatedClientHashes.add(clientHash)) {
+                updatedClientHashes.remove(clientHash);
+            }
+            return updatedClientHashes.isEmpty() ? null : updatedClientHashes;
+        });
     }
 
     @Transactional
