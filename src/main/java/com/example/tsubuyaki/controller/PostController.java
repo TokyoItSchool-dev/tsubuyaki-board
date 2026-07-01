@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -29,8 +30,10 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+        model.addAttribute("posts", postService.search(query));
+        model.addAttribute("q", query);
+        model.addAttribute("searched", postService.hasSearchQuery(query));
         return "posts/list";
     }
 

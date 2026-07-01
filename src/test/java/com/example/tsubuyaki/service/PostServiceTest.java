@@ -21,6 +21,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
@@ -47,6 +48,65 @@ class PostServiceTest {
 
         assertThat(posts).isSameAs(expectedPosts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_search_キーワード指定時はbody部分一致の新着50件を返す")
+    void search_whenKeywordProvided_returnsMatchedPostsFromRepository() {
+        List<Post> expectedPosts = List.of(
+                new Post("alice", "検索対象の新しい投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象")).willReturn(expectedPosts);
+
+        List<Post> posts = postService.search("検索対象");
+
+        assertThat(posts).isSameAs(expectedPosts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
+    }
+
+    @Test
+    @DisplayName("投稿検索_search_q未指定なら通常一覧と同じ結果を返す")
+    void search_whenQueryIsNull_returnsLatestPosts() {
+        List<Post> expectedPosts = List.of(
+                new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expectedPosts);
+
+        List<Post> posts = postService.search(null);
+
+        assertThat(posts).isSameAs(expectedPosts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verifyNoMoreInteractions(postRepository);
+    }
+
+    @Test
+    @DisplayName("投稿検索_search_q空文字なら通常一覧と同じ結果を返す")
+    void search_whenQueryIsEmpty_returnsLatestPosts() {
+        List<Post> expectedPosts = List.of(
+                new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expectedPosts);
+
+        List<Post> posts = postService.search("");
+
+        assertThat(posts).isSameAs(expectedPosts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verifyNoMoreInteractions(postRepository);
+    }
+
+    @Test
+    @DisplayName("投稿検索_search_q空白のみなら通常一覧と同じ結果を返す")
+    void search_whenQueryIsBlank_returnsLatestPosts() {
+        List<Post> expectedPosts = List.of(
+                new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expectedPosts);
+
+        List<Post> posts = postService.search("   ");
+
+        assertThat(posts).isSameAs(expectedPosts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verifyNoMoreInteractions(postRepository);
     }
 
     @Test

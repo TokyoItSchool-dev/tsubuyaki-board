@@ -27,6 +27,17 @@ public class PostService {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    public List<Post> search(String query) {
+        if (!hasSearchQuery(query)) {
+            return latest();
+        }
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(query);
+    }
+
+    public boolean hasSearchQuery(String query) {
+        return query != null && !query.isBlank();
+    }
+
     @Transactional
     public Post create(String author, String body) {
         return repository.save(new Post(author, body, Instant.now()));
