@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,5 +38,19 @@ class PostServiceTest {
 
         assertThat(latestPosts).isSameAs(repositoryResult);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("Service_create_投稿者と本文_作成日時を付けて保存する")
+    void create_投稿者と本文_作成日時を付けて保存する() {
+        given(postRepository.save(any(Post.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Post savedPost = postService.create("alice", "M3 の投稿");
+
+        assertThat(savedPost.getAuthor()).isEqualTo("alice");
+        assertThat(savedPost.getBody()).isEqualTo("M3 の投稿");
+        assertThat(savedPost.getCreatedAt()).isNotNull();
+        verify(postRepository).save(savedPost);
     }
 }
