@@ -16,6 +16,17 @@
     <article class="post">
         <div class="post__author" th:text="${post.author}">投稿者</div>
         <p class="post__body" th:text="${post.body}">本文</p>
+        <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+            <input th:if="${_csrf != null}"
+                   type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+            <button class="post__like-button" type="submit" aria-label="いいねする">
+                <span class="post__like-heart" aria-hidden="true">♥</span>
+                <span class="post__like-count" th:text="${likeCount}">0</span>
+                <span class="post__like-label">いいね</span>
+            </button>
+        </form>
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>

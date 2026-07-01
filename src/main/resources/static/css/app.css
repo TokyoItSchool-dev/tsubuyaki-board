@@ -72,3 +72,37 @@ h1 {
     gap: 1rem;
     margin-top: 0.75rem;
 }
+
+.post__like-form {
+    margin: 0.75rem 0 0.5rem;
+}
+
+.post__like-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.85rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 9999px;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1.3;
+}
+
+.post__like-button:hover {
+    border-color: #f9a8d4;
+}
+
+.post__like-heart {
+    color: #e11d48;
+}
+
+.post__like-count {
+    font-weight: 700;
+}
+
+.post__like-label {
+    font-weight: 400;
+}
