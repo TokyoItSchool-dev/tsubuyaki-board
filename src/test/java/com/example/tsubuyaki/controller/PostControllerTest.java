@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -66,13 +67,16 @@ class PostControllerTest {
     void 投稿詳細_存在するidのとき_投稿をビューに渡す() throws Exception {
         Post post = new Post("alice", "詳細表示する投稿", Instant.parse("2026-05-23T10:00:00Z"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(2L);
 
         mockMvc.perform(get("/posts/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
-                .andExpect(model().attribute("post", post));
+                .andExpect(model().attribute("post", post))
+                .andExpect(model().attribute("likeCount", 2L));
 
         verify(postService).findById(1L);
+        verify(postService).countLikes(1L);
     }
 
     @Test
@@ -84,6 +88,43 @@ class PostControllerTest {
                 .andExpect(status().isNotFound());
 
         verify(postService).findById(999L);
+        verify(postService, never()).countLikes(999L);
+    }
+
+    @Test
+    @DisplayName("いいね切替_存在する投稿のとき_clientHashを渡して詳細へリダイレクトする")
+    void いいね切替_存在する投稿のとき_clientHashを渡して詳細へリダイレクトする() throws Exception {
+        Post post = new Post("alice", "いいね対象", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(post("/posts/{id}/likes", 1L)
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit-Agent"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).findById(1L);
+        verify(postService).toggleLike(1L, "c68f6c0d");
+    }
+
+    @Test
+    @DisplayName("いいね切替_存在しない投稿のとき_404を返し更新しない")
+    void いいね切替_存在しない投稿のとき_404を返し更新しない() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(post("/posts/{id}/likes", 999L)
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit-Agent"))
+                .andExpect(status().isNotFound());
+
+        verify(postService).findById(999L);
+        verify(postService, never()).toggleLike(999L, "c68f6c0d");
     }
 
     @Test
