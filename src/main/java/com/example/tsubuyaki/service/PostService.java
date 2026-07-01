@@ -19,7 +19,10 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        // TODO: 演習で実装する (最新 50 件を新着順で返す)
-        return Collections.emptyList();
+        List<Post> posts = repository.findTop50ByOrderByCreatedAtDesc();
+        if (posts == null) {
+            return Collections.emptyList();
+        }
+        return posts;
     }
 }
