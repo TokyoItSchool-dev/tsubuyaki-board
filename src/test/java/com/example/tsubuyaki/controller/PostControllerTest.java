@@ -11,8 +11,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
+import java.util.HexFormat;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
@@ -120,11 +124,15 @@ class PostControllerTest {
     void 投稿詳細_存在するid_投稿をmodelに渡す() throws Exception {
         Post post = new Post("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(2L);
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post))
+                .andExpect(model().attribute("likeCount", 2L))
+                .andExpect(content().string(containsString("いいね 2")))
+                .andExpect(content().string(containsString("Like")))
                 .andExpect(content().string(containsString("M4 の詳細投稿")));
     }
 
@@ -135,5 +143,48 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Controller_いいねPOST_IPとUserAgentのclientHashでトグルする")
+    void いいねPOST_IPとUserAgentのclientHashでトグルする() throws Exception {
+        given(postService.toggleLike(1L, clientHash("127.0.0.1", "JUnit UA")))
+                .willReturn(Optional.of(true));
+
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).toggleLike(1L, clientHash("127.0.0.1", "JUnit UA"));
+    }
+
+    @Test
+    @DisplayName("Controller_いいねPOST_存在しないid_404を返す")
+    void いいねPOST_存在しないid_404を返す() throws Exception {
+        given(postService.toggleLike(999L, clientHash("127.0.0.1", "JUnit UA")))
+                .willReturn(Optional.empty());
+
+        mockMvc.perform(post("/posts/999/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isNotFound());
+    }
+
+    private static String clientHash(String ipAddress, String userAgent) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest((ipAddress + userAgent).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm is not available", e);
+        }
     }
 }
