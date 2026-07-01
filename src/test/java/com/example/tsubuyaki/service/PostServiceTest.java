@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -51,5 +52,17 @@ class PostServiceTest {
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("今日の学びを共有します");
         assertThat(savedPost.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿詳細_id指定_RepositoryのfindByIdを返す")
+    void 投稿詳細_id指定_RepositoryのfindByIdを返す() {
+        Post post = new Post("alice", "詳細で表示する本文", LocalDateTime.parse("2026-05-23T10:00:00"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+
+        Optional<Post> actual = postService.findPostById(1L);
+
+        assertThat(actual).contains(post);
+        then(postRepository).should().findById(1L);
     }
 }

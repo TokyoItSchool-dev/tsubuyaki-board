@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -154,5 +155,31 @@ class PostControllerTest {
                 Arguments.of("", "本文を入力してください"),
                 Arguments.of("   ", "本文を入力してください"),
                 Arguments.of("x".repeat(281), "本文は 280 文字以内で入力してください"));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_正常なid_該当投稿の詳細を表示する")
+    void 投稿詳細_正常なid_該当投稿の詳細を表示する() throws Exception {
+        Post post = new Post("alice", "詳細で表示する本文", LocalDateTime.parse("2026-05-23T10:00:00"));
+        given(postService.findPostById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("詳細で表示する本文")))
+                .andExpect(content().string(containsString("2026-05-23 10:00")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないid_404で存在しないページメッセージを表示する")
+    void 投稿詳細_存在しないid_404で存在しないページメッセージを表示する() throws Exception {
+        given(postService.findPostById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error/404"))
+                .andExpect(content().string(containsString("お探しのページは存在しません")));
     }
 }
