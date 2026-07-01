@@ -12,6 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -30,8 +31,9 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model) {
-        model.addAttribute("posts", latestPosts());
+    public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+        model.addAttribute("posts", postsFor(query));
+        model.addAttribute("q", nullToEmpty(query).trim());
         return "posts/list";
     }
 
@@ -72,6 +74,19 @@ public class PostController {
 
     private List<Post> latestPosts() {
         List<Post> posts = postService.findLatest50Posts();
+        if (posts == null) {
+            return List.of();
+        }
+        return posts;
+    }
+
+    private List<Post> postsFor(String query) {
+        String normalizedQuery = nullToEmpty(query).trim();
+        if (normalizedQuery.isEmpty()) {
+            return latestPosts();
+        }
+
+        List<Post> posts = postService.searchPosts(normalizedQuery);
         if (posts == null) {
             return List.of();
         }

@@ -74,6 +74,32 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_検索語を受け取ったとき_Repositoryの本文部分一致結果を返す")
+    void 投稿検索_検索語を受け取ったとき_Repositoryの本文部分一致結果を返す() {
+        postService = new PostService(postRepository, postLikeRepository);
+        List<Post> searchResults = List.of(
+                new Post("alice", "リモート勤務のお知らせ", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("リモート")).willReturn(searchResults);
+
+        List<Post> actual = postService.searchPosts(" リモート ");
+
+        assertThat(actual).isEqualTo(searchResults);
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索語が空白のとき_最新50件を返す")
+    void 投稿検索_検索語が空白のとき_最新50件を返す() {
+        postService = new PostService(postRepository, postLikeRepository);
+        List<Post> latestPosts = List.of(
+                new Post("alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(latestPosts);
+
+        List<Post> actual = postService.searchPosts("   ");
+
+        assertThat(actual).isEqualTo(latestPosts);
+    }
+
+    @Test
     @DisplayName("投稿詳細_投稿が削除されていないとき_Repositoryの投稿を返す")
     void 投稿詳細_投稿が削除されていないとき_Repositoryの投稿を返す() {
         postService = new PostService(postRepository, postLikeRepository);

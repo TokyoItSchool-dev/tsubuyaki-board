@@ -93,15 +93,52 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿一覧_表示したとき_postsへ再取得する更新ボタンを表示する")
-    void 投稿一覧_表示したとき_postsへ再取得する更新ボタンを表示する() throws Exception {
+    @DisplayName("投稿一覧_表示したとき_postsへGET送信する検索フォームを表示する")
+    void 投稿一覧_表示したとき_postsへGET送信する検索フォームを表示する() throws Exception {
         given(postService.findLatest50Posts()).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("action=\"/posts\"")))
                 .andExpect(content().string(containsString("method=\"get\"")))
-                .andExpect(content().string(containsString("<button type=\"submit\">更新</button>")));
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("<button type=\"submit\">検索</button>")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_GET_posts_q指定_Serviceで本文検索し検索語をビューに保持する")
+    void 投稿検索_GET_posts_q指定_Serviceで本文検索し検索語をビューに保持する() throws Exception {
+        List<Post> searchResults = List.of(
+                new Post("alice", "リモート勤務のお知らせ", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postService.searchPosts("リモート")).willReturn(searchResults);
+
+        mockMvc.perform(get("/posts").param("q", "リモート"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", searchResults))
+                .andExpect(model().attribute("q", "リモート"))
+                .andExpect(content().string(containsString("リモート勤務のお知らせ")))
+                .andExpect(content().string(containsString("value=\"リモート\"")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_表示したとき_検索ボックスはpostsへGET送信でき一覧上部に表示される")
+    void 投稿検索_表示したとき_検索ボックスはpostsへGET送信でき一覧上部に表示される() throws Exception {
+        given(postService.findLatest50Posts()).willReturn(List.of());
+
+        String html = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"toolbar toolbar--search\"")))
+                .andExpect(content().string(containsString("action=\"/posts\"")))
+                .andExpect(content().string(containsString("method=\"get\"")))
+                .andExpect(content().string(containsString("type=\"search\"")))
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("<button type=\"submit\">検索</button>")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html.indexOf("class=\"toolbar toolbar--search\"")).isLessThan(html.indexOf("<section>"));
     }
 
     @Test

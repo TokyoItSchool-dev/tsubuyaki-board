@@ -45,6 +45,19 @@ public class PostService {
         return posts;
     }
 
+    public List<Post> searchPosts(String keyword) {
+        String normalizedKeyword = normalizeKeyword(keyword);
+        if (normalizedKeyword.isEmpty()) {
+            return findLatest50Posts();
+        }
+
+        List<Post> posts = repository.findTop50ByBodyContainingOrderByCreatedAtDesc(normalizedKeyword);
+        if (posts == null) {
+            return List.of();
+        }
+        return posts;
+    }
+
     public Optional<Post> findDetailPost(Long id) {
         return repository.findByIdAndDeletedAtIsNull(id);
     }
@@ -73,5 +86,12 @@ public class PostService {
     @Transactional
     public void createPost(String author, String body) {
         repository.save(new Post(author, body, Instant.now(clock)));
+    }
+
+    private static String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return "";
+        }
+        return keyword.trim();
     }
 }

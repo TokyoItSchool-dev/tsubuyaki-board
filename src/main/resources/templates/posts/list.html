@@ -14,8 +14,16 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
-    <form class="toolbar" th:action="@{/posts}" method="get">
-        <button type="submit">更新</button>
+    <form class="toolbar toolbar--search" th:action="@{/posts}" method="get">
+        <label class="toolbar__label" for="post-search">本文検索</label>
+        <input id="post-search"
+               class="toolbar__query"
+               type="search"
+               name="q"
+               th:value="${q}"
+               maxlength="280">
+        <button type="submit">検索</button>
+        <a th:href="@{/posts}">クリア</a>
     </form>
 
     <section>

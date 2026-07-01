@@ -61,6 +61,20 @@ class PostRepositoryTest {
     }
 
     @Test
+    @DisplayName("投稿検索_本文の一部を指定したとき_LIKEで曖昧検索し新着順で返す")
+    void 投稿検索_本文の一部を指定したとき_LIKEで曖昧検索し新着順で返す() {
+        postRepository.saveAll(List.of(
+                new Post("alice", "明日はリモート勤務です", Instant.parse("2026-05-23T10:00:00Z")),
+                new Post("bob", "リモート会議の資料を共有します", Instant.parse("2026-05-23T11:00:00Z")),
+                new Post("carol", "出社イベントのお知らせ", Instant.parse("2026-05-23T12:00:00Z"))));
+
+        List<Post> actual = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("リモート");
+
+        assertThat(actual).extracting(Post::getBody)
+                .containsExactly("リモート会議の資料を共有します", "明日はリモート勤務です");
+    }
+
+    @Test
     @DisplayName("投稿詳細_投稿が削除されているとき_空を返す")
     void 投稿詳細_投稿が削除されているとき_空を返す() {
         Post post = postRepository.save(new Post(
