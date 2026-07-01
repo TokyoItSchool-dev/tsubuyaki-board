@@ -58,34 +58,90 @@ CI検証は成功しているが、実際に画面表示の確認はできてい
 
 ## プロンプト 2
 
-**フェーズ**:
+**フェーズ**:M4: 投稿詳細 GET /posts/{id} 用スクリプト
 
 **プロンプト本文**:
 
 ```
+Spring Boot（Java）で、投稿詳細表示機能を実装してください。
 
+制約:
+- GET /posts/{id} をハンドリングするコントローラメソッドを作成すること
+- ビュー posts/detail.html を返すこと
+- 指定された id の Post が存在しない場合は 404 を返すこと
+- 追加の機能（編集リンク、コメント表示など）は実装しないこと
+
+テスト:
+- 正常系: 存在する id を指定したとき、200 が返り、model に該当 Post が設定されること
+- 異常系: 存在しない id を指定したとき、404 が返ること
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**:  部分的に効いた 
+• 実装しました。
+
+  差分
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java:31: GET /posts/{id} を追加し、存在しない場合は
+    404 を返すようにしました。
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java:26: findById を追加しました。
+  - src/main/resources/templates/posts/detail.html:1: posts/detail.html を追加しました。追加機能は入れず、投稿者・本文・
+    投稿日時のみ表示します。
+
+  - src/test/java/com/example/tsubuyaki/controller/PostControllerTest.java:93: 正常系と 404 系の Controller テストを追加
+    しました。
+
+  検証
+
+  - ./mvnw -B -Ph2 -Dtest=PostControllerTest test 成功
+  - ./mvnw -B -Ph2 verify 成功
+
+  補足: 作業前から作業対象外の未コミット変更が複数ありました。今回の変更対象には触れていません。
 
 **振り返り**:
-
+実装後起動時に「Whitelabel Error Page」が出てしまった。
+AIへの命令時に created_at が Oracle 側ではタイムゾーンなし日時として扱われる一方、Java 側が Instant でタイムゾーン前提の型になっている点を考慮できていなかったことが原因
+エラー修正をAIに投げた後正常に動くこと確認済み
 ---
 
 ## プロンプト 3
 
-**フェーズ**:
+**フェーズ**:M5: ヘルスチェック確認用スクリプト
 
 **プロンプト本文**:
 
 ```
+Spring Boot Actuator のヘルスチェックが壊れていないことを確認するためのテストを作成してください。
 
+制約:
+- 既に /actuator/health が有効になっている前提で、追加の設定は行わないこと
+- WebTestClient または MockMvc を用いて /actuator/health に GET し、
+  ステータス 200 と、レスポンス JSON に "status": "UP" が含まれることを確認するテストを作成すること
+- Actuator の他のエンドポイントは触らないこと
+
+テスト:
+- /actuator/health が 200 かつ status=UP を返すことを確認する単一テスト
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた 
 
+• Actuator のヘルスチェック確認テストを追加しました。
+
+  追加ファイル:
+
+  - src/test/java/com/example/tsubuyaki/ActuatorHealthTest.java:15
+
+  内容は MockMvc で GET /actuator/health を実行し、200 OK と JSON の $.status == "UP" だけを確認する単一テストです。追加
+  設定や他の Actuator エンドポイント変更はしていません。
+
+  検証:
+
+  - ./mvnw -B -Ph2 -Dtest=ActuatorHealthTest test 成功
+  - ./mvnw -B -Ph2 verify 成功
+
+  作業前からある setup 系スクリプトの未コミット変更には触れていません。
 **振り返り**:
-
+テストケースも問題なく起動できておりJSONテストも「$.status == "UP"」が出ること確認済み
 ---
 
 ## プロンプト 4 以降
