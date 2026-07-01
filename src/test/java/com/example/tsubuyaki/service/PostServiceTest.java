@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -36,6 +37,18 @@ class PostServiceTest {
 
         assertThat(actual).isSameAs(expected);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("Service_投稿詳細_Repositoryからidで取得する")
+    void findById_returnsPostFromRepository() {
+        Post expected = new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(expected));
+
+        Optional<Post> actual = postService.findById(1L);
+
+        assertThat(actual).containsSame(expected);
+        verify(postRepository).findById(1L);
     }
 
     @Test

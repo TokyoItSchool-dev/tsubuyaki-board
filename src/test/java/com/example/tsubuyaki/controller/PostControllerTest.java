@@ -105,6 +105,39 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿セル_クリックすると詳細画面へ遷移するリンクになっている")
+    void list_postCellLinksToDetail() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/" + saved.getId() + "\"")))
+                .andExpect(content().string(containsString("class=\"post post--link\"")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するid_posts_detailビューに投稿を表示する")
+    void detail_whenFound_rendersDetailView() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        mockMvc.perform(get("/posts/{id}", saved.getId()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attributeExists("post"))
+                .andExpect(content().string(containsString("<title>投稿詳細 - 社内つぶやきボード</title>")))
+                .andExpect(content().string(containsString("一覧に戻る")))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("hello")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないid_404を返す")
+    void detail_whenNotFound_returns404() throws Exception {
+        mockMvc.perform(get("/posts/{id}", 999999L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @DisplayName("新規投稿フォーム_GET_posts_newはpostFormを積んでフォームビューを返す")
     void newForm_addsPostFormAndRendersFormView() throws Exception {
         mockMvc.perform(get("/posts/new"))
