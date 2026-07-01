@@ -5,7 +5,10 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -13,11 +16,32 @@ public class PostService {
 
     private final PostRepository repository;
 
-    public PostService(PostRepository repository) {
+    private final Clock clock;
+
+    public PostService(PostRepository repository, Clock clock) {
         this.repository = repository;
+        this.clock = clock;
     }
 
     public List<Post> latest() {
         return repository.findTop50ByOrderByCreatedAtDesc();
+    }
+
+    public List<Post> search(String keyword) {
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword);
+    }
+
+    public Optional<Post> findById(Long id) {
+        return repository.findById(id);
+    }
+
+    @Transactional
+    public Post create(String author, String body) {
+        return create(author, body, null);
+    }
+
+    @Transactional
+    public Post create(String author, String body, String avatarColor) {
+        return repository.save(new Post(author, body, Instant.now(clock), avatarColor));
     }
 }

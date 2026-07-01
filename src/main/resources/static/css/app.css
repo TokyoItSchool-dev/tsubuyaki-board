@@ -58,6 +58,70 @@ h1 {
     margin: 0 0 0.5rem;
 }
 
+.post__avatar-color {
+    display: inline-block;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.post__avatar {
+    position: relative;
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.post__avatar-head {
+    position: absolute;
+    top: 0.35rem;
+    left: 50%;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+    background: white;
+    transform: translateX(-50%);
+}
+
+.post__avatar-body {
+    position: absolute;
+    bottom: 0.3rem;
+    left: 50%;
+    width: 1.2rem;
+    height: 0.7rem;
+    border-radius: 999px 999px 0.25rem 0.25rem;
+    background: white;
+    transform: translateX(-50%);
+}
+
+.avatar-color--red {
+    background: #dc2626;
+}
+
+.avatar-color--blue {
+    background: #2563eb;
+}
+
+.avatar-color--green {
+    background: #16a34a;
+}
+
+.avatar-color--pink {
+    background: #db2777;
+}
+
+.avatar-color--orange {
+    background: #ea580c;
+}
+
+.avatar-color--gray {
+    background: #6b7280;
+}
+
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;
