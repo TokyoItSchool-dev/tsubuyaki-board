@@ -29,6 +29,13 @@ public class PostService {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    public List<Post> list(String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return latest();
+        }
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(q);
+    }
+
     public Optional<Post> findById(Long id) {
         return repository.findById(id);
     }
