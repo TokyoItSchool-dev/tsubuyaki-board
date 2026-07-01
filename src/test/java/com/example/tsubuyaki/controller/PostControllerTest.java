@@ -69,6 +69,28 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_qあり_検索結果をposts_listへ渡す")
+    void 投稿一覧_qあり_検索結果をpostsListへ渡す() throws Exception {
+        Post post = new Post("alice", "hello world", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.list("hello")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", "hello"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_qあり_qをmodelに保持する")
+    void 投稿一覧_qあり_qをmodelに保持する() throws Exception {
+        given(postService.list("hello")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts").param("q", "hello"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("q", "hello"));
+    }
+
+    @Test
     @DisplayName("投稿一覧_更新ボタン_押すとpostsスラッシュへGETリクエストする")
     void 投稿一覧_更新ボタン_押すとpostsスラッシュへGetリクエストする() throws Exception {
         given(postService.latest()).willReturn(Collections.emptyList());
@@ -77,6 +99,29 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("<form class=\"refresh-form\" action=\"/posts/\" method=\"get\">")))
                 .andExpect(content().string(containsString("<button type=\"submit\">更新</button>")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索フォーム_GET_postsへqを送信できる")
+    void 投稿一覧_検索フォーム_GetPostsへqを送信できる() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<form class=\"search-form\" action=\"/posts\" method=\"get\">\\s*"
+                        + "<input[^>]+type=\"search\"[^>]+name=\"q\"[^>]*>\\s*"
+                        + "<button type=\"submit\">検索</button>\\s*</form>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索後_入力欄にqを保持する")
+    void 投稿一覧_検索後_入力欄にqを保持する() throws Exception {
+        given(postService.list("hello")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts").param("q", "hello"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<input[^>]+type=\"search\"[^>]+name=\"q\""
+                        + "[^>]+value=\"hello\"[^>]*>.*")));
     }
 
     @Test

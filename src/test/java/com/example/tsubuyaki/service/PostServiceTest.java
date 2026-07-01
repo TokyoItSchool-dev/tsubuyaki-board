@@ -51,6 +51,32 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_qあり_本文検索Repositoryを呼び結果を返す")
+    void 投稿検索_qあり_本文検索Repositoryを呼び結果を返す() {
+        List<Post> expected = List.of(new Post("alice", "hello world", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("hello")).willReturn(expected);
+
+        List<Post> posts = postService.list("hello");
+
+        assertThat(posts).isEqualTo(expected);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("hello");
+        verify(postRepository, never()).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_q空白_latestを返す")
+    void 投稿検索_q空白_latestを返す() {
+        List<Post> expected = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expected);
+
+        List<Post> posts = postService.list("   ");
+
+        assertThat(posts).isEqualTo(expected);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository, never()).findTop50ByBodyContainingOrderByCreatedAtDesc("   ");
+    }
+
+    @Test
     @DisplayName("投稿詳細_findById_Repositoryの検索結果を返す")
     void 投稿詳細_findById_Repositoryの検索結果を返す() {
         Post expected = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
