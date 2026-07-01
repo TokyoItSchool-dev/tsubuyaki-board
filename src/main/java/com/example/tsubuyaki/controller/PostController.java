@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -29,8 +30,15 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model) {
+    public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+        String keyword = normalizeQuery(query);
+        if (hasText(keyword)) {
+            model.addAttribute("posts", postService.searchByBodyContaining(keyword));
+            model.addAttribute("q", keyword);
+            return "posts/list";
+        }
         model.addAttribute("posts", postService.findLatest50());
+        model.addAttribute("q", "");
         return "posts/list";
     }
 
@@ -85,5 +93,13 @@ public class PostController {
 
     private static String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private static String normalizeQuery(String query) {
+        return query == null ? "" : query.trim();
     }
 }

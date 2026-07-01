@@ -122,6 +122,40 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿検索_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す")
+    void list_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す() throws Exception {
+        List<Post> posts = List.of(post("alice", "検索対象の共有です", BASE_TIME.plusSeconds(1)));
+        given(postService.searchByBodyContaining("共有")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", "共有"))
+                .andExpect(content().string(containsString("検索対象の共有です")))
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("value=\"共有\"")));
+
+        verify(postService).searchByBodyContaining("共有");
+    }
+
+    @Test
+    @DisplayName("投稿検索_qに前後空白があるとき_trimした本文検索結果を一覧ビューに渡す")
+    void list_qに前後空白があるとき_trimした本文検索結果を一覧ビューに渡す() throws Exception {
+        List<Post> posts = List.of(post("alice", "検索対象の共有です", BASE_TIME.plusSeconds(1)));
+        given(postService.searchByBodyContaining("共有")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", " 共有 "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", "共有"))
+                .andExpect(content().string(containsString("value=\"共有\"")));
+
+        verify(postService).searchByBodyContaining("共有");
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在するIDのとき_投稿を表示する")
     void detail_存在するIDのとき_投稿を表示する() throws Exception {
         Post post = post("alice", "詳細表示の本文です", Instant.parse("2026-06-30T01:15:00Z"));

@@ -40,4 +40,18 @@ class PostRepositoryTest {
         assertThat(posts.get(49).getBody()).isEqualTo("body2");
         assertThat(posts).extracting(Post::getBody).doesNotContain("body1");
     }
+
+    @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿だけを新着順で返す")
+    void searchByBody_本文にキーワードを含む投稿だけを新着順で返す() {
+        Instant base = Instant.parse("2026-06-30T00:00:00Z");
+        postRepository.save(new Post("alice", "検索対象の共有です", base.plusSeconds(1)));
+        postRepository.save(new Post("bob", "検索対象の新しい共有です", base.plusSeconds(2)));
+        postRepository.save(new Post("carol", "雑談だけの投稿です", base.plusSeconds(3)));
+
+        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("共有");
+
+        assertThat(posts).extracting(Post::getBody)
+                .containsExactly("検索対象の新しい共有です", "検索対象の共有です");
+    }
 }
