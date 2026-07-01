@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -62,6 +63,20 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("href=\"/posts/1\"")))
                 .andExpect(content().string(containsString("詳細")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿者名の色があるとき_先頭文字アバターではなく投稿者名へ色を付ける")
+    void list_投稿者名の色があるとき_投稿者名へ色を付ける() throws Exception {
+        Post post = new Post("watanabe", "hello", "green", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("style=\"color: green\"")))
+                .andExpect(content().string(containsString(">watanabe</span>")))
+                .andExpect(content().string(not(containsString("post__avatar"))));
     }
 
     @Test

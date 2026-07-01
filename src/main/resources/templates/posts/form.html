@@ -20,7 +20,7 @@
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
         <div>
-            <label for="avatarColor">アバター色</label>
+            <label for="avatarColor">投稿者名の色</label>
             <select id="avatarColor" th:field="*{avatarColor}">
                 <option value="blue">青</option>
                 <option value="green">緑</option>
