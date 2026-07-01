@@ -356,11 +356,237 @@ commit f8057d5e1b4b3e6fff046d209e748be64abe3a8f
 
 ## プロンプト 7
 
+**フェーズ**:M4: 投稿詳細
+
+**プロンプト本文**:
+
+```
+投稿詳細機能（GET /posts/{id} ）を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+- posts/detail.html を表示する
+- 存在しない id が指定された場合は 404を返す
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- /posts/{id} にリクエストした際に、返されるビュー名がposts/detailであること
+- /posts/{id} のidが存在する場合は、posts/detail.html を表示し、当該データが表示されること
+- /posts/{id} のidが存在しない場合は、404を返すこと。
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 効いた
+変更ファイル
+
+  - src/test/java/com/example/tsubuyaki/controller/PostDetailFeatureTest.java
+      - 存在する ID は posts/detail を返し、投稿内容を表示
+      - 存在しない ID は 404 を返すことを確認
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java
+      - GET /posts/{id} を追加
+      - 未存在時は ResponseStatusException(NOT_FOUND) で 404
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java
+      - findById を追加
+
+  - src/main/resources/templates/posts/detail.html
+      - th:text で投稿者・本文・作成日時を表示
+
+  確認
+
+  - Red: Status expected:<200> but was:<404> で失敗確認
+  - Green: 最小実装後、詳細テスト成功
+  - 全体テスト: ./mvnw -B -Ph2 test 成功
+      - Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット
+
+  - 8113c3a feat(post): 投稿詳細を実装
+
+
+**振り返り**:
+投稿詳細機能は追加出来た。
+ソースについて確認したが、問題なく実装が出来ている。
+また、「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+
+
+## プロンプト 7
+
+**フェーズ**:M5: ヘルスチェック
+背景：WEB画面を動かそうとした際に、/postsが500エラーで返ってくることがあった
+LogをCodexと確認したところ、Java側の日時型がOlacle側とあっていないことが原因である、という結論となり
+修正を実施することとなった
+
+
+**プロンプト本文**:
+
+```
+Oracle 実行時に一覧表示で発生する ORA-18716 を TDD で修正してください。
+
+  背景:
+  - `/posts` にアクセスすると以下のエラーが発生する
+    `ORA-18716: {0}はどのタイム・ゾーンでもありません。DATE`
+  - スタックトレース上は `PostRepository.findTop50ByOrderByCreatedAtDesc`
+    → `PostService.latest`
+    → `PostController.list` で発生している
+  - `Post.createdAt` は現在 `Instant`
+  - DB の `posts.created_at` は `TIMESTAMP(6)`
+  - Hibernate / Oracle JDBC が `Instant` を `OffsetDateTime` として取り出そうとして失敗している可能性が高い
+
+  修正方針:
+  - `created_at TIMESTAMP(6)` に合わせて、Java 側の `createdAt` を `Instant` から `LocalDateTime` に変更する
+  - `PostService#create` は `Instant.now()` ではなく `LocalDateTime.now()` を使う
+  - 既存テスト内の `Instant.parse(...)` は `LocalDateTime.of(...)` などに置き換える
+  - Thymeleaf の日時表示は既存の `#temporals.format(...)` を維持する
+
+  順序:
+  1. まず、この不具合を再現または防止する失敗テストを 1 本だけ書く (Red)。
+     - H2 では Oracle JDBC の ORA-18716 自体は再現できない可能性があるため、
+       `Post.createdAt` が `LocalDateTime` として扱われること、または一覧取得・詳細表示で `LocalDateTime` の投稿を
+       表示できることを検証するテストにする。
+  2. その失敗テストを通す最小実装を書く (Green)。
+  3. 既存テストを `Instant` 依存から `LocalDateTime` 依存へ修正する。
+  4. 重複・命名・抽象度の観点でリファクタリングする (Refactor)。
+  5. `./mvnw -B -Ph2 test` で全テストが緑であることを確認する。
+  6. 可能なら `./mvnw -B -Ph2 verify` も実行する。
+  7. Conventional Commits でコミットする。
+     - 例: `fix(post): Oracleで投稿日時を読み出せない問題を修正`
+
+  受入基準:
+  - `Post.createdAt` が `LocalDateTime` である
+  - `posts.created_at TIMESTAMP(6)` との対応で Oracle JDBC の `ORA-18716` を避ける設計になっている
+  - `/posts` の一覧表示テストが通る
+  - `/posts/{id}` の詳細表示テストが通る
+  - 投稿登録時に `created_at` が保存される
+  - `./mvnw -B -Ph2 test` が成功する
+
+  制約:
+  - AGENTS.md と `.codex/instructions.md` を参照すること
+  - TDD: RED → GREEN → REFACTOR の順を守ること
+  - テストを書かずに本体コードを書き始めないこと
+  - 失敗テストに `@Disabled` を貼ることは禁止
+  - スコープ外のファイルは触らないこと
+  - `th:utext` は使わず、既存どおり `th:text` を使うこと
+  - 完了後に変更ファイルとテスト結果を要約して報告すること
+```
+
+**結果**: 効いた
+  変更内容
+
+  - src/main/java/com/example/tsubuyaki/domain/Post.java
+      - createdAt を Instant から LocalDateTime に変更
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java
+      - 投稿登録時の日時を LocalDateTime.now() に変更
+
+  - src/test/java/com/example/tsubuyaki/domain/PostCreatedAtTypeTest.java
+      - createdAt が LocalDateTime として扱われることを防止テスト化
+
+  - 既存テスト 3 本
+      - Instant.parse(...) を LocalDateTime.of(...) に置き換え
+
+  確認
+
+  - Red: expected: java.time.LocalDateTime but was: java.time.Instant で失敗確認
+  - Green: 型変更後、追加テスト成功
+  - ./mvnw -B -Ph2 test 成功
+      - Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+
+  - ./mvnw -B -Ph2 verify は最初 JaCoCo の生成物不整合で失敗
+  - ./mvnw -B -Ph2 clean verify 成功
+      - Checkstyle 0 件
+      - SpotBugs 0 件
+      - JaCoCo check 成功
+
+  コミット
+
+  - ab496f7 fix(post): Oracleで投稿日時を読み出せない問題を修正
+
+
+**振り返り**:
+本エラーについて、修正されていることを確認
+ソースについても、当該箇所が修正され、WEBアプリも動いていることが確認出来た。
+M4: 投稿詳細の表示方法がないため、プロンプト8にて追加する
+
+
+## プロンプト 8
+
+**フェーズ**:M4: 投稿詳細：投稿一覧からの表示
+
+**プロンプト本文**:
+
+```
+投稿一覧機能の修正を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+修正内容:
+-  投稿一覧画面（posts/list.html）の投稿一覧内タイトル（author）をクリックすることで当該の投稿詳細に遷移する
+
+受入基準:
+-  投稿一覧内のタイトルにリンクがあり、押すとposts/{id} にリクエストすること
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 効いた
+
+変更ファイル
+
+  - src/test/java/com/example/tsubuyaki/controller/PostListFeatureTest.java
+      - 一覧 HTML に href="/posts/{id}" が含まれることを追加検証
+
+  - src/main/resources/templates/posts/list.html
+      - 投稿者名を span から詳細リンク付きの a に変更
+      - 表示は引き続き th:text を使用
+
+  確認
+
+  - Red: href="/posts/{id}" が見つからず失敗
+  - Green: テンプレート修正後、一覧テスト成功
+  - 全体テスト: ./mvnw -B -Ph2 test 成功
+      - Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット
+
+  - 58cf64e feat(post): 投稿一覧から詳細へ遷移できるようにする
+
+**振り返り**:
+
+本内容について、修正されていることを確認
+ソースについても、当該箇所が修正され、WEBアプリも動いていることが確認出来た。
+
+
+## プロンプト 9
+
 **フェーズ**:
 
 **プロンプト本文**:
 
 ```
+
 ```
 
 **結果**: 効いた / 部分的に効いた / 効かなかった
