@@ -5,6 +5,7 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,5 +37,19 @@ class PostServiceTest {
 
         assertThat(posts).isSameAs(expectedPosts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿登録_有効な値のとき_Postを保存する")
+    void 投稿登録_有効な値のとき_Postを保存する() {
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+
+        postService.create("alice", "こんにちは");
+
+        verify(postRepository).save(postCaptor.capture());
+        Post savedPost = postCaptor.getValue();
+        assertThat(savedPost.getAuthor()).isEqualTo("alice");
+        assertThat(savedPost.getBody()).isEqualTo("こんにちは");
+        assertThat(savedPost.getCreatedAt()).isNotNull();
     }
 }
