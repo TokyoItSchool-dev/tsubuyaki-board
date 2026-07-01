@@ -15,22 +15,26 @@ import java.util.Objects;
 @Table(name = "posts")
 public class Post {
 
+    // Oracle/H2 の posts_seq シーケンスを使って投稿IDを採番する。
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "posts_seq_gen")
     private Long id;
 
+    // 投稿者名を保存する。DB側でも NOT NULL と30文字制限を持つ。
     @Column(name = "author", length = 30, nullable = false)
     private String author;
 
+    // 投稿本文を保存する。DB側でも NOT NULL と280文字制限を持つ。
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
+    // 投稿作成日時をUTC基準の Instant として保存する。
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected Post() {
-        // JPA
+        // JPA がエンティティを復元するための引数なしコンストラクタ。
     }
 
     public Post(String author, String body, Instant createdAt) {

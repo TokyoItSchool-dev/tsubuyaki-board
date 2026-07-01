@@ -9,21 +9,31 @@
 <body>
 <main>
     <h1>社内つぶやきボード</h1>
+    <!-- 一覧表示と新規投稿画面を移動するためのナビゲーション。 -->
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <!-- 現在の一覧画面を GET /posts/ で再読み込みする。 -->
+    <form class="toolbar" th:action="@{/posts/}" method="get">
+        <button type="submit">更新</button>
+    </form>
 
+    <!-- Controller が model に積んだ posts を表示する。 -->
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <!-- 投稿が0件の場合だけ空メッセージを表示する。 -->
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <!-- 投稿ごとに投稿者、本文、作成日時を表示する。 -->
         <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
+            <!-- th:text でエスケープ表示し、投稿者名のXSSを防ぐ。 -->
+            <p class="post__author" th:text="${post.author}">投稿者</p>
+            <!-- th:text でエスケープ表示し、本文のXSSを防ぐ。 -->
             <p class="post__body" th:text="${post.body}">本文</p>
+            <!-- 投稿日時を machine-readable な datetime と画面表示用テキストの両方で出す。 -->
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
         </article>
     </section>
 </main>

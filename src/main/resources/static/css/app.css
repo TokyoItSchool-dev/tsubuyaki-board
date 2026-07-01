@@ -1,4 +1,4 @@
-/* 最小スタイル — 受講生が必要に応じて拡張する */
+/* 画面全体で使う色を CSS 変数として定義する。 */
 :root {
     --color-bg: #fafafa;
     --color-text: #222;
@@ -7,10 +7,12 @@
     --color-muted: #6b7280;
 }
 
+/* padding と border を要素幅に含め、レイアウト計算を安定させる。 */
 * {
     box-sizing: border-box;
 }
 
+/* アプリ全体の余白、フォント、背景色、文字色を設定する。 */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
@@ -20,17 +22,35 @@ body {
     line-height: 1.6;
 }
 
+/* メイン領域を読みやすい幅に制限し、中央寄せにする。 */
 main {
     max-width: 720px;
     margin: 2rem auto;
     padding: 0 1rem;
 }
 
+/* 画面見出しをコンパクトに表示する。 */
 h1 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
 }
 
+/* 一覧画面の更新ボタンを投稿一覧から少し離して配置する。 */
+.toolbar {
+    margin: 1rem 0;
+}
+
+/* 更新ボタンの見た目をシンプルな操作ボタンとして整える。 */
+.toolbar button {
+    cursor: pointer;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text);
+    padding: 0.4rem 0.8rem;
+}
+
+/* 1件の投稿を白背景の枠付きブロックとして表示する。 */
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -39,18 +59,23 @@ h1 {
     background: white;
 }
 
+/* 投稿者名を本文より強く見せる。 */
 .post__author {
     font-weight: 600;
-    margin-right: 0.5rem;
+    margin: 0 0 0.5rem;
 }
 
+/* 投稿日時を補助情報として控えめに表示する。 */
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;
 }
 
+/* 長い本文や改行を崩さず、枠内で折り返して表示する。 */
 .post__body {
-    margin-top: 0.5rem;
+    margin: 0 0 0.5rem;
+    max-width: 100%;
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
 }
