@@ -31,6 +31,10 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.toolbar {
+    margin: 1rem 0;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -53,4 +57,43 @@ h1 {
     margin-top: 0.5rem;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.posts-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.posts-table th,
+.posts-table td {
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.posts-table th {
+    background: var(--color-accent);
+    color: white;
+    font-weight: 700;
+}
+
+.posts-table td {
+    color: var(--color-text);
+    font-size: 0.9rem;
+}
+
+.posts-table__author {
+    width: 8rem;
+}
+
+.posts-table__body {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.posts-table__created-at {
+    width: 10rem;
+    white-space: nowrap;
 }

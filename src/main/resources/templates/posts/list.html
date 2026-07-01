@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>投稿一覧 - 社内つぶやきボード</title>
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v=20260701)}">
 </head>
 <body>
 <main>
@@ -14,17 +14,29 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="toolbar" th:action="@{/posts}" method="get">
+        <button type="submit">更新</button>
+    </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
-        <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
-        </article>
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <table class="posts-table" th:if="${!#lists.isEmpty(posts)}">
+            <thead>
+            <tr>
+                <th scope="col">投稿者</th>
+                <th scope="col">内容</th>
+                <th scope="col">投稿日</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="post : ${posts}">
+                <td class="posts-table__author" th:text="${post.author}">投稿者</td>
+                <td class="posts-table__body" th:text="${post.body}">本文</td>
+                <td class="posts-table__created-at"
+                    th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</td>
+            </tr>
+            </tbody>
+        </table>
     </section>
 </main>
 </body>
