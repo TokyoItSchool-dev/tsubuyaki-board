@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -165,6 +166,27 @@ class PostControllerTest {
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"));
 
         verify(postService, never()).create("alice", body);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するIDのとき_投稿をビューに渡して表示する")
+    void 投稿詳細_存在するIDのとき_投稿をビューに渡して表示する() throws Exception {
+        Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail.html"))
+                .andExpect(model().attribute("post", post));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないIDのとき_404を返す")
+    void 投稿詳細_存在しないIDのとき_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

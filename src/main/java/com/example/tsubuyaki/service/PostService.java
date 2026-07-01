@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,5 +31,9 @@ public class PostService {
     @Transactional
     public Post create(String author, String body) {
         return repository.save(new Post(author, body, Instant.now()));
+    }
+
+    public Optional<Post> findById(Long id) {
+        return repository.findById(id);
     }
 }
