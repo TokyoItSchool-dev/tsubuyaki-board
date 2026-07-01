@@ -10,11 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import static org.hamcrest.Matchers.containsString;
@@ -83,6 +85,7 @@ class PostControllerTest {
                 "alice",
                 "長い本文でも読みやすく折り返して表示する投稿です。",
                 Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
         given(postService.latest()).willReturn(List.of(post));
 
         mockMvc.perform(get("/posts"))
@@ -90,7 +93,50 @@ class PostControllerTest {
                 .andExpect(content().string(matchesPattern("(?s).*<article class=\"post\">\\s*"
                         + "<div class=\"post__author\">alice</div>\\s*"
                         + "<p class=\"post__body\">長い本文でも読みやすく折り返して表示する投稿です。</p>\\s*"
+                        + "<div class=\"post__meta\">\\s*"
+                        + "<time class=\"post__created-at\".*>2026-05-23 19:15</time>\\s*"
+                        + "<a href=\"/posts/1\">詳細</a>\\s*</div>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿あり_各投稿に詳細リンクを表示する")
+    void 投稿一覧_投稿あり_各投稿に詳細リンクを表示する() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<article class=\"post\">.*"
+                        + "<a[^>]+href=\"/posts/1\"[^>]*>詳細</a>.*</article>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するid_posts_detailビューに投稿を渡す")
+    void 投稿詳細_存在するid_posts_detailビューに投稿を渡す() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("<h1>投稿詳細</h1>")))
+                .andExpect(content().string(containsString("<a href=\"/posts\">一覧に戻る</a>")))
+                .andExpect(content().string(matchesPattern("(?s).*<article class=\"post\">\\s*"
+                        + "<div class=\"post__author\">alice</div>\\s*"
+                        + "<p class=\"post__body\">hello</p>\\s*"
                         + "<time class=\"post__created-at\".*>2026-05-23 19:15</time>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないid_404を返す")
+    void 投稿詳細_存在しないid_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
