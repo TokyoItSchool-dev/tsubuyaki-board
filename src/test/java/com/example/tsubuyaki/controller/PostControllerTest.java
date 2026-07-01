@@ -17,9 +17,13 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -78,5 +82,33 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name(POST_FORM_VIEW))
                 .andExpect(model().attribute(POST_FORM_ATTRIBUTE, instanceOf(PostForm.class)));
+    }
+
+    @Test
+    @DisplayName("投稿作成_入力値が妥当なとき_保存して投稿一覧へリダイレクトする")
+    void 投稿作成_入力値が妥当なとき_保存して投稿一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post(POSTS_PATH)
+                        .param("author", "alice")
+                        .param("body", "今日の共有です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl(POSTS_PATH));
+
+        verify(postService).create("alice", "今日の共有です");
+        verifyNoMoreInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_投稿者と本文が空白のみのとき_フォームを再表示しエラーを表示する")
+    void 投稿作成_投稿者と本文が空白のみのとき_フォームを再表示しエラーを表示する() throws Exception {
+        mockMvc.perform(post(POSTS_PATH)
+                        .param("author", "   ")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name(POST_FORM_VIEW))
+                .andExpect(model().attributeHasFieldErrors(POST_FORM_ATTRIBUTE, "author", "body"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verifyNoInteractions(postService);
     }
 }
