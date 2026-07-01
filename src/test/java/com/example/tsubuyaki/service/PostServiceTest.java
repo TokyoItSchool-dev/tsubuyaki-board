@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,8 +35,8 @@ class PostServiceTest {
     @DisplayName("投稿一覧_取得するとき_Repositoryから新着50件を取得する")
     void 投稿一覧_取得するとき_Repositoryから新着50件を取得する() {
         List<Post> posts = List.of(
-                new Post("alice", "new", Instant.parse("2026-05-23T10:00:00Z")),
-                new Post("bob", "old", Instant.parse("2026-05-23T09:00:00Z")));
+                new Post("alice", "new", LocalDateTime.parse("2026-05-23T10:00:00")),
+                new Post("bob", "old", LocalDateTime.parse("2026-05-23T09:00:00")));
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> latestPosts = postService.latest();
@@ -62,7 +62,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿詳細_取得するとき_RepositoryからIDで検索する")
     void 投稿詳細_取得するとき_RepositoryからIDで検索する() {
-        Post post = new Post("tanaka", "本文", Instant.parse("2026-05-23T09:00:00Z"));
+        Post post = new Post("tanaka", "本文", LocalDateTime.parse("2026-05-23T09:00:00"));
         given(postRepository.findById(1L)).willReturn(Optional.of(post));
 
         Optional<Post> foundPost = postService.findById(1L);

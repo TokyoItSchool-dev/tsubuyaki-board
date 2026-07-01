@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -31,13 +31,13 @@ public class PostLike {
     private String clientHash;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     protected PostLike() {
         // JPA
     }
 
-    public PostLike(Post post, String clientHash, Instant createdAt) {
+    public PostLike(Post post, String clientHash, LocalDateTime createdAt) {
         this.post = post;
         this.clientHash = clientHash;
         this.createdAt = createdAt;
@@ -55,7 +55,7 @@ public class PostLike {
         return clientHash;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 

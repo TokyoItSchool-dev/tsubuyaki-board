@@ -13,7 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -74,7 +74,7 @@ class PostControllerTest {
         given(postService.latest()).willReturn(List.of(new Post(
                 "tanaka",
                 "表示順を確認する本文です",
-                Instant.parse("2026-05-23T09:00:00Z"))));
+                LocalDateTime.parse("2026-05-23T09:00:00"))));
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -83,7 +83,7 @@ class PostControllerTest {
                 .getContentAsString();
 
         assertThat(html.indexOf("tanaka")).isLessThan(html.indexOf("表示順を確認する本文です"));
-        assertThat(html.indexOf("表示順を確認する本文です")).isLessThan(html.indexOf("2026-05-23 18:00"));
+        assertThat(html.indexOf("表示順を確認する本文です")).isLessThan(html.indexOf("2026-05-23 09:00"));
     }
 
     @Test
@@ -176,7 +176,7 @@ class PostControllerTest {
         Post post = new Post(
                 "tanaka",
                 "詳細画面に表示する本文です",
-                Instant.parse("2026-05-23T09:00:00Z"));
+                LocalDateTime.parse("2026-05-23T09:00:00"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postService.countLikes(1L)).willReturn(3L);
 
@@ -188,7 +188,7 @@ class PostControllerTest {
                 .andExpect(model().attribute("likeCount", 3L))
                 .andExpect(content().string(containsString("tanaka")))
                 .andExpect(content().string(containsString("詳細画面に表示する本文です")))
-                .andExpect(content().string(containsString("2026-05-23 18:00")))
+                .andExpect(content().string(containsString("2026-05-23 09:00")))
                 .andExpect(content().string(containsString("いいね 3")))
                 .andExpect(content().string(containsString("action=\"/posts/1/likes\"")))
                 .andExpect(content().string(containsString("method=\"post\"")));
@@ -209,7 +209,7 @@ class PostControllerTest {
         given(postService.findById(1L)).willReturn(Optional.of(new Post(
                 "tanaka",
                 "本文",
-                Instant.parse("2026-05-23T09:00:00Z"))));
+                LocalDateTime.parse("2026-05-23T09:00:00"))));
 
         mockMvc.perform(post("/posts/1/likes")
                         .with(request -> {

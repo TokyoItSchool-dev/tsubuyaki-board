@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -90,6 +90,6 @@ class PostLikeServiceIntegrationTest {
         return postRepository.save(new Post(
                 "tanaka",
                 "いいね対象の本文です",
-                Instant.parse("2026-05-23T09:00:00Z")));
+                LocalDateTime.parse("2026-05-23T09:00:00")));
     }
 }

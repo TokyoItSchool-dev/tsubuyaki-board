@@ -7,7 +7,7 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -46,12 +46,12 @@ public class PostService {
 
         Post post = repository.findById(postId)
                 .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId));
-        postLikeRepository.save(new PostLike(post, clientHash, Instant.now()));
+        postLikeRepository.save(new PostLike(post, clientHash, LocalDateTime.now()));
     }
 
     @Transactional
     public Post create(String author, String body) {
-        Post post = new Post(author.trim(), body.trim(), Instant.now());
+        Post post = new Post(author.trim(), body.trim(), LocalDateTime.now());
         return repository.save(post);
     }
 }
