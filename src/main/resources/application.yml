@@ -12,6 +12,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        type:
+          preferred_instant_jdbc_type: TIMESTAMP
         jdbc:
           time_zone: UTC
   flyway:
