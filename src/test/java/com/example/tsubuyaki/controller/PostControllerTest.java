@@ -16,8 +16,12 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -96,5 +100,115 @@ class PostControllerTest {
                         org.hamcrest.Matchers.nullValue())))
                 .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
                         org.hamcrest.Matchers.nullValue())));
+    }
+
+    @Test
+    @DisplayName("投稿作成_投稿者が空文字の場合_エラーを表示し入力内容を保持する")
+    void 投稿作成_投稿者が空文字の場合_エラーを表示し入力内容を保持する() throws Exception {
+        mockMvc.perform(post("/posts").param("author", "").param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("author",
+                        org.hamcrest.Matchers.equalTo(""))))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
+                        org.hamcrest.Matchers.equalTo("本文"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_投稿者が空白のみの場合_エラーを表示し入力内容を保持する")
+    void 投稿作成_投稿者が空白のみの場合_エラーを表示し入力内容を保持する() throws Exception {
+        mockMvc.perform(post("/posts").param("author", "   ").param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("author",
+                        org.hamcrest.Matchers.equalTo("   "))))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
+                        org.hamcrest.Matchers.equalTo("本文"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_投稿者が31文字以上の場合_エラーを表示し入力内容を保持する")
+    void 投稿作成_投稿者が31文字以上の場合_エラーを表示し入力内容を保持する() throws Exception {
+        String author = "a".repeat(31);
+
+        mockMvc.perform(post("/posts").param("author", author).param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("author",
+                        org.hamcrest.Matchers.equalTo(author))))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
+                        org.hamcrest.Matchers.equalTo("本文"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名は 30 文字以内で入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_本文が空文字の場合_エラーを表示し入力内容を保持する")
+    void 投稿作成_本文が空文字の場合_エラーを表示し入力内容を保持する() throws Exception {
+        mockMvc.perform(post("/posts").param("author", "alice").param("body", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("author",
+                        org.hamcrest.Matchers.equalTo("alice"))))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
+                        org.hamcrest.Matchers.equalTo(""))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_本文が空白のみの場合_エラーを表示し入力内容を保持する")
+    void 投稿作成_本文が空白のみの場合_エラーを表示し入力内容を保持する() throws Exception {
+        mockMvc.perform(post("/posts").param("author", "alice").param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("author",
+                        org.hamcrest.Matchers.equalTo("alice"))))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
+                        org.hamcrest.Matchers.equalTo("   "))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_本文が281文字以上の場合_エラーを表示し入力内容を保持する")
+    void 投稿作成_本文が281文字以上の場合_エラーを表示し入力内容を保持する() throws Exception {
+        String body = "a".repeat(281);
+
+        mockMvc.perform(post("/posts").param("author", "alice").param("body", body))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("author",
+                        org.hamcrest.Matchers.equalTo("alice"))))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
+                        org.hamcrest.Matchers.equalTo(body))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文は 280 文字以内で入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_入力が妥当な場合_投稿後にpostsへリダイレクトする")
+    void 投稿作成_入力が妥当な場合_投稿後にpostsへリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts").param("author", "alice").param("body", "本文"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "本文");
     }
 }

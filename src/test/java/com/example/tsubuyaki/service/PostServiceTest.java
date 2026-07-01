@@ -5,6 +5,7 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -35,5 +36,21 @@ class PostServiceTest {
 
         assertThat(latest).isSameAs(posts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿作成_create_投稿者と本文を現在日時つきで保存する")
+    void 投稿作成_create_投稿者と本文を現在日時つきで保存する() {
+        Instant before = Instant.now();
+
+        postService.create("alice", "本文");
+
+        Instant after = Instant.now();
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(captor.capture());
+        Post savedPost = captor.getValue();
+        assertThat(savedPost.getAuthor()).isEqualTo("alice");
+        assertThat(savedPost.getBody()).isEqualTo("本文");
+        assertThat(savedPost.getCreatedAt()).isBetween(before, after);
     }
 }
