@@ -30,6 +30,8 @@
                   th:datetime="${post.createdAt}"
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
             <p>
+                <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+                |
                 <a th:href="@{/posts/{id}/edit(id=${post.id})}">編集</a>
             </p>
         </article>

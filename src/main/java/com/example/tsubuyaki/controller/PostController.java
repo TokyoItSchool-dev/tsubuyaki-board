@@ -1,5 +1,10 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.service.ClientHashGenerator;
+import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -11,13 +16,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.tsubuyaki.service.PostService;
-import com.example.tsubuyaki.web.dto.PostForm;
-
 @Controller
 public class PostController {
 
     private final PostService postService;
+    private final ClientHashGenerator clientHashGenerator = new ClientHashGenerator();
 
     public PostController(PostService postService) {
         this.postService = postService;
@@ -30,12 +33,25 @@ public class PostController {
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("postId", id);
-        model.addAttribute("post", postService.findById(id)
+    public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
+        Post post = postService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "投稿が見つかりません")));
+                        HttpStatus.NOT_FOUND, "投稿が見つかりません"));
+        String clientHash = clientHash(request);
+
+        model.addAttribute("postId", id);
+        model.addAttribute("post", post);
+        model.addAttribute("likeCount", postService.countLikes(id));
+        model.addAttribute("likedByClient", postService.likedBy(id, clientHash));
         return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        postService.toggleLike(id, clientHash(request))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "投稿が見つかりません"));
+        return "redirect:/posts/" + id;
     }
 
     @GetMapping("/posts/new")
@@ -99,5 +115,9 @@ public class PostController {
         model.addAttribute("formTitle", "投稿編集");
         model.addAttribute("formAction", "/posts/" + id);
         model.addAttribute("cancelUrl", "/posts/" + id);
+    }
+
+    private String clientHash(HttpServletRequest request) {
+        return clientHashGenerator.generate(request.getRemoteAddr(), request.getHeader("User-Agent"));
     }
 }

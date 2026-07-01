@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +26,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostLikeRepository postLikeRepository;
 
     @InjectMocks
     private PostService postService;
@@ -92,5 +97,70 @@ class PostServiceTest {
         assertThat(actual).isEmpty();
         verify(postRepository).findById(999L);
         verify(postRepository, never()).save(org.mockito.ArgumentMatchers.any(Post.class));
+    }
+
+    @Test
+    @DisplayName("いいね_未いいねの場合_いいねを保存してtrueを返す")
+    void toggleLike_whenNotLiked_savesLikeAndReturnsTrue() {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234")).willReturn(Optional.empty());
+
+        Optional<Boolean> actual = postService.toggleLike(42L, "abcd1234");
+
+        assertThat(actual).contains(true);
+        ArgumentCaptor<PostLike> captor = ArgumentCaptor.forClass(PostLike.class);
+        verify(postLikeRepository).save(captor.capture());
+        assertThat(captor.getValue().getPost()).isSameAs(post);
+        assertThat(captor.getValue().getClientHash()).isEqualTo("abcd1234");
+        assertThat(captor.getValue().getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("いいね_いいね済みの場合_いいねを削除してfalseを返す")
+    void toggleLike_whenAlreadyLiked_deletesLikeAndReturnsFalse() {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        PostLike like = new PostLike(post, "abcd1234", Instant.parse("2026-05-23T02:00:00Z"));
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234")).willReturn(Optional.of(like));
+
+        Optional<Boolean> actual = postService.toggleLike(42L, "abcd1234");
+
+        assertThat(actual).contains(false);
+        verify(postLikeRepository).delete(like);
+        verify(postLikeRepository, never()).save(org.mockito.ArgumentMatchers.any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("いいね_存在しない投稿の場合_保存削除せず空を返す")
+    void toggleLike_whenPostDoesNotExist_returnsEmpty() {
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        Optional<Boolean> actual = postService.toggleLike(999L, "abcd1234");
+
+        assertThat(actual).isEmpty();
+        verify(postLikeRepository, never()).save(org.mockito.ArgumentMatchers.any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("いいね数_投稿id指定_Repositoryの件数を返す")
+    void countLikes_returnsRepositoryCount() {
+        given(postLikeRepository.countByPostId(42L)).willReturn(3L);
+
+        long actual = postService.countLikes(42L);
+
+        assertThat(actual).isEqualTo(3L);
+        verify(postLikeRepository).countByPostId(42L);
+    }
+
+    @Test
+    @DisplayName("いいね状態_投稿idとclientHash指定_Repositoryの存在判定を返す")
+    void likedBy_returnsRepositoryExistsResult() {
+        given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcd1234")).willReturn(true);
+
+        boolean actual = postService.likedBy(42L, "abcd1234");
+
+        assertThat(actual).isTrue();
+        verify(postLikeRepository).existsByPostIdAndClientHash(42L, "abcd1234");
     }
 }

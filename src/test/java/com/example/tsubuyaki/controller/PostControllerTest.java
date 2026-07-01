@@ -98,6 +98,19 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿ごとに詳細リンクを表示する")
+    void list_displaysDetailLinkForEachPost() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/42\"")))
+                .andExpect(content().string(containsString("詳細")));
+    }
+
+    @Test
     @DisplayName("投稿作成フォーム_GET_posts_new_postFormをビューに渡す")
     void newForm_setsPostForm() throws Exception {
         mockMvc.perform(get("/posts/new"))
@@ -252,6 +265,63 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("href=\"/posts/42/edit\"")))
                 .andExpect(content().string(containsString("編集")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいね数_ビューに表示する")
+    void detail_displaysLikeCount() throws Exception {
+        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+        given(postService.countLikes(42L)).willReturn(3L);
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("likeCount", 3L))
+                .andExpect(content().string(containsString("いいね 3")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいねボタン_posts_id_likesへPOST送信する")
+    void detail_hasLikeButtonPostingToLikes() throws Exception {
+        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("action=\"/posts/42/likes\"")))
+                .andExpect(content().string(containsString("いいね")));
+    }
+
+    @Test
+    @DisplayName("いいね_POST_posts_id_likes_いいねを切り替えて詳細へリダイレクトする")
+    void like_whenPostExists_togglesLikeAndRedirectsToDetail() throws Exception {
+        given(postService.toggleLike(42L, "0a409f63")).willReturn(Optional.of(true));
+
+        mockMvc.perform(post("/posts/42/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/42"));
+
+        verify(postService).toggleLike(42L, "0a409f63");
+    }
+
+    @Test
+    @DisplayName("いいね_POST_posts_id_likes_存在しないidは404を返す")
+    void like_whenPostDoesNotExist_returns404() throws Exception {
+        given(postService.toggleLike(999L, "0a409f63")).willReturn(Optional.empty());
+
+        mockMvc.perform(post("/posts/999/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
