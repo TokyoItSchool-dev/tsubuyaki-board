@@ -189,13 +189,38 @@ class PostControllerTest {
         int author = html.indexOf("alice");
         int body = html.indexOf("リンク対象の本文");
         int createdAt = html.indexOf("2026-05-23");
-        int linkEnd = html.indexOf("</a>", createdAt);
+        int linkEnd = html.indexOf("</a>", body);
 
         assertThat(linkStart).isNotNegative();
         assertThat(linkStart).isLessThan(author);
         assertThat(author).isLessThan(body);
-        assertThat(body).isLessThan(createdAt);
-        assertThat(createdAt).isLessThan(linkEnd);
+        assertThat(body).isLessThan(linkEnd);
+        assertThat(linkEnd).isLessThan(createdAt);
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿時間といいねトグル_同じ高さで表示する")
+    void 投稿一覧_投稿時間といいねトグル_同じ高さで表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"));
+        post.applyLikeState(0, false);
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post__meta-row\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post__created-at\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post__like-form\"")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        int body = html.indexOf("本文");
+        int metaRow = html.indexOf("class=\"post__meta-row\"");
+        int createdAt = html.indexOf("class=\"post__created-at\"");
+        int likeForm = html.indexOf("class=\"post__like-form\"");
+        assertThat(metaRow).isGreaterThan(body);
+        assertThat(createdAt).isGreaterThan(metaRow);
+        assertThat(likeForm).isGreaterThan(createdAt);
+        assertThat(likeForm).isLessThan(html.indexOf("</article>", metaRow));
     }
 
     @Test
