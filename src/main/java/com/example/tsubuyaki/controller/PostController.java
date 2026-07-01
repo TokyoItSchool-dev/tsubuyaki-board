@@ -2,11 +2,14 @@ package com.example.tsubuyaki.controller;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
@@ -26,6 +29,14 @@ public class PostController {
         return "posts/list";
     }
 
+    @GetMapping("/posts/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        model.addAttribute("post", postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "投稿が見つかりません")));
+        return "posts/detail";
+    }
+
     @GetMapping("/posts/new")
     public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());
@@ -42,7 +53,4 @@ public class PostController {
         postService.create(postForm.getAuthor(), postForm.getBody());
         return "redirect:/posts";
     }
-
-    // 演習中に追加するエンドポイント:
-    //   @GetMapping("/posts/{id}")       // 詳細
 }

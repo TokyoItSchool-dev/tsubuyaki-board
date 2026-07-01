@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -189,5 +190,41 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts"));
 
         verify(postService).create("alice", "本文です");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するid_posts_detailを表示しpostをビューに渡す")
+    void detail_whenPostExists_showsDetailAndSetsPost() throws Exception {
+        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("詳細本文です")))
+                .andExpect(content().string(containsString("2026-05-23 10:00")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないid_404を返す")
+    void detail_whenPostDoesNotExist_returns404() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿詳細_一覧に戻るボタン_postsへ遷移する")
+    void detail_hasBackToListButton() throws Exception {
+        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts\"")))
+                .andExpect(content().string(containsString("一覧に戻る")));
     }
 }
