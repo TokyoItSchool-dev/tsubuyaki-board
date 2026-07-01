@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,5 +39,20 @@ class PostServiceTest {
 
         assertThat(actual).isSameAs(expected);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿登録_投稿者と本文を受け取ったとき_現在時刻付きの投稿を保存する")
+    void create_投稿者と本文を受け取ったとき_現在時刻付きの投稿を保存する() {
+        Instant before = Instant.now();
+
+        postService.create("alice", "本日の共有です");
+
+        Instant after = Instant.now();
+        verify(postRepository).save(argThat(post ->
+                "alice".equals(post.getAuthor())
+                        && "本日の共有です".equals(post.getBody())
+                        && !post.getCreatedAt().isBefore(before)
+                        && !post.getCreatedAt().isAfter(after)));
     }
 }
