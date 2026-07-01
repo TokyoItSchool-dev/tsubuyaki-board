@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -65,8 +66,9 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する")
     void 投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する() throws Exception {
-        given(postService.latest()).willReturn(List.of(
-                new Post("suzuki", "表示順を確認します", LocalDateTime.of(2026, 6, 26, 10, 0))));
+        Post post = new Post("suzuki", "表示順を確認します", LocalDateTime.of(2026, 6, 26, 10, 0));
+        ReflectionTestUtils.setField(post, "id", 123L);
+        given(postService.latest()).willReturn(List.of(post));
 
         String html = mockMvc.perform(get("/posts/"))
                 .andExpect(status().isOk())
@@ -81,6 +83,18 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿本文リンク_投稿詳細へ遷移できる")
+    void 投稿一覧_投稿本文リンク_投稿詳細へ遷移できる() throws Exception {
+        Post post = new Post("suzuki", "詳細へ移動します", LocalDateTime.of(2026, 6, 26, 10, 0));
+        ReflectionTestUtils.setField(post, "id", 123L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<a class=\"post__title\" href=\"/posts/123\">詳細へ移動します</a>")));
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在するid_投稿をビューに渡し詳細画面を表示する")
     void 投稿詳細_存在するid_投稿をビューに渡し詳細画面を表示する() throws Exception {
         Post post = new Post("suzuki", "詳細を確認します", LocalDateTime.of(2026, 6, 26, 11, 30));
@@ -92,7 +106,8 @@ class PostControllerTest {
                 .andExpect(model().attribute("post", post))
                 .andExpect(content().string(containsString("suzuki")))
                 .andExpect(content().string(containsString("詳細を確認します")))
-                .andExpect(content().string(containsString("2026-06-26 11:30")));
+                .andExpect(content().string(containsString("2026-06-26 11:30")))
+                .andExpect(content().string(containsString("<a href=\"/posts\">一覧に戻る</a>")));
     }
 
     @Test
