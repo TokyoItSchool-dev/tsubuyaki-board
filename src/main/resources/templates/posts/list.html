@@ -20,13 +20,15 @@
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
-        <article class="post" th:each="post : ${posts}">
-            <p class="post__author" th:text="${post.author}">投稿者</p>
-            <p class="post__body" th:text="${post.body}">本文</p>
-            <time class="post__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-        </article>
+        <a class="post-link" th:each="post : ${posts}" th:href="@{/posts/{id}(id=${post.id})}">
+            <article class="post">
+                <p class="post__author" th:text="${post.author}">投稿者</p>
+                <p class="post__body" th:text="${post.body}">本文</p>
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </article>
+        </a>
     </section>
 </main>
 </body>

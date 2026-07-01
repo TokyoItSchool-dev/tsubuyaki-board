@@ -65,6 +65,17 @@ h1 {
     background: white;
 }
 
+.post-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.post-link:hover .post,
+.post-link:focus .post {
+    border-color: var(--color-accent);
+}
+
 .post__author {
     font-weight: 600;
     margin: 0 0 0.5rem;

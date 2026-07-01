@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -92,6 +93,22 @@ class PostControllerTest {
                 .getContentAsString();
 
         assertThat(html).containsSubsequence("alice", "順序確認の本文", "2026-05-23 10:30");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿ブロック_詳細画面へのリンクを表示する")
+    void list_displaysPostBlockLinkToDetail() throws Exception {
+        Post post = new Post("alice", "リンク確認の本文", LocalDateTime.parse("2026-05-23T10:30:00"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        String html = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).containsSubsequence("href=\"/posts/42\"", "alice", "リンク確認の本文");
     }
 
     @Test
