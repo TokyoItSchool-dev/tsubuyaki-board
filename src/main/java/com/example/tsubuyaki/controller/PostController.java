@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.validation.Valid;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Controller
 public class PostController {
 
@@ -23,7 +26,7 @@ public class PostController {
 
     @GetMapping({ "/", "/posts", "/posts/" })
     public String list(Model model) {
-        model.addAttribute("posts", postService.findLatest50Posts());
+        model.addAttribute("posts", latestPosts());
         return "posts/list";
     }
 
@@ -47,5 +50,13 @@ public class PostController {
         }
         postService.createPost(postForm.getAuthor(), postForm.getBody());
         return "redirect:/posts";
+    }
+
+    private List<Post> latestPosts() {
+        List<Post> posts = postService.findLatest50Posts();
+        if (posts == null) {
+            return List.of();
+        }
+        return posts;
     }
 }

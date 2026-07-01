@@ -33,7 +33,11 @@ public class PostService {
     }
 
     public List<Post> findLatest50Posts() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> posts = repository.findTop50ByOrderByCreatedAtDesc();
+        if (posts == null) {
+            return List.of();
+        }
+        return posts;
     }
 
     public Optional<Post> findDetailPost(Long id) {

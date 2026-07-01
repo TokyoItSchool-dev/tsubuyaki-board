@@ -57,6 +57,17 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_Repositoryがnullを返したとき_空リストを返す")
+    void 投稿一覧_Repositoryがnullを返したとき_空リストを返す() {
+        postService = new PostService(postRepository);
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(null);
+
+        List<Post> actual = postService.findLatest50Posts();
+
+        assertThat(actual).isEmpty();
+    }
+
+    @Test
     @DisplayName("投稿詳細_投稿が削除されていないとき_Repositoryの投稿を返す")
     void 投稿詳細_投稿が削除されていないとき_Repositoryの投稿を返す() {
         postService = new PostService(postRepository);

@@ -52,6 +52,32 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_ルートにアクセスしたとき_Serviceの最新投稿をビューに渡す")
+    void 投稿一覧_ルートにアクセスしたとき_Serviceの最新投稿をビューに渡す() throws Exception {
+        List<Post> latestPosts = List.of(
+                new Post("alice", "ルートでも表示する投稿", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postService.findLatest50Posts()).willReturn(latestPosts);
+
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", latestPosts))
+                .andExpect(content().string(containsString("ルートでも表示する投稿")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_Serviceの戻り値がnullのとき_空リストをビューに渡す")
+    void 投稿一覧_Serviceの戻り値がnullのとき_空リストをビューに渡す() throws Exception {
+        given(postService.findLatest50Posts()).willReturn(null);
+
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of()))
+                .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿が0件のとき_空メッセージを表示する")
     void 投稿一覧_投稿が0件のとき_空メッセージを表示する() throws Exception {
         given(postService.findLatest50Posts()).willReturn(List.of());
