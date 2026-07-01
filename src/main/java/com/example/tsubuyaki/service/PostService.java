@@ -12,10 +12,13 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @Transactional(readOnly = true)
 public class PostService {
+
+    private static final Pattern AVATAR_COLOR_PATTERN = Pattern.compile("^#[0-9a-fA-F]{6}$");
 
     private final PostRepository repository;
     private final PostLikeRepository postLikeRepository;
@@ -42,7 +45,12 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body) {
-        return repository.save(new Post(author, body, Instant.now()));
+        return create(author, body, Post.DEFAULT_AVATAR_COLOR);
+    }
+
+    @Transactional
+    public Post create(String author, String body, String avatarColor) {
+        return repository.save(new Post(author, body, normalizeAvatarColor(avatarColor), Instant.now()));
     }
 
     @Transactional
@@ -59,5 +67,16 @@ public class PostService {
 
     public long countLikes(Long postId) {
         return postLikeRepository.countByPostId(postId);
+    }
+
+    private String normalizeAvatarColor(String avatarColor) {
+        if (avatarColor == null || avatarColor.trim().isEmpty()) {
+            return Post.DEFAULT_AVATAR_COLOR;
+        }
+        String trimmed = avatarColor.trim();
+        if (!AVATAR_COLOR_PATTERN.matcher(trimmed).matches()) {
+            return Post.DEFAULT_AVATAR_COLOR;
+        }
+        return trimmed;
     }
 }
