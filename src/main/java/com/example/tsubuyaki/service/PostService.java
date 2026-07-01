@@ -2,8 +2,10 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.domain.User;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +19,13 @@ public class PostService {
 
     private final PostRepository repository;
     private final PostLikeRepository postLikeRepository;
+    private final UserRepository userRepository;
 
-    public PostService(PostRepository repository, PostLikeRepository postLikeRepository) {
+    public PostService(PostRepository repository, PostLikeRepository postLikeRepository,
+            UserRepository userRepository) {
         this.repository = repository;
         this.postLikeRepository = postLikeRepository;
+        this.userRepository = userRepository;
     }
 
     public List<Post> findLatest50() {
@@ -44,7 +49,18 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body) {
-        return repository.save(new Post(author, body, Instant.now()));
+        return create(author, body, "");
+    }
+
+    @Transactional
+    public Post create(String author, String body, String avatarColor) {
+        User user = userRepository.findByName(author)
+                .map(existing -> {
+                    existing.updateAvatarColor(avatarColor);
+                    return existing;
+                })
+                .orElseGet(() -> userRepository.save(new User(author, avatarColor)));
+        return repository.save(new Post(user, body, Instant.now()));
     }
 
     @Transactional

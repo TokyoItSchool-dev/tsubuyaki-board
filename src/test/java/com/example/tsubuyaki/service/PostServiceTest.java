@@ -2,8 +2,10 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.domain.User;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +31,9 @@ class PostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private PostService postService;
@@ -73,16 +78,50 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("投稿作成_投稿者と本文を指定したとき_投稿を保存する")
-    void 投稿作成_投稿者と本文を指定したとき_投稿を保存する() {
+    @DisplayName("投稿作成_投稿者と本文とアバター色を指定したとき_投稿を保存する")
+    void 投稿作成_投稿者と本文とアバター色を指定したとき_投稿を保存する() {
         given(postRepository.save(org.mockito.ArgumentMatchers.any(Post.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
+        given(userRepository.findByName("alice")).willReturn(Optional.empty());
+        given(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
-        Post created = postService.create("alice", "こんにちは");
+        Post created = postService.create("alice", "こんにちは", "#ef4444");
 
         assertThat(created.getAuthor()).isEqualTo("alice");
         assertThat(created.getBody()).isEqualTo("こんにちは");
+        assertThat(created.getAvatarColor()).isEqualTo("#ef4444");
+        assertThat(created.getUser().getName()).isEqualTo("alice");
         assertThat(created.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿作成_新規ユーザーでアバター色が空白のとき_デフォルト色で保存する")
+    void 投稿作成_新規ユーザーでアバター色が空白のとき_デフォルト色で保存する() {
+        given(postRepository.save(org.mockito.ArgumentMatchers.any(Post.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        given(userRepository.findByName("alice")).willReturn(Optional.empty());
+        given(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Post created = postService.create("alice", "こんにちは", "   ");
+
+        assertThat(created.getAvatarColor()).isEqualTo(User.DEFAULT_AVATAR_COLOR);
+    }
+
+    @Test
+    @DisplayName("投稿作成_既存ユーザーでアバター色が空白のとき_既存色を維持する")
+    void 投稿作成_既存ユーザーでアバター色が空白のとき_既存色を維持する() {
+        User user = new User("alice", "#22c55e");
+        given(userRepository.findByName("alice")).willReturn(Optional.of(user));
+        given(postRepository.save(org.mockito.ArgumentMatchers.any(Post.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Post created = postService.create("alice", "こんにちは", "");
+
+        assertThat(created.getUser()).isSameAs(user);
+        assertThat(created.getAvatarColor()).isEqualTo("#22c55e");
+        verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
     }
 
     @Test

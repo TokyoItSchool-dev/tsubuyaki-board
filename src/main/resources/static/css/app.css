@@ -44,6 +44,17 @@ h1 {
     margin-right: 0.5rem;
 }
 
+.post__avatar {
+    display: inline-block;
+    width: 0.85rem;
+    height: 0.85rem;
+    margin-right: 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--avatar-color, var(--color-muted));
+    vertical-align: -0.08rem;
+}
+
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;
