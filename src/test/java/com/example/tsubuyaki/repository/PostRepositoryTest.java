@@ -10,6 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,5 +41,33 @@ class PostRepositoryTest {
         assertThat(actual.getFirst().getBody()).isEqualTo("post-51");
         assertThat(actual.getLast().getBody()).isEqualTo("post-2");
         assertThat(actual).extracting(Post::getBody).doesNotContain("post-1");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_投稿が削除されていないとき_投稿を返す")
+    void 投稿詳細_投稿が削除されていないとき_投稿を返す() {
+        Post post = postRepository.save(new Post(
+                "alice",
+                "詳細を表示する投稿",
+                Instant.parse("2026-05-23T10:00:00Z")));
+
+        Optional<Post> actual = postRepository.findByIdAndDeletedAtIsNull(post.getId());
+
+        assertThat(actual).contains(post);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_投稿が削除されているとき_空を返す")
+    void 投稿詳細_投稿が削除されているとき_空を返す() {
+        Post post = postRepository.save(new Post(
+                "alice",
+                "削除済み投稿",
+                Instant.parse("2026-05-23T10:00:00Z")));
+        post.markDeleted(Instant.parse("2026-05-23T11:00:00Z"));
+        postRepository.flush();
+
+        Optional<Post> actual = postRepository.findByIdAndDeletedAtIsNull(post.getId());
+
+        assertThat(actual).isEmpty();
     }
 }

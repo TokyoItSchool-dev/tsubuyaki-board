@@ -13,6 +13,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -53,5 +54,28 @@ class PostServiceTest {
         List<Post> actual = postService.findLatest50Posts();
 
         assertThat(actual).isEqualTo(latestPosts);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_投稿が削除されていないとき_Repositoryの投稿を返す")
+    void 投稿詳細_投稿が削除されていないとき_Repositoryの投稿を返す() {
+        postService = new PostService(postRepository);
+        Post post = new Post("alice", "詳細を表示する投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+
+        Optional<Post> actual = postService.findDetailPost(1L);
+
+        assertThat(actual).contains(post);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_投稿が存在しないまたは削除済みのとき_空を返す")
+    void 投稿詳細_投稿が存在しないまたは削除済みのとき_空を返す() {
+        postService = new PostService(postRepository);
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
+
+        Optional<Post> actual = postService.findDetailPost(999L);
+
+        assertThat(actual).isEmpty();
     }
 }

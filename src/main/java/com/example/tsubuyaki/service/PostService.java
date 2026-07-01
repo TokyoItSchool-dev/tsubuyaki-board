@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,6 +34,10 @@ public class PostService {
 
     public List<Post> findLatest50Posts() {
         return repository.findTop50ByOrderByCreatedAtDesc();
+    }
+
+    public Optional<Post> findDetailPost(Long id) {
+        return repository.findByIdAndDeletedAtIsNull(id);
     }
 
     @Transactional
