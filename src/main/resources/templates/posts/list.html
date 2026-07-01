@@ -31,6 +31,7 @@
             <div class="post__actions">
                 <span class="post__like-count" th:text="|いいね ${post.likeCount}|">いいね 0</span>
                 <form class="post__like-form" method="post" th:action="@{/posts/{id}/likes(id=${post.id})}">
+                    <input type="hidden" name="returnTo" value="list">
                     <input type="hidden" th:if="${_csrf != null}"
                            th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                     <button type="submit">Like</button>

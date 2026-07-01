@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,9 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Controller
 public class PostController {
+
+    private static final String RETURN_TO_LIST = "list";
+    private static final String RETURN_TO_DETAIL = "detail";
 
     private final PostService postService;
 
@@ -58,9 +62,19 @@ public class PostController {
     }
 
     @PostMapping("/posts/{id}/likes")
-    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+    public String toggleLike(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = RETURN_TO_DETAIL) String returnTo,
+            HttpServletRequest request) {
         if (!postService.toggleLike(id, clientHash(request))) {
             throw new ResponseStatusException(NOT_FOUND);
+        }
+        return likeRedirectUrl(id, returnTo);
+    }
+
+    private String likeRedirectUrl(Long id, String returnTo) {
+        if (RETURN_TO_LIST.equals(returnTo)) {
+            return "redirect:/posts";
         }
         return "redirect:/posts/" + id;
     }

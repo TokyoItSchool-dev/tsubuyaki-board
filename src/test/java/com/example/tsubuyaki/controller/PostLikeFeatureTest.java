@@ -45,8 +45,8 @@ class PostLikeFeatureTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    @DisplayName("いいね_POST_posts_id_likes_一覧と詳細にトグルを表示し同一clientHashで登録解除する")
-    void いいね_POST_posts_id_likes_一覧と詳細にトグルを表示し同一clientHashで登録解除する() throws Exception {
+    @DisplayName("いいね_POST_posts_id_likes_押下元画面を維持して同一clientHashで登録解除する")
+    void いいね_POST_posts_id_likes_押下元画面を維持して同一clientHashで登録解除する() throws Exception {
         postRepository.deleteAll();
         Post savedPost = postRepository.save(new Post(
                 "like-user",
@@ -61,6 +61,7 @@ class PostLikeFeatureTest {
                 .andExpect(view().name("posts/list"))
                 .andExpect(content().string(containsString("action=\"" + likeAction + "\"")))
                 .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("name=\"returnTo\" value=\"list\"")))
                 .andExpect(content().string(containsString("Like")));
 
         mockMvc.perform(get("/posts/{id}", savedPost.getId()))
@@ -69,23 +70,34 @@ class PostLikeFeatureTest {
                 .andExpect(content().string(containsString("いいね 0")))
                 .andExpect(content().string(containsString("action=\"" + likeAction + "\"")))
                 .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("name=\"returnTo\" value=\"detail\"")))
                 .andExpect(content().string(containsString("Like")));
 
-        mockMvc.perform(post("/posts/{id}/likes", savedPost.getId()).with(testClient()))
+        mockMvc.perform(post("/posts/{id}/likes", savedPost.getId())
+                        .param("returnTo", "list")
+                        .with(testClient()))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/posts/" + savedPost.getId()));
+                .andExpect(redirectedUrl("/posts"));
 
         assertThat(countLikes(savedPost.getId(), clientHash())).isEqualTo(1);
 
-        mockMvc.perform(get("/posts/{id}", savedPost.getId()))
+        mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
                 .andExpect(content().string(containsString("いいね 1")));
 
-        mockMvc.perform(post("/posts/{id}/likes", savedPost.getId()).with(testClient()))
+        mockMvc.perform(post("/posts/{id}/likes", savedPost.getId())
+                        .param("returnTo", "detail")
+                        .with(testClient()))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts/" + savedPost.getId()));
 
         assertThat(countLikes(savedPost.getId(), clientHash())).isZero();
+
+        mockMvc.perform(get("/posts/{id}", savedPost.getId()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(content().string(containsString("いいね 0")));
 
         mockMvc.perform(post("/posts/{id}/likes", savedPost.getId() + 1).with(testClient()))
                 .andExpect(status().isNotFound());
