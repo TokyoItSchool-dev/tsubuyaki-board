@@ -41,13 +41,14 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_0件のとき_空メッセージと更新ボタンを表示する")
     void 投稿一覧_0件のとき_空メッセージと更新ボタンを表示する() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.search(null)).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", Collections.emptyList()))
                 .andExpect(content().string(containsString("まだ投稿はありません")))
+                .andExpect(content().string(containsString("name=\"q\"")))
                 .andExpect(content().string(containsString("action=\"/posts/\"")))
                 .andExpect(content().string(containsString("type=\"submit\"")))
                 .andExpect(content().string(containsString("更新")));
@@ -56,13 +57,48 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_更新ボタン押下時_postsスラッシュで一覧を再表示する")
     void 投稿一覧_更新ボタン押下時_postsスラッシュで一覧を再表示する() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.search(null)).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/posts/"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", Collections.emptyList()))
                 .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_キーワード指定ありのとき_本文に含む投稿だけを表示する")
+    void 投稿一覧_キーワード指定ありのとき_本文に含む投稿だけを表示する() throws Exception {
+        Post matchPost = new Post("alice", "Springの話題", Instant.parse("2026-05-23T10:00:00Z"));
+        List<Post> searchResults = List.of(matchPost);
+        given(postService.search("Spring")).willReturn(searchResults);
+
+        mockMvc.perform(get("/posts").param("q", "Spring"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", searchResults))
+                .andExpect(content().string(containsString("Springの話題")))
+                .andExpect(result -> {
+                    Object modelPosts = result.getModelAndView().getModel().get("posts");
+                    assertThat(modelPosts).isInstanceOf(List.class);
+                    assertThat((List<?>) modelPosts)
+                            .extracting(post -> ((Post) post).getBody())
+                            .containsExactly("Springの話題");
+                });
+    }
+
+    @Test
+    @DisplayName("投稿一覧_キーワード空文字のとき_全件を表示する")
+    void 投稿一覧_キーワード空文字のとき_全件を表示する() throws Exception {
+        List<Post> posts = List.of(
+                new Post("alice", "Springの話題", Instant.parse("2026-05-23T10:00:00Z")),
+                new Post("bob", "Javaの話題", Instant.parse("2026-05-23T09:00:00Z")));
+        given(postService.search("")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts));
     }
 
     @Test
@@ -194,7 +230,7 @@ class PostControllerTest {
     void 投稿一覧_投稿があるとき_投稿者_内容_投稿日の順に表示する() throws Exception {
         List<Post> posts = List.of(
                 new Post("alice", "長い本文が折り返される", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postService.latest()).willReturn(posts);
+        given(postService.search(null)).willReturn(posts);
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())

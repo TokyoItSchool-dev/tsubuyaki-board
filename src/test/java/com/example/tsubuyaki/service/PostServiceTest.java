@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,9 @@ class PostServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private PostLikeRepository postLikeRepository;
+
     @InjectMocks
     private PostService postService;
 
@@ -35,6 +39,33 @@ class PostServiceTest {
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expectedPosts);
 
         List<Post> posts = postService.latest();
+
+        assertThat(posts).isSameAs(expectedPosts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワード指定ありのとき_本文部分一致検索結果を返す")
+    void 投稿検索_キーワード指定ありのとき_本文部分一致検索結果を返す() {
+        List<Post> expectedPosts = List.of(
+                new Post("alice", "Springの話題", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("Spring"))
+                .willReturn(expectedPosts);
+
+        List<Post> posts = postService.search(" Spring ");
+
+        assertThat(posts).isSameAs(expectedPosts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("Spring");
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワード空白のとき_新着50件を返す")
+    void 投稿検索_キーワード空白のとき_新着50件を返す() {
+        List<Post> expectedPosts = List.of(
+                new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expectedPosts);
+
+        List<Post> posts = postService.search("   ");
 
         assertThat(posts).isSameAs(expectedPosts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();

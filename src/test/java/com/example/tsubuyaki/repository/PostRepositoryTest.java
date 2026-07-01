@@ -41,4 +41,18 @@ class PostRepositoryTest {
                         .toArray(String[]::new));
         assertThat(posts).extracting(Post::getBody).doesNotContain("body5");
     }
+
+    @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿だけを新着順で返す")
+    void 投稿検索_本文にキーワードを含む投稿だけを新着順で返す() {
+        postRepository.save(new Post("alice", "Springの古い話題", Instant.parse("2026-05-23T09:00:00Z")));
+        postRepository.save(new Post("bob", "Javaの話題", Instant.parse("2026-05-23T10:00:00Z")));
+        postRepository.save(new Post("carol", "Springの新しい話題", Instant.parse("2026-05-23T11:00:00Z")));
+        postRepository.flush();
+
+        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("Spring");
+
+        assertThat(posts).extracting(Post::getBody)
+                .containsExactly("Springの新しい話題", "Springの古い話題");
+    }
 }

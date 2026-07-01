@@ -17,6 +17,11 @@
     <form class="toolbar" th:action="@{/posts/}" method="get">
         <button type="submit">更新</button>
     </form>
+    <form class="toolbar" th:action="@{/posts}" method="get">
+        <label for="q">キーワード</label>
+        <input type="search" id="q" name="q" th:value="${q}" placeholder="本文を検索">
+        <button type="submit">検索</button>
+    </form>
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
