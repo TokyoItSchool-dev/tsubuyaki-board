@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -12,6 +14,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 @Controller
 public class PostController {
@@ -45,8 +52,30 @@ public class PostController {
 
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("post", postService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        Post post = postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("post", post);
+        model.addAttribute("likeCount", postService.countLikes(id));
         return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        if (postService.findById(id).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        postService.toggleLike(id, clientHash(request));
+        return "redirect:/posts/" + id;
+    }
+
+    private String clientHash(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        String source = request.getRemoteAddr() + "|" + (userAgent == null ? "" : userAgent);
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(source.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm is not available", e);
+        }
     }
 }

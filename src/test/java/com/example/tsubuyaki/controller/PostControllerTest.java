@@ -91,12 +91,16 @@ class PostControllerTest {
     void detail_存在するidのとき_postsDetailを表示しpostをビューに渡す() throws Exception {
         Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(3L);
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post))
-                .andExpect(content().string(containsString("hello")));
+                .andExpect(model().attribute("likeCount", 3L))
+                .andExpect(content().string(containsString("hello")))
+                .andExpect(content().string(containsString("いいね 3")))
+                .andExpect(content().string(containsString("Like")));
     }
 
     @Test
@@ -106,5 +110,23 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("いいね_POST_/posts/{id}/likes_clientHashでトグルして詳細へリダイレクトする")
+    void like_POST_postsIdLikes_clientHashでトグルして詳細へリダイレクトする() throws Exception {
+        given(postService.findById(1L)).willReturn(Optional.of(
+                new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))));
+
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).toggleLike(1L, "1fc7d39b");
     }
 }
