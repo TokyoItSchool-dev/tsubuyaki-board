@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -27,6 +29,9 @@ class PostControllerTest {
     private static final String POSTS_PATH = "/posts";
     private static final String POSTS_VIEW = "posts/list";
     private static final String POSTS_ATTRIBUTE = "posts";
+    private static final String NEW_POST_PATH = "/posts/new";
+    private static final String POST_FORM_VIEW = "posts/form";
+    private static final String POST_FORM_ATTRIBUTE = "postForm";
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,5 +69,14 @@ class PostControllerTest {
                 .andExpect(content().string(containsString(">まだ投稿はありません<")));
 
         verify(postService).findLatest50();
+    }
+
+    @Test
+    @DisplayName("投稿画面_GETリクエスト_空のPostFormをビューに渡す")
+    void 投稿画面_GETリクエスト_空のPostFormをビューに渡す() throws Exception {
+        mockMvc.perform(get(NEW_POST_PATH))
+                .andExpect(status().isOk())
+                .andExpect(view().name(POST_FORM_VIEW))
+                .andExpect(model().attribute(POST_FORM_ATTRIBUTE, instanceOf(PostForm.class)));
     }
 }
