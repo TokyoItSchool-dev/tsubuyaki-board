@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,5 +72,22 @@ class PostControllerTest {
         assertThat(html).contains("suzuki", "表示順を確認します", "2026-06-26 10:00");
         assertThat(html.indexOf("suzuki")).isLessThan(html.indexOf("表示順を確認します"));
         assertThat(html.indexOf("表示順を確認します")).isLessThan(html.indexOf("2026-06-26 10:00"));
+    }
+
+    @Test
+    @DisplayName("投稿作成フォーム_GET_posts_new_空のPostFormをビューに渡しフォームを表示する")
+    void 投稿作成フォーム_GET_posts_new_空のPostFormをビューに渡しフォームを表示する() throws Exception {
+        PostForm postForm = (PostForm) mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeExists("postForm"))
+                .andExpect(content().string(containsString("<form action=\"/posts\" method=\"post\">")))
+                .andReturn()
+                .getModelAndView()
+                .getModel()
+                .get("postForm");
+
+        assertThat(postForm.getAuthor()).isEmpty();
+        assertThat(postForm.getBody()).isEmpty();
     }
 }
