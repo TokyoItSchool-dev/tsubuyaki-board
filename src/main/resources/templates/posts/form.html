@@ -14,6 +14,8 @@
     </nav>
 
     <form th:action="@{/posts}" th:object="${postForm}" method="post">
+        <p class="error" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}"
+           th:text="${err}">エラー</p>
         <div>
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
