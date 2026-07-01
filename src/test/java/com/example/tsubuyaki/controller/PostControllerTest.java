@@ -7,11 +7,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
@@ -47,6 +49,19 @@ class PostControllerTest {
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", Collections.emptyList()))
                 .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_詳細ページへのリンクを表示する")
+    void list_投稿があるとき_詳細ページへのリンクを表示する() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/1\"")))
+                .andExpect(content().string(containsString("詳細")));
     }
 
     @Test
