@@ -62,7 +62,7 @@ class PostLikeFeatureTest {
                 .andExpect(content().string(containsString("action=\"" + likeAction + "\"")))
                 .andExpect(content().string(containsString("method=\"post\"")))
                 .andExpect(content().string(containsString("name=\"returnTo\" value=\"list\"")))
-                .andExpect(content().string(containsString("Like")));
+                .andExpect(content().string(containsString("いいね！")));
 
         mockMvc.perform(get("/posts/{id}", savedPost.getId()))
                 .andExpect(status().isOk())
@@ -71,7 +71,7 @@ class PostLikeFeatureTest {
                 .andExpect(content().string(containsString("action=\"" + likeAction + "\"")))
                 .andExpect(content().string(containsString("method=\"post\"")))
                 .andExpect(content().string(containsString("name=\"returnTo\" value=\"detail\"")))
-                .andExpect(content().string(containsString("Like")));
+                .andExpect(content().string(containsString("いいね！")));
 
         mockMvc.perform(post("/posts/{id}/likes", savedPost.getId())
                         .param("returnTo", "list")

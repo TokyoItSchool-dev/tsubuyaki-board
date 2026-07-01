@@ -27,7 +27,7 @@
                 <input type="hidden" name="returnTo" value="detail">
                 <input type="hidden" th:if="${_csrf != null}"
                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button type="submit">Like</button>
+                <button class="post__like-button" type="submit">いいね！</button>
             </form>
         </div>
     </article>
