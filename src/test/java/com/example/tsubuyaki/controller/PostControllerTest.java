@@ -13,8 +13,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -86,5 +88,26 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", org.hamcrest.Matchers.instanceOf(PostForm.class)));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するid_該当Postをビューに渡す")
+    void 投稿詳細_存在するid_該当Postをビューに渡す() throws Exception {
+        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", sameInstance(post)));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないid_404を返す")
+    void 投稿詳細_存在しないid_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 }
