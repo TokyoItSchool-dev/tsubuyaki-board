@@ -19,6 +19,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -54,7 +55,11 @@ class PostControllerTest {
                 .andExpect(model().attribute("posts", posts))
                 .andExpect(model().attribute("q", ""))
                 .andExpect(content().string(containsString("post__avatar")))
-                .andExpect(content().string(containsString("--avatar-color: #ef4444")));
+                .andExpect(content().string(containsString("--avatar-color: #ef4444")))
+                .andExpect(content().string(matchesPattern("(?s).*<span class=\"post__avatar\""
+                        + "\\s+style=\"--avatar-color: #ef4444\""
+                        + "\\s+aria-hidden=\"true\"></span>\\s+"
+                        + "<span class=\"post__author\">alice</span>.*")));
 
         verify(postService).findLatest50();
     }
@@ -107,7 +112,11 @@ class PostControllerTest {
                 .andExpect(model().attribute("post", post))
                 .andExpect(model().attribute("likeCount", 2L))
                 .andExpect(content().string(containsString("post__avatar")))
-                .andExpect(content().string(containsString("--avatar-color: #22c55e")));
+                .andExpect(content().string(containsString("--avatar-color: #22c55e")))
+                .andExpect(content().string(matchesPattern("(?s).*<span class=\"post__avatar\""
+                        + "\\s+style=\"--avatar-color: #22c55e\""
+                        + "\\s+aria-hidden=\"true\"></span>\\s+"
+                        + "<span class=\"post__author\">alice</span>.*")));
 
         verify(postService).findById(1L);
         verify(postService).countLikes(1L);
