@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -93,7 +94,9 @@ class PostControllerTest {
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("<a class=\"post__title\" href=\"/posts/123\">詳細タイトル</a>")))
-                .andExpect(content().string(containsString("<span>本文はリンクにしません</span>")));
+                .andExpect(content().string(containsString("<span>本文はリンクにしません</span>")))
+                .andExpect(content().string(not(containsString(
+                        "<a class=\"post__title\" href=\"/posts/123\">本文はリンクにしません</a>"))));
     }
 
     @Test
