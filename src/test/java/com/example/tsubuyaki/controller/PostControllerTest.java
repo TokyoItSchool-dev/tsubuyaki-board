@@ -122,6 +122,24 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_アバター色がある場合_投稿者名に色を反映する")
+    void list_アバター色がある場合_投稿者名に色を反映する() throws Exception {
+        Post post = post(
+                "alice",
+                "本日の共有です",
+                Instant.parse("2026-06-30T01:15:00Z"),
+                "green");
+        given(postService.findLatest50()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("style=\"color: green\"");
+    }
+
+    @Test
     @DisplayName("投稿検索_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す")
     void list_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す() throws Exception {
         List<Post> posts = List.of(post("alice", "検索対象の共有です", BASE_TIME.plusSeconds(1)));
@@ -213,11 +231,12 @@ class PostControllerTest {
     void create_入力が妥当なとき_Serviceで保存し投稿一覧へリダイレクトする() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/posts")
                         .param("author", "alice")
-                        .param("body", "本日の共有です"))
+                        .param("body", "本日の共有です")
+                        .param("avatarColor", "green"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "本日の共有です");
+        verify(postService).create("alice", "本日の共有です", "green");
     }
 
     @Test
@@ -231,6 +250,23 @@ class PostControllerTest {
         String html = result.getResponse().getContentAsString();
         assertThat(html).doesNotContain("maxlength=");
         assertThat(html).doesNotContain(" required");
+    }
+
+    @Test
+    @DisplayName("投稿登録フォーム_投稿者名と任意のアバター色を入力できる")
+    void newForm_投稿者名と任意のアバター色を入力できる() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("name=\"author\"");
+        assertThat(html).contains("name=\"avatarColor\"");
+        assertThat(html).contains("value=\"\"");
+        assertThat(html).contains("value=\"blue\"");
+        assertThat(html).contains("value=\"green\"");
+        assertThat(html).contains("value=\"pink\"");
     }
 
     @Test
@@ -269,6 +305,10 @@ class PostControllerTest {
 
     private static Post post(String author, String body, Instant createdAt) {
         return new Post(author, body, createdAt);
+    }
+
+    private static Post post(String author, String body, Instant createdAt, String avatarColor) {
+        return new Post(author, body, createdAt, avatarColor);
     }
 
     private static String clientHash(String ipAddress, String userAgent) {

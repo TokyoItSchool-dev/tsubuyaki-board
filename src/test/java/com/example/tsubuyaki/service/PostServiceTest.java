@@ -84,16 +84,17 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("投稿登録_投稿者と本文を受け取ったとき_現在時刻付きの投稿を保存する")
-    void create_投稿者と本文を受け取ったとき_現在時刻付きの投稿を保存する() {
+    @DisplayName("投稿登録_投稿者と本文とアバター色を受け取ったとき_現在時刻付きの投稿を保存する")
+    void create_投稿者と本文とアバター色を受け取ったとき_現在時刻付きの投稿を保存する() {
         Instant before = Instant.now();
 
-        postService.create("alice", "本日の共有です");
+        postService.create("alice", "本日の共有です", "green");
 
         Instant after = Instant.now();
         verify(postRepository).save(argThat(post ->
                 "alice".equals(post.getAuthor())
                         && "本日の共有です".equals(post.getBody())
+                        && "green".equals(post.getAvatarColor())
                         && !post.getCreatedAt().isBefore(before)
                         && !post.getCreatedAt().isAfter(after)));
     }

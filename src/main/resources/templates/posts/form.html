@@ -19,6 +19,25 @@
             <input type="text" id="author" th:field="*{author}">
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
+        <fieldset>
+            <legend>アバター色</legend>
+            <label>
+                <input type="radio" th:field="*{avatarColor}" value="">
+                指定なし
+            </label>
+            <label>
+                <input type="radio" th:field="*{avatarColor}" value="blue">
+                青
+            </label>
+            <label>
+                <input type="radio" th:field="*{avatarColor}" value="green">
+                緑
+            </label>
+            <label>
+                <input type="radio" th:field="*{avatarColor}" value="pink">
+                ピンク
+            </label>
+        </fieldset>
         <div>
             <label for="body">本文</label>
             <textarea id="body" th:field="*{body}" rows="4"></textarea>

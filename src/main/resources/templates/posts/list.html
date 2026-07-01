@@ -25,7 +25,9 @@
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <p class="post__author" th:text="${post.author}">投稿者</p>
+            <p class="post__author"
+               th:style="${#strings.isEmpty(post.avatarColor)} ? null : |color: ${post.avatarColor}|"
+               th:text="${post.author}">投稿者</p>
             <p class="post__body" th:text="${post.body}">本文</p>
             <time class="post__created-at"
                   th:datetime="${post.createdAt}"

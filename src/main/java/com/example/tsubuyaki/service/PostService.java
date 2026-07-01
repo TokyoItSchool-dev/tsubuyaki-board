@@ -56,6 +56,11 @@ public class PostService {
 
     @Transactional
     public void create(String author, String body) {
-        repository.save(new Post(author, body, Instant.now()));
+        create(author, body, null);
+    }
+
+    @Transactional
+    public void create(String author, String body, String avatarColor) {
+        repository.save(new Post(author, body, Instant.now(), avatarColor));
     }
 }
