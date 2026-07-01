@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -137,6 +138,22 @@ class PostControllerTest {
 
         String html = result.getResponse().getContentAsString();
         assertThat(html).contains("style=\"color: green\"");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿がある場合_詳細画面へのリンクを表示する")
+    void list_投稿がある場合_詳細画面へのリンクを表示する() throws Exception {
+        Post post = postWithId(10L, "alice", "詳細へ遷移できる投稿です", BASE_TIME.plusSeconds(1));
+        given(postService.findLatest50()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("href=\"/posts/10\"");
+        assertThat(html).contains(">詳細<");
     }
 
     @Test
@@ -335,6 +352,12 @@ class PostControllerTest {
 
     private static Post post(String author, String body, Instant createdAt, String avatarColor) {
         return new Post(author, body, createdAt, avatarColor);
+    }
+
+    private static Post postWithId(Long id, String author, String body, Instant createdAt) {
+        Post post = post(author, body, createdAt);
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
     }
 
     private static String clientHash(String ipAddress, String userAgent) {
