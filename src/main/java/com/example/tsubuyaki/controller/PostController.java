@@ -6,12 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -29,8 +31,16 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model) {
+    public String list(@RequestParam(name = "q", required = false) String keyword, Model model) {
+        if (StringUtils.hasText(keyword)) {
+            String trimmedKeyword = keyword.trim();
+            model.addAttribute("posts", postService.searchPosts(trimmedKeyword));
+            model.addAttribute("keyword", trimmedKeyword);
+            return "posts/list";
+        }
+
         model.addAttribute("posts", postService.findLatestPosts());
+        model.addAttribute("keyword", "");
         return "posts/list";
     }
 

@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +47,21 @@ class PostServiceTest {
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("本文です");
         assertThat(savedPost.getCreatedAt()).isBetween(before, after);
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワードを指定した場合_本文検索結果を返す")
+    void 投稿検索_キーワードを指定した場合_本文検索結果を返す() {
+        List<Post> searchResults = List.of(
+                new Post("alice", "検索キーワードを含む投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索キーワード"))
+                .willReturn(searchResults);
+
+        List<Post> posts = postService.searchPosts("検索キーワード");
+
+        assertThat(posts).isSameAs(searchResults);
+        then(postRepository).should().findTop50ByBodyContainingOrderByCreatedAtDesc("検索キーワード");
     }
 
     @Test

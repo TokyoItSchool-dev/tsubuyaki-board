@@ -110,6 +110,63 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿検索_キーワードを指定した場合_検索結果のみ一覧に表示する")
+    void 投稿検索_キーワードを指定した場合_検索結果のみ一覧に表示する() throws Exception {
+        List<Post> searchResults = List.of(
+                new Post("alice", "検索キーワードを含む投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postService.searchPosts("検索キーワード")).willReturn(searchResults);
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", "検索キーワード"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(searchResults)))
+                .andExpect(model().attribute("keyword", "検索キーワード"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("検索キーワードを含む投稿")
+                .doesNotContain("一致しない投稿");
+        then(postService).should().searchPosts("検索キーワード");
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワードを指定しない場合_従来どおり投稿一覧を表示する")
+    void 投稿検索_キーワードを指定しない場合_従来どおり投稿一覧を表示する() throws Exception {
+        List<Post> latestPosts = List.of(
+                new Post("alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postService.findLatestPosts()).willReturn(latestPosts);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(latestPosts)))
+                .andExpect(model().attribute("keyword", ""));
+
+        then(postService).should().findLatestPosts();
+    }
+
+    @Test
+    @DisplayName("投稿検索_一覧画面の上部に検索ボックスを表示する")
+    void 投稿検索_一覧画面の上部に検索ボックスを表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(Collections.emptyList());
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("action=\"/posts\"")
+                .contains("method=\"get\"")
+                .contains("name=\"q\"")
+                .contains("検索");
+    }
+
+    @Test
     @DisplayName("投稿作成フォーム_GET_posts_new_200を返しフォームビューを表示する")
     void 投稿作成フォーム_GET_posts_new_200を返しフォームビューを表示する() throws Exception {
         mockMvc.perform(get("/posts/new"))

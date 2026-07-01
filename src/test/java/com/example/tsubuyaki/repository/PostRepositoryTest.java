@@ -41,4 +41,18 @@ class PostRepositoryTest {
                 .startsWith("投稿-51", "投稿-50", "投稿-49")
                 .doesNotContain("投稿-1");
     }
+
+    @Test
+    @DisplayName("投稿検索_キーワードを指定した場合_本文をLIKE検索できる")
+    void 投稿検索_キーワードを指定した場合_本文をLIKE検索できる() {
+        Instant baseTime = Instant.parse("2026-05-23T00:00:00Z");
+        postRepository.save(new Post("alice", "検索キーワードを含む投稿", baseTime.plusSeconds(1)));
+        postRepository.save(new Post("bob", "一致しない投稿", baseTime.plusSeconds(2)));
+        postRepository.save(new Post("carol", "別の検索キーワードを含む投稿", baseTime.plusSeconds(3)));
+
+        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索キーワード");
+
+        assertThat(posts).extracting(Post::getBody)
+                .containsExactly("別の検索キーワードを含む投稿", "検索キーワードを含む投稿");
+    }
 }
