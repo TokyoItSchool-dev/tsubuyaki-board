@@ -154,8 +154,7 @@ commit f8057d5e1b4b3e6fff046d209e748be64abe3a8f
   - ./mvnw -B -Ph2 -Dtest=PostListFeatureTest test 成功
   - コミット: 9652eb6 fix(post): 空の投稿一覧メッセージを修正
 
-  スコープ外の既存未コミット変更は触っていません。ブランチ d-fujie は
-  origin/d-fujie より 2 コミット ahead です。
+  ブランチ d-fujie はorigin/d-fujie より 2 コミット ahead です。
 ```
 
 **振り返り**:
@@ -166,7 +165,129 @@ commit f8057d5e1b4b3e6fff046d209e748be64abe3a8f
 
 ---
 
-## プロンプト 4 以降
+## プロンプト 4 
+
+**フェーズ**:M2: 投稿作成フォーム
+
+**プロンプト本文**:
+
+```
+投稿作成フォーム機能（GET /posts/new ）を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+- posts/form.html を表示
+- フォームバインド用に postForm (PostForm) を model に積む
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- posts/new にリクエストした際に、返されるビュー名がposts/form.htmlであること
+- modelに postForm というキーでオブジェクトが格納されていること
+- modelに格納されている postForm オブジェクトの型が PostForm クラスであること。
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 効いた
+
+変更内容
+
+  - src/test/java/com/example/tsubuyaki/controller/PostNewFormFeatureTest.java を追加
+      - GET /posts/new が posts/form.html を返すこと
+      - model に postForm があること
+      - postForm が PostForm 型であることを確認
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java を更新
+      - GET /posts/new の戻り値を posts/form.html に変更
+
+  確認
+
+  - Red: 追加テストが View name expected:<posts/form.html> but was:<posts/form> で失敗
+  - Green: 最小実装後、追加テスト成功
+  - 全体テスト: ./mvnw -B -Ph2 test 成功
+      - Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット
+
+  - a33c0f1 feat(post): 投稿作成フォーム表示を実装
+
+
+**振り返り**:
+投稿作成フォーム機能は追加出来た。
+ソースについて確認したところ、仕様の記載が間違っていたため、controller/PostController.java の
+戻り値がposts/form.htmlとなってしまった。
+上記はプロンプト5にて修正を実施した。
+また、「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+
+
+## プロンプト 5
+
+**フェーズ**:M2: 投稿作成フォーム：修正
+
+**プロンプト本文**:
+
+```
+投稿作成フォーム機能の修正を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+修正内容:
+-  posts/new にリクエストした際に、返されるビュー名をposts/formとする
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 効いた
+
+投稿作成フォーム機能の修正を TDD で完了しました。
+
+  変更ファイル
+
+  - src/test/java/com/example/tsubuyaki/controller/PostNewFormFeatureTest.java
+      - GET /posts/new の期待ビュー名を posts/form に修正
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java
+      - newForm の戻り値を posts/form に修正
+
+  確認
+
+  - Red: View name expected:<posts/form> but was:<posts/form.html> で失敗確認
+  - Green: 最小実装後、対象テスト成功
+  - 全体テスト: ./mvnw -B -Ph2 test 成功
+      - Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット
+
+  - b78f280 feat(post): 投稿作成フォームのビュー名を修正
+
+**振り返り**:
+投稿作成フォーム機能の仕様修正に対するソース修正が完了した。
+また、プロンプト 3にて記載した通り、テスト実施を必ず盛り込むことで、
+修正内容の質が担保出来ている
+
+
+## プロンプト 6
+
 **フェーズ**:
 
 **プロンプト本文**:
@@ -177,5 +298,3 @@ commit f8057d5e1b4b3e6fff046d209e748be64abe3a8f
 **結果**: 効いた / 部分的に効いた / 効かなかった
 
 **振り返り**:
-
-3 件目以降も追加可能。書ければ書くほど良い。
