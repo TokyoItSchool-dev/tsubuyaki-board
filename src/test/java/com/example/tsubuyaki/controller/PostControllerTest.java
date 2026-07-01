@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -73,5 +75,14 @@ class PostControllerTest {
         assertThat(html).contains("alice", "hello", "2026-05-23 19:00");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("hello"));
         assertThat(html.indexOf("hello")).isLessThan(html.indexOf("2026-05-23 19:00"));
+    }
+
+    @Test
+    @DisplayName("新規投稿フォーム_GET_posts_new_posts_formを返しpostFormを渡す")
+    void newForm_whenRequested_returnsFormViewWithPostForm() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
     }
 }
