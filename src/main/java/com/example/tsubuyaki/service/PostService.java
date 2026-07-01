@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,5 +34,9 @@ public class PostService {
     @Transactional
     public void create(PostForm form) {
         repository.save(new Post(form.getAuthor(), form.getBody(), Instant.now()));
+    }
+
+    public Optional<PostDto> findById(Long id) {
+        return repository.findById(id).map(PostDto::from);
     }
 }

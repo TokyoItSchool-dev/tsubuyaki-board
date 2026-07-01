@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -50,10 +51,10 @@ class PostServiceTest {
         List<PostDto> actual = postService.latest();
 
         assertThat(actual)
-                .extracting(PostDto::author, PostDto::body, PostDto::createdAt)
+                .extracting(PostDto::id, PostDto::author, PostDto::body, PostDto::createdAt)
                 .containsExactly(
-                        tuple(newerPost.getAuthor(), newerPost.getBody(), newerPost.getCreatedAt()),
-                        tuple(olderPost.getAuthor(), olderPost.getBody(), olderPost.getCreatedAt()));
+                        tuple(newerPost.getId(), newerPost.getAuthor(), newerPost.getBody(), newerPost.getCreatedAt()),
+                        tuple(olderPost.getId(), olderPost.getAuthor(), olderPost.getBody(), olderPost.getCreatedAt()));
     }
 
     @Test
@@ -73,5 +74,31 @@ class PostServiceTest {
         assertThat(saved.getAuthor()).isEqualTo("alice");
         assertThat(saved.getBody()).isEqualTo("登録した投稿");
         assertThat(saved.getCreatedAt()).isBetween(before, after);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在する投稿_投稿DTOを返す")
+    void findById_whenPostExists_returnsPostDto() {
+        Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+
+        Optional<PostDto> actual = postService.findById(1L);
+
+        assertThat(actual).hasValueSatisfying(dto -> {
+            assertThat(dto.id()).isEqualTo(post.getId());
+            assertThat(dto.author()).isEqualTo("alice");
+            assertThat(dto.body()).isEqualTo("詳細本文");
+            assertThat(dto.createdAt()).isEqualTo(Instant.parse("2026-05-23T10:00:00Z"));
+        });
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しない投稿_空を返す")
+    void findById_whenPostDoesNotExist_returnsEmpty() {
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        Optional<PostDto> actual = postService.findById(999L);
+
+        assertThat(actual).isEmpty();
     }
 }

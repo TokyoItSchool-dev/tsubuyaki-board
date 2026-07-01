@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -42,8 +43,8 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_最新投稿があるとき_投稿を新着順でビューに渡す")
     void list_whenLatestPostsExist_passesPostsToViewInNewestOrder() throws Exception {
-        PostDto newerPost = new PostDto("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
-        PostDto olderPost = new PostDto("bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z"));
+        PostDto newerPost = new PostDto(1L, "alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        PostDto olderPost = new PostDto(2L, "bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z"));
         given(postService.latest()).willReturn(List.of(newerPost, olderPost));
 
         mockMvc.perform(get("/posts"))
@@ -79,7 +80,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する")
     void list_whenPostsExist_displaysAuthorBodyCreatedAtInOrder() throws Exception {
-        PostDto post = new PostDto("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        PostDto post = new PostDto(1L, "alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
         given(postService.latest()).willReturn(List.of(post));
 
         MvcResult result = mockMvc.perform(get("/posts"))
@@ -93,6 +94,17 @@ class PostControllerTest {
 
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("新しい投稿"));
         assertThat(html.indexOf("新しい投稿")).isLessThan(html.indexOf("2026-05-23 19:00"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_詳細画面へのリンクを表示する")
+    void list_whenPostsExist_displaysDetailLink() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<a href=\"/posts/1\">詳細</a>")));
     }
 
     @Test
@@ -206,5 +218,67 @@ class PostControllerTest {
     private PostForm assertThatForm(String author, String body) {
         return org.mockito.ArgumentMatchers.argThat(form ->
                 author.equals(form.getAuthor()) && body.equals(form.getBody()));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在する投稿_詳細画面を表示しmodelに投稿を積む")
+    void detail_whenPostExists_displaysDetailViewWithPost() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("詳細本文")))
+                .andExpect(content().string(containsString("2026-05-23 19:00")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在する投稿_投稿者内容投稿日の順に表示する")
+    void detail_whenPostExists_displaysAuthorBodyCreatedAtInOrder() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String html = result.getResponse().getContentAsString();
+
+        assertThat(html.indexOf("alice")).isLessThan(html.indexOf("詳細本文"));
+        assertThat(html.indexOf("詳細本文")).isLessThan(html.indexOf("2026-05-23 19:00"));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しない投稿_404を返す")
+    void detail_whenPostDoesNotExist_returns404() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在する投稿_一覧に戻るリンクを表示する")
+    void detail_whenPostExists_displaysBackToListLink() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<a href=\"/posts\">一覧に戻る</a>")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_本文にHTMLが含まれるとき_エスケープ表示する")
+    void detail_whenBodyContainsHtml_escapesBody() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "<script>alert('xss')</script>",
+                Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;")));
     }
 }
