@@ -90,11 +90,12 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("新規投稿フォーム_GET_posts_new_postFormをビューに渡す")
-    void 新規投稿フォーム_GET_posts_new_postFormをビューに渡す() throws Exception {
+    @DisplayName("投稿作成フォーム_GET_posts_new_posts_formを表示しpostFormをビューに渡す")
+    void 投稿作成フォーム_GET_posts_new_posts_formを表示しpostFormをビューに渡す() throws Exception {
         mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
-                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"post\"[^>]*>.*")));
     }
 }
