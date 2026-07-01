@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Locale;
 
 @Controller
 public class PostController {
@@ -39,6 +40,15 @@ public class PostController {
         }
         model.addAttribute("posts", postService.findLatest50());
         model.addAttribute("q", "");
+        return "posts/list";
+    }
+
+    @GetMapping("/tags/{name}")
+    public String listByTag(@PathVariable String name, Model model) {
+        String tagName = normalizeQuery(name).toLowerCase(Locale.ROOT);
+        model.addAttribute("posts", postService.findByTagName(tagName));
+        model.addAttribute("q", "");
+        model.addAttribute("tagName", tagName);
         return "posts/list";
     }
 
@@ -77,7 +87,7 @@ public class PostController {
         if (result.hasErrors()) {
             return "posts/form";
         }
-        postService.create(form.getAuthor(), form.getBody(), form.getAvatarColor());
+        postService.create(form.getAuthor(), form.getBody(), form.getAvatarColor(), form.getTagNames());
         return "redirect:/posts";
     }
 

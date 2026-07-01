@@ -1,15 +1,22 @@
 package com.example.tsubuyaki.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "posts")
@@ -34,6 +41,13 @@ public class Post {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(
+            name = "post_tags",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags = new LinkedHashSet<>();
 
     protected Post() {
         // JPA
@@ -72,6 +86,18 @@ public class Post {
 
     public Instant getDeletedAt() {
         return deletedAt;
+    }
+
+    public Set<Tag> getTags() {
+        return Collections.unmodifiableSet(tags);
+    }
+
+    public boolean hasTags() {
+        return !tags.isEmpty();
+    }
+
+    public void addTag(Tag tag) {
+        tags.add(Objects.requireNonNull(tag));
     }
 
     public void markDeleted(Instant deletedAt) {

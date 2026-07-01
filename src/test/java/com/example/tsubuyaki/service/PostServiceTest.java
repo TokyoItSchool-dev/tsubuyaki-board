@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -23,6 +27,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private TagRepository tagRepository;
 
     @InjectMocks
     private PostService postService;
@@ -97,6 +104,37 @@ class PostServiceTest {
                         && "green".equals(post.getAvatarColor())
                         && !post.getCreatedAt().isBefore(before)
                         && !post.getCreatedAt().isAfter(after)));
+    }
+
+    @Test
+    @DisplayName("投稿登録_本文にタグがあるとき_タグを正規化して投稿に紐づける")
+    void create_本文にタグがあるとき_タグを正規化して投稿に紐づける() {
+        Tag spring = new Tag("spring", Instant.parse("2026-06-30T00:00:00Z"));
+        given(tagRepository.findByName("java")).willReturn(Optional.empty());
+        given(tagRepository.findByName("spring")).willReturn(Optional.of(spring));
+
+        postService.create("alice", "共有です #Java #spring #java", "blue");
+
+        verify(postRepository).save(argThat(post ->
+                post.getTags().stream().map(Tag::getName).collect(Collectors.toSet())
+                        .equals(Set.of("java", "spring"))));
+        verify(tagRepository).findByName("java");
+        verify(tagRepository).findByName("spring");
+    }
+
+    @Test
+    @DisplayName("投稿登録_タグ入力欄があるとき_本文タグと合わせて投稿に紐づける")
+    void create_タグ入力欄があるとき_本文タグと合わせて投稿に紐づける() {
+        given(tagRepository.findByName("java")).willReturn(Optional.empty());
+        given(tagRepository.findByName("spring")).willReturn(Optional.empty());
+
+        postService.create("alice", "共有です #Java", "blue", "spring java");
+
+        verify(postRepository).save(argThat(post ->
+                post.getTags().stream().map(Tag::getName).collect(Collectors.toSet())
+                        .equals(Set.of("java", "spring"))));
+        verify(tagRepository).findByName("java");
+        verify(tagRepository).findByName("spring");
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -157,6 +158,22 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_タグがある場合_タグリンクを表示する")
+    void list_タグがある場合_タグリンクを表示する() throws Exception {
+        Post post = post("alice", "タグ付き投稿です", BASE_TIME.plusSeconds(1));
+        post.addTag(new Tag("java", BASE_TIME));
+        given(postService.findLatest50()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("href=\"/tags/java\"");
+        assertThat(html).contains(">#java<");
+    }
+
+    @Test
     @DisplayName("投稿検索_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す")
     void list_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す() throws Exception {
         List<Post> posts = List.of(post("alice", "検索対象の共有です", BASE_TIME.plusSeconds(1)));
@@ -188,6 +205,22 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("value=\"共有\"")));
 
         verify(postService).searchByBodyContaining("共有");
+    }
+
+    @Test
+    @DisplayName("タグ一覧_GET_tags_name_タグ関連投稿を一覧ビューに渡す")
+    void listByTag_GET_tags_name_タグ関連投稿を一覧ビューに渡す() throws Exception {
+        List<Post> posts = List.of(post("alice", "共有です #java", BASE_TIME.plusSeconds(1)));
+        given(postService.findByTagName("java")).willReturn(posts);
+
+        mockMvc.perform(get("/tags/Java"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("tagName", "java"))
+                .andExpect(content().string(containsString("共有です #java")));
+
+        verify(postService).findByTagName("java");
     }
 
     @Test
@@ -229,6 +262,23 @@ class PostControllerTest {
         assertThat(html).contains("method=\"post\" action=\"/posts/10/delete\"");
         assertThat(html).contains("<button type=\"submit\">削除</button>");
     }
+
+    @Test
+    @DisplayName("投稿詳細_タグがある場合_タグリンクを表示する")
+    void detail_タグがある場合_タグリンクを表示する() throws Exception {
+        Post post = post("alice", "タグ付き投稿です", Instant.parse("2026-06-30T01:15:00Z"));
+        post.addTag(new Tag("java", BASE_TIME));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("href=\"/tags/java\"");
+        assertThat(html).contains(">#java<");
+    }
+
 
     @Test
     @DisplayName("投稿詳細_存在しないIDのとき_404を返す")
@@ -275,11 +325,12 @@ class PostControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.post("/posts")
                         .param("author", "alice")
                         .param("body", "本日の共有です")
-                        .param("avatarColor", "green"))
+                        .param("avatarColor", "green")
+                        .param("tagNames", "java spring"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "本日の共有です", "green");
+        verify(postService).create("alice", "本日の共有です", "green", "java spring");
     }
 
     @Test
@@ -297,7 +348,7 @@ class PostControllerTest {
 
     @Test
     @DisplayName("投稿登録フォーム_投稿者名と任意のアバター色を入力できる")
-    void newForm_投稿者名と任意のアバター色を入力できる() throws Exception {
+    void newForm_投稿者名と任意のアバター色とタグを入力できる() throws Exception {
         MvcResult result = mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
@@ -306,6 +357,7 @@ class PostControllerTest {
         String html = result.getResponse().getContentAsString();
         assertThat(html).contains("name=\"author\"");
         assertThat(html).contains("name=\"avatarColor\"");
+        assertThat(html).contains("name=\"tagNames\"");
         assertThat(html).contains("value=\"\"");
         assertThat(html).contains("value=\"blue\"");
         assertThat(html).contains("value=\"green\"");

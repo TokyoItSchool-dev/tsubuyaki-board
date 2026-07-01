@@ -43,6 +43,10 @@
             <textarea id="body" th:field="*{body}" rows="4"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
+        <div>
+            <label for="tagNames">タグ</label>
+            <input type="text" id="tagNames" th:field="*{tagNames}">
+        </div>
         <button type="submit">投稿</button>
     </form>
 </main>

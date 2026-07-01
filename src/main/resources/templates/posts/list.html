@@ -21,6 +21,7 @@
         <input type="search" name="q" th:value="${q}" placeholder="本文を検索">
         <button type="submit">検索</button>
     </form>
+    <p th:if="${tagName != null}" th:text="|#${tagName} の投稿|">#tag の投稿</p>
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
@@ -29,6 +30,11 @@
                th:style="${#strings.isEmpty(post.avatarColor)} ? null : |color: ${post.avatarColor}|"
                th:text="${post.author}">投稿者</p>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <p class="post__tags" th:if="${post.hasTags()}">
+                <a th:each="tag : ${post.tags}"
+                   th:href="@{/tags/{name}(name=${tag.name})}"
+                   th:text="|#${tag.name}|">#tag</a>
+            </p>
             <time class="post__created-at"
                   th:datetime="${post.createdAt}"
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>

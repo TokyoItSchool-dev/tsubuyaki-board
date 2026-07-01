@@ -15,6 +15,8 @@ public class PostForm {
 
     private String avatarColor;
 
+    private String tagNames;
+
     public PostForm() {
     }
 
@@ -40,5 +42,13 @@ public class PostForm {
 
     public void setAvatarColor(String avatarColor) {
         this.avatarColor = avatarColor;
+    }
+
+    public String getTagNames() {
+        return tagNames;
+    }
+
+    public void setTagNames(String tagNames) {
+        this.tagNames = tagNames;
     }
 }
