@@ -56,4 +56,16 @@ class PostRepositoryTest {
                 .extracting(Post::getAuthor, Post::getBody, Post::getCreatedAt)
                 .containsExactly("alice", "M3 の投稿", Instant.parse("2026-06-26T10:00:00Z"));
     }
+
+    @Test
+    @DisplayName("Repository_投稿詳細_id指定で投稿を取得できる")
+    void 投稿詳細_id指定で投稿を取得できる() {
+        Post savedPost = postRepository.saveAndFlush(
+                new Post("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z")));
+
+        assertThat(postRepository.findById(savedPost.getId()))
+                .get()
+                .extracting(Post::getAuthor, Post::getBody, Post::getCreatedAt)
+                .containsExactly("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
+    }
 }

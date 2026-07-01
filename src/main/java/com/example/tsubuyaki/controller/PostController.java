@@ -5,10 +5,14 @@ import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Controller
 public class PostController {
@@ -23,6 +27,13 @@ public class PostController {
     public String list(Model model) {
         model.addAttribute("posts", postService.latest());
         return "posts/list";
+    }
+
+    @GetMapping("/posts/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        model.addAttribute("post", postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND)));
+        return "posts/detail";
     }
 
     @GetMapping("/posts/new")
@@ -44,5 +55,4 @@ public class PostController {
     }
 
     // 演習中に追加するエンドポイント:
-    //   @GetMapping("/posts/{id}")       // 詳細
 }

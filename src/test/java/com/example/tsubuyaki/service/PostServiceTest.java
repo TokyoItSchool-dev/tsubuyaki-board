@@ -11,10 +11,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,5 +53,28 @@ class PostServiceTest {
         assertThat(savedPost.getBody()).isEqualTo("M3 の投稿");
         assertThat(savedPost.getCreatedAt()).isNotNull();
         verify(postRepository).save(savedPost);
+    }
+
+    @Test
+    @DisplayName("Service_findById_id指定でRepositoryの投稿を返す")
+    void findById_id指定でRepositoryの投稿を返す() {
+        Post post = new Post("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+
+        Optional<Post> foundPost = postService.findById(1L);
+
+        assertThat(foundPost).containsSame(post);
+        verify(postRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Service_findById_存在しないid_空を返す")
+    void findById_存在しないid_空を返す() {
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        Optional<Post> foundPost = postService.findById(999L);
+
+        assertThat(foundPost).isEmpty();
+        verify(postRepository).findById(999L);
     }
 }

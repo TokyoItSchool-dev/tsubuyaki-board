@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
@@ -112,5 +113,27 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
 
         verify(postService, never()).create(tooLongAuthor, tooLongBody);
+    }
+
+    @Test
+    @DisplayName("Controller_投稿詳細_存在するid_投稿をmodelに渡す")
+    void 投稿詳細_存在するid_投稿をmodelに渡す() throws Exception {
+        Post post = new Post("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("M4 の詳細投稿")));
+    }
+
+    @Test
+    @DisplayName("Controller_投稿詳細_存在しないid_404を返す")
+    void 投稿詳細_存在しないid_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 }
