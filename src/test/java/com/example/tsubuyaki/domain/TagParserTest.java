@@ -18,6 +18,14 @@ class TagParserTest {
     }
 
     @Test
+    @DisplayName("タグ抽出_改行で区切られたとき_別タグとして返す")
+    void タグ抽出_改行で区切られたとき_別タグとして返す() {
+        List<String> tags = TagParser.extractNames("#java\n#spring\r\n#研修");
+
+        assertThat(tags).containsExactly("java", "spring", "研修");
+    }
+
+    @Test
     @DisplayName("タグ抽出_全角シャープを含むとき_半角シャープだけ認識する")
     void タグ抽出_全角シャープを含むとき_半角シャープだけ認識する() {
         List<String> tags = TagParser.extractNames("＃ng #ok");

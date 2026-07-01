@@ -38,6 +38,6 @@ public final class TagParser {
     }
 
     private static boolean isTagSeparator(char character) {
-        return character == ' ' || character == '　';
+        return Character.isWhitespace(character) || character == '　';
     }
 }
