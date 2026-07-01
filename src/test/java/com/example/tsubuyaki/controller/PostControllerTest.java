@@ -54,8 +54,8 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿一覧_投稿あり_投稿者内容投稿日の順に表示する")
-    void 投稿一覧_投稿あり_投稿者内容投稿日の順に表示する() throws Exception {
+    @DisplayName("投稿一覧_投稿あり_投稿者投稿日本文の順に表示する")
+    void 投稿一覧_投稿あり_投稿者投稿日本文の順に表示する() throws Exception {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));
         given(postService.latest()).willReturn(List.of(post));
 
@@ -64,7 +64,7 @@ class PostControllerTest {
                 .andReturn();
 
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-        assertThat(html.indexOf("alice")).isLessThan(html.indexOf("本文です"));
-        assertThat(html.indexOf("本文です")).isLessThan(html.indexOf("2026-05-23"));
+        assertThat(html.indexOf("alice")).isLessThan(html.indexOf("2026-05-23"));
+        assertThat(html.indexOf("2026-05-23")).isLessThan(html.indexOf("本文です"));
     }
 }

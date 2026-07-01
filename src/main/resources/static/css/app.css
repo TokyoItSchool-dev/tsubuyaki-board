@@ -59,41 +59,42 @@ h1 {
     word-break: break-word;
 }
 
-.posts-table {
+.posts-list {
     width: 100%;
-    border-collapse: collapse;
     background: white;
+    border-top: 1px solid var(--color-border);
 }
 
-.posts-table th,
-.posts-table td {
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    text-align: left;
-    vertical-align: top;
+.post-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
 }
 
-.posts-table th {
-    background: var(--color-accent);
-    color: white;
-    font-weight: 700;
+.post-item__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
 }
 
-.posts-table td {
+.post-item__author,
+.post-item__created-at,
+.post-item__body {
     color: var(--color-text);
     font-size: 0.9rem;
 }
 
-.posts-table__author {
-    width: 8rem;
+.post-item__author {
+    font-weight: 600;
 }
 
-.posts-table__body {
+.post-item__created-at {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.post-item__body {
+    margin: 0.75rem 0 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-}
-
-.posts-table__created-at {
-    width: 10rem;
-    white-space: nowrap;
 }
