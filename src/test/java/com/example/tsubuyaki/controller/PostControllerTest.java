@@ -16,6 +16,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -48,6 +49,15 @@ class PostControllerTest {
     @DisplayName("新規投稿フォーム_GET_posts_new_PostFormをビューに渡す")
     void 新規投稿フォーム_GET_posts_new_PostFormをビューに渡す() throws Exception {
         mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+    }
+
+    @Test
+    @DisplayName("新規投稿フォーム_POST_posts_new_PostFormをビューに渡す")
+    void 新規投稿フォーム_POST_posts_new_PostFormをビューに渡す() throws Exception {
+        mockMvc.perform(post("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));

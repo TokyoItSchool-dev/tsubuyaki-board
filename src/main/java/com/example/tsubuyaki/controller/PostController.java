@@ -5,6 +5,7 @@ import com.example.tsubuyaki.web.dto.PostForm;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
 public class PostController {
@@ -23,6 +24,15 @@ public class PostController {
 
     @GetMapping("/posts/new")
     public String newForm(Model model) {
+        return showNewForm(model);
+    }
+
+    @PostMapping("/posts/new")
+    public String newFormByPost(Model model) {
+        return showNewForm(model);
+    }
+
+    private String showNewForm(Model model) {
         model.addAttribute("postForm", new PostForm());
         return "posts/form";
     }
