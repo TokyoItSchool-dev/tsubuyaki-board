@@ -13,6 +13,7 @@ import org.springframework.dao.DataAccessResourceFailureException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,6 +41,29 @@ class PostServiceTest {
 
         assertThat(actual).isSameAs(posts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidの場合_RepositoryのfindById結果を返す")
+    void findById_whenPostExists_returnsRepositoryPost() {
+        Post post = new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:00:00"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+
+        Optional<Post> actual = postService.findById(1L);
+
+        assertThat(actual).containsSame(post);
+        verify(postRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないidの場合_空のOptionalを返す")
+    void findById_whenPostDoesNotExist_returnsEmptyOptional() {
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        Optional<Post> actual = postService.findById(999L);
+
+        assertThat(actual).isEmpty();
+        verify(postRepository).findById(999L);
     }
 
     @Test

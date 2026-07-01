@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -91,6 +92,48 @@ class PostControllerTest {
                 .getContentAsString();
 
         assertThat(html).containsSubsequence("alice", "順序確認の本文", "2026-05-23 10:30");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidの場合_posts_detailビューとpostを返す")
+    void detail_whenPostExists_returnsDetailViewWithPost() throws Exception {
+        Post post = new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:30:00"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post));
+
+        then(postService).should().findById(1L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidの場合_投稿者本文投稿日を表示する")
+    void detail_whenPostExists_displaysAuthorBodyCreatedAt() throws Exception {
+        given(postService.findById(1L)).willReturn(Optional.of(
+                new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:30:00"))));
+
+        String html = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).containsSubsequence("alice", "詳細本文", "2026-05-23 10:30");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないidの場合_404エラー画面を表示する")
+    void detail_whenPostDoesNotExist_returnsNotFoundErrorView() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error/404"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿が見つかりません")));
+
+        then(postService).should().findById(999L);
     }
 
     @Test
