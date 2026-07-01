@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +12,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -49,5 +55,32 @@ public class PostController {
         model.addAttribute("post", postService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND)));
         return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        if (!postService.toggleLike(id, clientHash(request))) {
+            throw new ResponseStatusException(NOT_FOUND);
+        }
+        return "redirect:/posts/" + id;
+    }
+
+    private String clientHash(HttpServletRequest request) {
+        String source = request.getRemoteAddr() + userAgent(request);
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(source.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash, 0, 4);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
+    }
+
+    private String userAgent(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent == null) {
+            return "";
+        }
+        return userAgent;
     }
 }
