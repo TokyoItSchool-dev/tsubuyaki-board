@@ -31,4 +31,14 @@ public class PostService {
     public void create(String author, String body) {
         repository.save(new Post(author, body, Instant.now()));
     }
+
+    @Transactional
+    public Optional<Post> update(Long id, String author, String body) {
+        return repository.findById(id)
+                .map(post -> {
+                    post.update(author, body);
+                    repository.save(post);
+                    return post;
+                });
+    }
 }

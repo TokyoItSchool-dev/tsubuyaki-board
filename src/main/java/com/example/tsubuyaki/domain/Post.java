@@ -55,6 +55,11 @@ public class Post {
         return createdAt;
     }
 
+    public void update(String author, String body) {
+        this.author = author;
+        this.body = body;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

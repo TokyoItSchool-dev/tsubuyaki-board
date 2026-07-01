@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,5 +65,32 @@ class PostServiceTest {
 
         assertThat(actual).containsSame(post);
         verify(postRepository).findById(42L);
+    }
+
+    @Test
+    @DisplayName("投稿編集_存在するid_投稿を更新してRepositoryへ保存する")
+    void update_whenPostExists_updatesAndSavesPost() {
+        Post post = new Post("alice", "更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+
+        Optional<Post> actual = postService.update(42L, "bob", "更新後本文です");
+
+        assertThat(actual).containsSame(post);
+        assertThat(post.getAuthor()).isEqualTo("bob");
+        assertThat(post.getBody()).isEqualTo("更新後本文です");
+        verify(postRepository).findById(42L);
+        verify(postRepository).save(post);
+    }
+
+    @Test
+    @DisplayName("投稿編集_存在しないid_保存せず空を返す")
+    void update_whenPostDoesNotExist_returnsEmpty() {
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        Optional<Post> actual = postService.update(999L, "bob", "更新後本文です");
+
+        assertThat(actual).isEmpty();
+        verify(postRepository).findById(999L);
+        verify(postRepository, never()).save(org.mockito.ArgumentMatchers.any(Post.class));
     }
 }

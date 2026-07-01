@@ -48,4 +48,17 @@ class PostTest {
         assertThat(post).isNotEqualTo(otherId);
         assertThat(post).hasSameHashCodeAs(sameId);
     }
+
+    @Test
+    @DisplayName("Post_更新時_投稿者と本文だけを変更する")
+    void update_changesAuthorAndBodyOnly() {
+        Instant createdAt = Instant.parse("2026-05-23T10:00:00Z");
+        Post post = new Post("alice", "hello", createdAt);
+
+        post.update("bob", "更新後本文です");
+
+        assertThat(post.getAuthor()).isEqualTo("bob");
+        assertThat(post.getBody()).isEqualTo("更新後本文です");
+        assertThat(post.getCreatedAt()).isEqualTo(createdAt);
+    }
 }

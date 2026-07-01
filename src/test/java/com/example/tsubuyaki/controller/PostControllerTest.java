@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -81,6 +82,19 @@ class PostControllerTest {
         assertThat(html).contains("alice", "本文です", "2026-05-23 10:00");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("本文です"));
         assertThat(html.indexOf("本文です")).isLessThan(html.indexOf("2026-05-23 10:00"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿ごとに編集リンクを表示する")
+    void list_displaysEditLinkForEachPost() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/42/edit\"")))
+                .andExpect(content().string(containsString("編集")));
     }
 
     @Test
@@ -226,5 +240,127 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("href=\"/posts\"")))
                 .andExpect(content().string(containsString("一覧に戻る")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_編集リンク_posts_id_editへ遷移する")
+    void detail_hasEditLink() throws Exception {
+        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/42/edit\"")))
+                .andExpect(content().string(containsString("編集")));
+    }
+
+    @Test
+    @DisplayName("投稿編集フォーム_存在するid_既存値をフォームに表示する")
+    void editForm_whenPostExists_showsFormWithExistingValues() throws Exception {
+        Post post = new Post("alice", "編集前本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42/edit"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("author", org.hamcrest.Matchers.equalTo("alice"))))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("body", org.hamcrest.Matchers.equalTo("編集前本文です"))))
+                .andExpect(content().string(containsString("value=\"alice\"")))
+                .andExpect(content().string(containsString("編集前本文です")))
+                .andExpect(content().string(containsString("action=\"/posts/42\"")))
+                .andExpect(content().string(containsString("href=\"/posts/42\"")));
+    }
+
+    @Test
+    @DisplayName("投稿編集フォーム_存在しないid_404を返す")
+    void editForm_whenPostDoesNotExist_returns404() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999/edit"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿編集_author空白のみ_posts_formを再表示し入力値を保持する")
+    void update_whenAuthorBlank_redisplaysFormAndKeepsInput() throws Exception {
+        mockMvc.perform(post("/posts/42")
+                        .param("author", "   ")
+                        .param("body", "入力中の本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("author", org.hamcrest.Matchers.equalTo("   "))))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("body", org.hamcrest.Matchers.equalTo("入力中の本文です"))))
+                .andExpect(content().string(containsString("投稿者名を入力してください")))
+                .andExpect(content().string(containsString("action=\"/posts/42\"")))
+                .andExpect(content().string(containsString("入力中の本文です")));
+
+        verify(postService, never()).update(
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿編集_body空白のみ_posts_formを再表示する")
+    void update_whenBodyBlank_redisplaysForm() throws Exception {
+        mockMvc.perform(post("/posts/42")
+                        .param("author", "alice")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verify(postService, never()).update(
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿編集_author31文字_posts_formを再表示する")
+    void update_whenAuthorTooLong_redisplaysForm() throws Exception {
+        mockMvc.perform(post("/posts/42")
+                        .param("author", "a".repeat(31))
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")));
+
+        verify(postService, never()).update(
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿編集_body281文字_posts_formを再表示する")
+    void update_whenBodyTooLong_redisplaysForm() throws Exception {
+        mockMvc.perform(post("/posts/42")
+                        .param("author", "alice")
+                        .param("body", "a".repeat(281)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
+
+        verify(postService, never()).update(
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿編集_入力正常_詳細へリダイレクトし更新する")
+    void update_whenValid_redirectsToDetailAndUpdatesPost() throws Exception {
+        given(postService.update(42L, "alice", "更新後本文です"))
+                .willReturn(Optional.of(new Post("alice", "更新後本文です",
+                        Instant.parse("2026-05-23T01:00:00Z"))));
+
+        mockMvc.perform(post("/posts/42")
+                        .param("author", "alice")
+                        .param("body", "更新後本文です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/42"));
+
+        verify(postService).update(42L, "alice", "更新後本文です");
     }
 }
