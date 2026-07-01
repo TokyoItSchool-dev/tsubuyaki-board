@@ -17,10 +17,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -84,5 +89,58 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+    }
+
+    @Test
+    @DisplayName("投稿作成_正常入力_投稿を保存して一覧へリダイレクトする")
+    void 投稿作成_正常入力_投稿を保存して一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "今日の共有です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "今日の共有です");
+    }
+
+    @Test
+    @DisplayName("投稿作成_author未入力_フォームを再表示してエラー情報を含める")
+    void 投稿作成_author未入力_フォームを再表示してエラー情報を含める() throws Exception {
+        assertInvalidPost("", "本文があります", "author");
+    }
+
+    @Test
+    @DisplayName("投稿作成_body未入力_フォームを再表示してエラー情報を含める")
+    void 投稿作成_body未入力_フォームを再表示してエラー情報を含める() throws Exception {
+        assertInvalidPost("alice", "", "body");
+    }
+
+    @Test
+    @DisplayName("投稿作成_author31文字以上_フォームを再表示してエラー情報を含める")
+    void 投稿作成_author31文字以上_フォームを再表示してエラー情報を含める() throws Exception {
+        assertInvalidPost("a".repeat(31), "本文があります", "author");
+    }
+
+    @Test
+    @DisplayName("投稿作成_body281文字以上_フォームを再表示してエラー情報を含める")
+    void 投稿作成_body281文字以上_フォームを再表示してエラー情報を含める() throws Exception {
+        assertInvalidPost("alice", "あ".repeat(281), "body");
+    }
+
+    @Test
+    @DisplayName("投稿作成_空白のみ_フォームを再表示してエラー情報を含める")
+    void 投稿作成_空白のみ_フォームを再表示してエラー情報を含める() throws Exception {
+        assertInvalidPost("   ", "　　", "author", "body");
+    }
+
+    private void assertInvalidPost(String author, String body, String... errorFields) throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", author)
+                        .param("body", body))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", errorFields));
+
+        verify(postService, never()).create(anyString(), anyString());
     }
 }

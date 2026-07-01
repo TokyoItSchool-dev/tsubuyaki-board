@@ -14,6 +14,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,5 +38,19 @@ class PostServiceTest {
 
         assertThat(actual).isEqualTo(expected);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿作成_create_投稿者と本文を保存する")
+    void 投稿作成_create_投稿者と本文を保存する() {
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        Post actual = postService.create("alice", "今日の共有です");
+
+        assertThat(actual.getAuthor()).isEqualTo("alice");
+        assertThat(actual.getBody()).isEqualTo("今日の共有です");
+        assertThat(actual.getCreatedAt()).isNotNull();
+        verify(postRepository).save(any(Post.class));
+        verify(postRepository, never()).findTop50ByOrderByCreatedAtDesc();
     }
 }
