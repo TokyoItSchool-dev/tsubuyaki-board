@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main id="top">
+    <header class="page-header">
+        <div>
+            <p class="page-header__eyebrow">Post detail</p>
+            <h1 th:text="|ID ${post.id}|">ID 1</h1>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <a class="nav__link" th:href="@{/posts}">一覧</a>
+        <a class="nav__link" th:href="@{/posts/new}">新規投稿</a>
+        <a class="nav__link" th:href="@{/posts/trash}">ごみ箱</a>
+    </nav>
+
+    <div class="board-layout">
+        <aside class="notice-panel" aria-label="お知らせ">
+            <h2>お知らせ</h2>
+            <p th:if="${editedPostId != null}" th:text="|ID${editedPostId}が編集されました。|">ID10が編集されました。</p>
+            <p th:if="${deletedPostId != null}" th:text="|ID${deletedPostId}が削除されました。|">ID11が削除されました。</p>
+            <p th:if="${editedPostId == null and deletedPostId == null}">お知らせはありません。</p>
+        </aside>
+
+        <article class="post post--detail">
+            <div class="post__author" th:text="${post.author}">投稿者</div>
+            <p class="post__body post__body--full" th:text="${post.body}">本文全文</p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+
+            <div class="post-actions">
+                <a class="button-link" th:href="@{/posts/{id}/edit(id=${post.id})}">編集</a>
+                <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+                    <button class="button-danger" type="submit">削除</button>
+                </form>
+            </div>
+        </article>
+    </div>
+
+    <a class="back-to-top" href="#top" aria-label="TOPへ戻る">TOP</a>
+</main>
+</body>
+</html>

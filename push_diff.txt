@@ -1,0 +1,881 @@
+diff --git a/src/main/java/com/example/tsubuyaki/controller/PostController.java b/src/main/java/com/example/tsubuyaki/controller/PostController.java
+index a391917..ed6c5f4 100644
+--- a/src/main/java/com/example/tsubuyaki/controller/PostController.java
++++ b/src/main/java/com/example/tsubuyaki/controller/PostController.java
+@@ -2,32 +2,131 @@
+ 
+ import com.example.tsubuyaki.service.PostService;
+ import com.example.tsubuyaki.web.dto.PostForm;
++import jakarta.servlet.http.HttpSession;
++import jakarta.validation.Valid;
++import org.springframework.data.domain.Page;
++import org.springframework.http.HttpStatus;
+ import org.springframework.stereotype.Controller;
+ import org.springframework.ui.Model;
++import org.springframework.validation.BindingResult;
+ import org.springframework.web.bind.annotation.GetMapping;
++import org.springframework.web.bind.annotation.ModelAttribute;
++import org.springframework.web.bind.annotation.PathVariable;
++import org.springframework.web.bind.annotation.PostMapping;
++import org.springframework.web.bind.annotation.RequestParam;
++import org.springframework.web.server.ResponseStatusException;
++
++import java.util.List;
++import java.util.stream.IntStream;
+ 
+ @Controller
+ public class PostController {
+ 
++    private static final String EDITED_POST_ID = "editedPostId";
++
++    private static final String DELETED_POST_ID = "deletedPostId";
++
+     private final PostService postService;
+ 
+     public PostController(PostService postService) {
+         this.postService = postService;
+     }
+ 
+-    @GetMapping({ "/", "/posts" })
+-    public String list(Model model) {
+-        model.addAttribute("posts", postService.latest());
++    @ModelAttribute
++    public void addNoticeIds(Model model, HttpSession session) {
++        model.addAttribute(EDITED_POST_ID, session.getAttribute(EDITED_POST_ID));
++        model.addAttribute(DELETED_POST_ID, session.getAttribute(DELETED_POST_ID));
++    }
++
++    @GetMapping({ "/", "/posts", "/posts/" })
++    public String list(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
++        Page<?> postsPage = postService.latestPage(page);
++        int totalPages = postsPage.getTotalPages();
++        List<Integer> pageNumbers = totalPages == 0
++                ? List.of()
++                : IntStream.range(0, totalPages).boxed().toList();
++
++        model.addAttribute("posts", postsPage.getContent());
++        model.addAttribute("currentPage", postsPage.getNumber());
++        model.addAttribute("totalPages", totalPages);
++        model.addAttribute("hasPrevious", postsPage.hasPrevious());
++        model.addAttribute("hasNext", postsPage.hasNext());
++        model.addAttribute("pageNumbers", pageNumbers);
+         return "posts/list";
+     }
+ 
+     @GetMapping("/posts/new")
+     public String newForm(Model model) {
+         model.addAttribute("postForm", new PostForm());
++        model.addAttribute("formTitle", "新規投稿");
++        model.addAttribute("formAction", "/posts");
++        model.addAttribute("submitLabel", "投稿");
++        return "posts/form";
++    }
++
++    @PostMapping("/posts")
++    public String create(@Valid @ModelAttribute("postForm") PostForm postForm, BindingResult result) {
++        if (result.hasErrors()) {
++            return "posts/form";
++        }
++
++        postService.create(postForm.getAuthor(), postForm.getContent());
++        return "redirect:/posts";
++    }
++
++    @GetMapping("/posts/trash")
++    public String trash(Model model) {
++        model.addAttribute("posts", postService.trashedPosts());
++        return "posts/trash";
++    }
++
++    @GetMapping("/posts/{id}")
++    public String detail(@PathVariable Long id, Model model) {
++        model.addAttribute("post", postService.findVisibleById(id)
++                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
++        return "posts/detail";
++    }
++
++    @GetMapping("/posts/{id}/edit")
++    public String editForm(@PathVariable Long id, Model model) {
++        var post = postService.findVisibleById(id)
++                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
++        PostForm postForm = new PostForm();
++        postForm.setAuthor(post.getAuthor());
++        postForm.setBody(post.getBody());
++        model.addAttribute("postForm", postForm);
++        model.addAttribute("postId", id);
++        model.addAttribute("formTitle", "投稿編集");
++        model.addAttribute("formAction", "/posts/" + id + "/edit");
++        model.addAttribute("submitLabel", "更新");
+         return "posts/form";
+     }
+ 
+-    // 演習中に追加するエンドポイント:
+-    //   @PostMapping("/posts")           // 投稿登録
+-    //   @GetMapping("/posts/{id}")       // 詳細
++    @PostMapping("/posts/{id}/edit")
++    public String update(@PathVariable Long id,
++            @Valid @ModelAttribute("postForm") PostForm postForm,
++            BindingResult result,
++            Model model,
++            HttpSession session) {
++        if (result.hasErrors()) {
++            model.addAttribute("postId", id);
++            model.addAttribute("formTitle", "投稿編集");
++            model.addAttribute("formAction", "/posts/" + id + "/edit");
++            model.addAttribute("submitLabel", "更新");
++            return "posts/form";
++        }
++
++        postService.update(id, postForm.getAuthor(), postForm.getContent())
++                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
++        session.setAttribute(EDITED_POST_ID, id);
++        return "redirect:/posts/" + id;
++    }
++
++    @PostMapping("/posts/{id}/delete")
++    public String delete(@PathVariable Long id, HttpSession session) {
++        postService.moveToTrash(id)
++                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
++        session.setAttribute(DELETED_POST_ID, id);
++        return "redirect:/posts";
++    }
+ }
+diff --git a/src/main/java/com/example/tsubuyaki/domain/Post.java b/src/main/java/com/example/tsubuyaki/domain/Post.java
+index cd183ce..70e372a 100644
+--- a/src/main/java/com/example/tsubuyaki/domain/Post.java
++++ b/src/main/java/com/example/tsubuyaki/domain/Post.java
+@@ -29,7 +29,10 @@ public class Post {
+     @Column(name = "created_at", nullable = false)
+     private Instant createdAt;
+ 
+-    protected Post() {
++    @Column(name = "deleted_at")
++    private Instant deletedAt;
++
++    public Post() {
+         // JPA
+     }
+ 
+@@ -47,14 +50,34 @@ public String getAuthor() {
+         return author;
+     }
+ 
++    public void setAuthor(String author) {
++        this.author = author;
++    }
++
+     public String getBody() {
+         return body;
+     }
+ 
++    public void setBody(String body) {
++        this.body = body;
++    }
++
+     public Instant getCreatedAt() {
+         return createdAt;
+     }
+ 
++    public void setCreatedAt(Instant createdAt) {
++        this.createdAt = createdAt;
++    }
++
++    public Instant getDeletedAt() {
++        return deletedAt;
++    }
++
++    public void setDeletedAt(Instant deletedAt) {
++        this.deletedAt = deletedAt;
++    }
++
+     @Override
+     public boolean equals(Object o) {
+         if (this == o) {
+diff --git a/src/main/java/com/example/tsubuyaki/repository/PostRepository.java b/src/main/java/com/example/tsubuyaki/repository/PostRepository.java
+index 44ed4fc..25b4c9f 100644
+--- a/src/main/java/com/example/tsubuyaki/repository/PostRepository.java
++++ b/src/main/java/com/example/tsubuyaki/repository/PostRepository.java
+@@ -1,10 +1,20 @@
+ package com.example.tsubuyaki.repository;
+ 
+ import com.example.tsubuyaki.domain.Post;
++import org.springframework.data.domain.Page;
++import org.springframework.data.domain.Pageable;
+ import org.springframework.data.jpa.repository.JpaRepository;
+ 
++import java.util.List;
++import java.util.Optional;
++
+ public interface PostRepository extends JpaRepository<Post, Long> {
+ 
+-    // 演習中に追加するメソッド例:
+-    //   List<Post> findTop50ByOrderByCreatedAtDesc();
++    List<Post> findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
++
++    Page<Post> findAllByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);
++
++    Optional<Post> findByIdAndDeletedAtIsNull(Long id);
++
++    List<Post> findAllByDeletedAtIsNotNullOrderByDeletedAtDesc();
+ }
+diff --git a/src/main/java/com/example/tsubuyaki/service/PostService.java b/src/main/java/com/example/tsubuyaki/service/PostService.java
+index 58e4b7e..ccf7349 100644
+--- a/src/main/java/com/example/tsubuyaki/service/PostService.java
++++ b/src/main/java/com/example/tsubuyaki/service/PostService.java
+@@ -2,16 +2,21 @@
+ 
+ import com.example.tsubuyaki.domain.Post;
+ import com.example.tsubuyaki.repository.PostRepository;
++import org.springframework.data.domain.Page;
++import org.springframework.data.domain.PageRequest;
+ import org.springframework.stereotype.Service;
+ import org.springframework.transaction.annotation.Transactional;
+ 
+-import java.util.Collections;
++import java.time.Instant;
+ import java.util.List;
++import java.util.Optional;
+ 
+ @Service
+ @Transactional(readOnly = true)
+ public class PostService {
+ 
++    public static final int PAGE_SIZE = 50;
++
+     private final PostRepository repository;
+ 
+     public PostService(PostRepository repository) {
+@@ -19,7 +24,45 @@ public PostService(PostRepository repository) {
+     }
+ 
+     public List<Post> latest() {
+-        // TODO: 演習で実装する (最新 50 件を新着順で返す)
+-        return Collections.emptyList();
++        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
++    }
++
++    public Page<Post> latestPage(int page) {
++        int pageNumber = Math.max(page, 0);
++        return repository.findAllByDeletedAtIsNullOrderByCreatedAtDesc(PageRequest.of(pageNumber, PAGE_SIZE));
++    }
++
++    public Optional<Post> findVisibleById(Long id) {
++        return repository.findByIdAndDeletedAtIsNull(id);
++    }
++
++    public List<Post> trashedPosts() {
++        return repository.findAllByDeletedAtIsNotNullOrderByDeletedAtDesc();
++    }
++
++    @Transactional
++    public Post create(String author, String body) {
++        Post post = new Post();
++        post.setAuthor(author);
++        post.setBody(body);
++        post.setCreatedAt(Instant.now());
++        return repository.save(post);
++    }
++
++    @Transactional
++    public Optional<Post> update(Long id, String author, String body) {
++        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(id);
++        post.ifPresent(target -> {
++            target.setAuthor(author);
++            target.setBody(body);
++        });
++        return post;
++    }
++
++    @Transactional
++    public Optional<Post> moveToTrash(Long id) {
++        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(id);
++        post.ifPresent(target -> target.setDeletedAt(Instant.now()));
++        return post;
+     }
+ }
+diff --git a/src/main/java/com/example/tsubuyaki/web/dto/PostForm.java b/src/main/java/com/example/tsubuyaki/web/dto/PostForm.java
+index 4ec2fad..966cd6c 100644
+--- a/src/main/java/com/example/tsubuyaki/web/dto/PostForm.java
++++ b/src/main/java/com/example/tsubuyaki/web/dto/PostForm.java
+@@ -1,16 +1,22 @@
+ package com.example.tsubuyaki.web.dto;
+ 
+ import jakarta.validation.constraints.NotBlank;
++import jakarta.validation.constraints.Pattern;
+ import jakarta.validation.constraints.Size;
+ 
+ public class PostForm {
+ 
+     @NotBlank(message = "投稿者名を入力してください")
++    @Pattern(regexp = "^(?=.*[^\\s　]).*$", message = "投稿者名を入力してください")
+     @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
+     private String author;
+ 
+     @NotBlank(message = "本文を入力してください")
++    @Pattern(regexp = "^(?=.*[^\\s　]).*$", message = "本文を入力してください")
+     @Size(max = 280, message = "本文は 280 文字以内で入力してください")
++    @Pattern(
++            regexp = "(?is)^(?!.*<\\s*/?\\s*script\\b).*$",
++            message = "本文に script タグは入力できません")
+     private String body;
+ 
+     public PostForm() {
+@@ -28,6 +34,10 @@ public String getBody() {
+         return body;
+     }
+ 
++    public String getContent() {
++        return body;
++    }
++
+     public void setBody(String body) {
+         this.body = body;
+     }
+diff --git a/src/main/resources/db/seed/h2/R__seed_posts_h2.sql b/src/main/resources/db/seed/h2/R__seed_posts_h2.sql
+index 6a37d64..4bd3663 100644
+--- a/src/main/resources/db/seed/h2/R__seed_posts_h2.sql
++++ b/src/main/resources/db/seed/h2/R__seed_posts_h2.sql
+@@ -3,16 +3,20 @@
+ -- V1__init.sql の posts / posts_seq に依存する H2 専用シーダー。
+ -- =========================================================================
+ 
+-MERGE INTO posts (id, author, body, created_at) KEY(id) VALUES
+-    (1,  'tanaka',  '朝会メモを共有しました。今日の確認事項は投稿一覧の表示順です。', TIMESTAMP '2026-06-26 09:00:00'),
+-    (2,  'suzuki',  'H2 プロファイルで軽量に起動できるようにしました。', TIMESTAMP '2026-06-26 09:08:00'),
+-    (3,  'sato',    'レビュー観点: th:text で表示して XSS を防ぐ。', TIMESTAMP '2026-06-26 09:16:00'),
+-    (4,  'ito',     'Repository テストは DB を空にしてから最小ケースで進めます。', TIMESTAMP '2026-06-26 09:24:00'),
+-    (5,  'kobayashi', '投稿本文の上限は 280 文字です。境界値テストを忘れずに。', TIMESTAMP '2026-06-26 09:32:00'),
+-    (6,  'yamada',  'Service は Spring を起動せず Mockito で検証します。', TIMESTAMP '2026-06-26 09:40:00'),
+-    (7,  'nakamura', 'Controller は MockMvc でビュー名と model を確認します。', TIMESTAMP '2026-06-26 09:48:00'),
+-    (8,  'kato',    'Flyway の migration は Oracle と H2 の両方で読める構文にします。', TIMESTAMP '2026-06-26 09:56:00'),
+-    (9,  'yoshida', '仕上げ前に ./mvnw -B -Ph2 verify を緑にします。', TIMESTAMP '2026-06-26 10:04:00'),
+-    (10, 'watanabe', 'プロンプト履歴は education/prompts-i-used.md に残します。', TIMESTAMP '2026-06-26 10:12:00');
++MERGE INTO posts (id, author, body, created_at) KEY(id)
++SELECT
++    x,
++    'user' || x,
++    CASE
++        WHEN x IN (100, 101, 102) THEN
++            '投稿一覧の本文省略を確認するための長い投稿です。'
++            || REPEAT('長文確認', 35)
++            || '三点リーダーとツールチップの動作確認にも使います。'
++            || '新着50件の表示確認にも使います。No.' || x
++        ELSE
++            'H2 seed 投稿 No.' || x || '。新着50件の表示確認に使います。'
++    END,
++    DATEADD('MINUTE', x, TIMESTAMP '2026-06-26 09:00:00')
++FROM SYSTEM_RANGE(1, 102);
+ 
+-ALTER SEQUENCE posts_seq RESTART WITH 11;
++ALTER SEQUENCE posts_seq RESTART WITH 103;
+diff --git a/src/main/resources/static/css/app.css b/src/main/resources/static/css/app.css
+index c0d110c..da2866b 100644
+--- a/src/main/resources/static/css/app.css
++++ b/src/main/resources/static/css/app.css
+@@ -1,10 +1,12 @@
+-/* 最小スタイル — 受講生が必要に応じて拡張する */
+ :root {
+-    --color-bg: #fafafa;
+-    --color-text: #222;
+-    --color-accent: #1d4ed8;
+-    --color-border: #e5e7eb;
+-    --color-muted: #6b7280;
++    --color-bg: #f8fafc;
++    --color-surface: #ffffff;
++    --color-text: #1f2937;
++    --color-accent: #2563eb;
++    --color-focus: #f59e0b;
++    --color-border: #d6dde6;
++    --color-muted: #64748b;
++    --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.08);
+ }
+ 
+ * {
+@@ -21,36 +23,279 @@ body {
+ }
+ 
+ main {
+-    max-width: 720px;
+-    margin: 2rem auto;
+-    padding: 0 1rem;
++    max-width: 1120px;
++    margin: 0 auto;
++    padding: 2rem 1rem 5rem;
+ }
+ 
+ h1 {
+-    font-size: 1.5rem;
+-    margin-bottom: 1rem;
++    font-size: 1.75rem;
++    margin: 0;
++}
++
++a,
++button {
++    font: inherit;
++}
++
++a:focus-visible,
++button:focus-visible {
++    outline: 3px solid var(--color-focus);
++    outline-offset: 3px;
++}
++
++.page-header {
++    display: flex;
++    justify-content: space-between;
++    gap: 1rem;
++    padding: 1.5rem 0 1rem;
++}
++
++.page-header__eyebrow {
++    margin: 0 0 0.25rem;
++    color: var(--color-muted);
++    font-size: 0.85rem;
++    font-weight: 700;
++    letter-spacing: 0;
++}
++
++.nav {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 0.75rem;
++    padding: 0.75rem 0 1rem;
++}
++
++.nav__link,
++.pagination__link {
++    display: inline-flex;
++    align-items: center;
++    min-height: 2.5rem;
++    padding: 0.45rem 0.8rem;
++    border: 1px solid var(--color-border);
++    border-radius: 8px;
++    background: var(--color-surface);
++    color: var(--color-accent);
++    text-decoration: none;
++    font-weight: 600;
++}
++
++.toolbar {
++    display: flex;
++    justify-content: flex-end;
++    margin: 0 0 1rem;
++}
++
++.toolbar button {
++    min-height: 2.5rem;
++    padding: 0.45rem 0.9rem;
++    border: 1px solid var(--color-accent);
++    border-radius: 8px;
++    background: var(--color-accent);
++    color: white;
++    cursor: pointer;
++}
++
++.posts {
++    display: grid;
++    gap: 0.75rem;
++}
++
++.board-layout {
++    display: grid;
++    grid-template-columns: minmax(12rem, 0.28fr) minmax(0, 1fr);
++    gap: 1rem;
++    align-items: start;
++}
++
++.notice-panel {
++    position: sticky;
++    top: 1rem;
++    padding: 1rem;
++    border: 1px solid var(--color-border);
++    border-radius: 8px;
++    background: var(--color-surface);
++}
++
++.notice-panel h2 {
++    margin: 0 0 0.75rem;
++    font-size: 1rem;
++}
++
++.notice-panel p {
++    margin: 0.5rem 0 0;
++    color: var(--color-muted);
++    overflow-wrap: anywhere;
++}
++
++.empty-message {
++    padding: 1.25rem;
++    border: 1px solid var(--color-border);
++    border-radius: 8px;
++    background: var(--color-surface);
+ }
+ 
+ .post {
+     padding: 1rem;
+     border: 1px solid var(--color-border);
+     border-radius: 8px;
+-    margin-bottom: 0.75rem;
+-    background: white;
++    background: var(--color-surface);
++    box-shadow: var(--shadow-soft);
+ }
+ 
+ .post__author {
+     font-weight: 600;
+-    margin-right: 0.5rem;
++}
++
++.post__id {
++    display: inline-flex;
++    width: fit-content;
++    margin: 0 0 0.35rem;
++    color: var(--color-accent);
++    font-weight: 700;
++    text-decoration: none;
+ }
+ 
+ .post__created-at {
++    display: block;
+     color: var(--color-muted);
+     font-size: 0.85rem;
+ }
+ 
+ .post__body {
++    display: block;
++    position: relative;
+     margin-top: 0.5rem;
++    overflow-wrap: anywhere;
+     white-space: pre-wrap;
+     word-break: break-word;
+ }
++
++.post__body--truncated {
++    cursor: help;
++}
++
++.post__body--full {
++    max-width: 68ch;
++}
++
++.post__body--truncated:hover::after,
++.post__body--truncated:focus-visible::after {
++    position: absolute;
++    z-index: 10;
++    left: 0;
++    top: calc(100% + 0.5rem);
++    width: min(32rem, 80vw);
++    padding: 0.75rem;
++    border: 1px solid var(--color-border);
++    border-radius: 8px;
++    background: var(--color-surface);
++    box-shadow: var(--shadow-soft);
++    color: var(--color-text);
++    content: attr(data-tooltip);
++    white-space: normal;
++}
++
++.pagination {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 0.5rem;
++    justify-content: center;
++    margin: 1.5rem 0;
++}
++
++.pagination__link--current {
++    background: var(--color-accent);
++    color: white;
++}
++
++.post-actions {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 0.75rem;
++    margin-top: 1rem;
++}
++
++.button-link,
++.post-actions button,
++.post-form button {
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    min-height: 2.5rem;
++    padding: 0.45rem 0.9rem;
++    border: 1px solid var(--color-accent);
++    border-radius: 8px;
++    background: var(--color-accent);
++    color: white;
++    font-weight: 700;
++    text-decoration: none;
++    cursor: pointer;
++}
++
++.button-danger {
++    border-color: #b91c1c;
++    background: #b91c1c;
++}
++
++.post-form {
++    display: grid;
++    gap: 1rem;
++    max-width: 42rem;
++    padding: 1rem;
++    border: 1px solid var(--color-border);
++    border-radius: 8px;
++    background: var(--color-surface);
++}
++
++.form-field {
++    display: grid;
++    gap: 0.35rem;
++}
++
++.form-field label {
++    font-weight: 700;
++}
++
++.form-field input,
++.form-field textarea {
++    width: 100%;
++    padding: 0.65rem 0.75rem;
++    border: 1px solid var(--color-border);
++    border-radius: 8px;
++    font: inherit;
++}
++
++.back-to-top {
++    position: fixed;
++    right: 1rem;
++    bottom: 1rem;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    width: 3rem;
++    height: 3rem;
++    border-radius: 50%;
++    background: var(--color-accent);
++    color: white;
++    font-weight: 700;
++    text-decoration: none;
++    box-shadow: var(--shadow-soft);
++}
++
++.error {
++    margin: 0.35rem 0 0;
++    color: #b91c1c;
++    font-size: 0.9rem;
++    font-weight: 700;
++}
++
++@media (max-width: 760px) {
++    .board-layout {
++        grid-template-columns: 1fr;
++    }
++
++    .notice-panel {
++        position: static;
++    }
++}
+diff --git a/src/main/resources/templates/posts/form.html b/src/main/resources/templates/posts/form.html
+index 8d1e1a3..9e10a84 100644
+--- a/src/main/resources/templates/posts/form.html
++++ b/src/main/resources/templates/posts/form.html
+@@ -8,24 +8,47 @@
+ </head>
+ <body>
+ <main>
+-    <h1>新規投稿</h1>
+-    <nav>
+-        <a th:href="@{/posts}">一覧に戻る</a>
++    <h1 th:text="${formTitle}">新規投稿</h1>
++    <nav class="nav">
++        <a class="nav__link" th:href="@{/posts}">一覧に戻る</a>
++        <a class="nav__link" th:if="${postId != null}" th:href="@{/posts/{id}(id=${postId})}">詳細に戻る</a>
+     </nav>
+ 
+-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
+-        <div>
++    <form class="post-form" th:action="@{${formAction}}" th:object="${postForm}" method="post">
++        <div class="form-field">
+             <label for="author">投稿者</label>
+             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
+             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
+         </div>
+-        <div>
++        <div class="form-field">
+             <label for="body">本文 (280 文字まで)</label>
+-            <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
++            <textarea id="body"
++                      th:field="*{body}"
++                      maxlength="280"
++                      rows="4"
++                      required
++                      data-forbidden-pattern="&lt;script"></textarea>
+             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
+         </div>
+-        <button type="submit">投稿</button>
++        <button id="postSubmit" type="submit" disabled th:text="${submitLabel}">投稿</button>
+     </form>
++    <script>
++        (() => {
++            const author = document.getElementById("author");
++            const body = document.getElementById("body");
++            const submit = document.getElementById("postSubmit");
++            const scriptTagPattern = /<\s*\/?\s*script\b/i;
++            const refreshSubmitState = () => {
++                submit.disabled = !author.value.trim()
++                    || !body.value.trim()
++                    || scriptTagPattern.test(body.value);
++            };
++
++            author.addEventListener("input", refreshSubmitState);
++            body.addEventListener("input", refreshSubmitState);
++            refreshSubmitState();
++        })();
++    </script>
+ </main>
+ </body>
+ </html>
+diff --git a/src/main/resources/templates/posts/list.html b/src/main/resources/templates/posts/list.html
+index 1fea615..c8b2b62 100644
+--- a/src/main/resources/templates/posts/list.html
++++ b/src/main/resources/templates/posts/list.html
+@@ -7,25 +7,67 @@
+     <link rel="stylesheet" th:href="@{/css/app.css}">
+ </head>
+ <body>
+-<main>
+-    <h1>社内つぶやきボード</h1>
+-    <nav>
+-        <a th:href="@{/posts}">一覧</a>
+-        |
+-        <a th:href="@{/posts/new}">新規投稿</a>
++<main id="top">
++    <header class="page-header">
++        <div>
++            <p class="page-header__eyebrow">Internal board</p>
++            <h1>社内つぶやきボード</h1>
++        </div>
++    </header>
++
++    <nav class="nav">
++        <a class="nav__link" th:href="@{/posts}">一覧</a>
++        <a class="nav__link" th:href="@{/posts/new}">新規投稿</a>
++        <a class="nav__link" th:href="@{/posts/trash}">ごみ箱</a>
++    </nav>
++
++    <form class="toolbar" th:action="@{/posts/}" method="get">
++        <button type="submit">更新</button>
++    </form>
++
++    <div class="board-layout">
++        <aside class="notice-panel" aria-label="お知らせ">
++            <h2>お知らせ</h2>
++            <p th:if="${editedPostId != null}" th:text="|ID${editedPostId}が編集されました。|">ID10が編集されました。</p>
++            <p th:if="${deletedPostId != null}" th:text="|ID${deletedPostId}が削除されました。|">ID11が削除されました。</p>
++            <p th:if="${editedPostId == null and deletedPostId == null}">お知らせはありません。</p>
++        </aside>
++
++        <section class="posts">
++            <p class="empty-message" th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
++            <article class="post" th:each="post : ${posts}">
++                <a class="post__id" th:href="@{/posts/{id}(id=${post.id})}" th:text="|ID ${post.id}|">ID 1</a>
++                <div class="post__author" th:text="${post.author}">投稿者</div>
++                <p class="post__body"
++                   th:classappend="${#strings.length(post.body) > 100 ? 'post__body--truncated' : ''}"
++                   th:attr="data-tooltip=${#strings.length(post.body) > 100 ? post.body : null},
++                            title=${#strings.length(post.body) > 100 ? post.body : null},
++                            tabindex=${#strings.length(post.body) > 100 ? '0' : null}"
++                   th:text="${#strings.length(post.body) > 100
++                       ? #strings.substring(post.body, 0, 100) + '....'
++                       : post.body}">本文</p>
++                <time class="post__created-at"
++                      th:datetime="${post.createdAt}"
++                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
++            </article>
++        </section>
++    </div>
++
++    <nav class="pagination" th:if="${totalPages > 1}" aria-label="ページ遷移">
++        <a class="pagination__link"
++           th:if="${hasPrevious}"
++           th:href="@{/posts/(page=${currentPage - 1})}">前へ</a>
++        <a class="pagination__link"
++           th:each="pageNumber : ${pageNumbers}"
++           th:classappend="${pageNumber == currentPage ? 'pagination__link--current' : ''}"
++           th:href="@{/posts/(page=${pageNumber})}"
++           th:text="${pageNumber + 1}">1</a>
++        <a class="pagination__link"
++           th:if="${hasNext}"
++           th:href="@{/posts/(page=${currentPage + 1})}">次へ</a>
+     </nav>
+ 
+-    <section>
+-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+-        <article class="post" th:each="post : ${posts}">
+-            <header>
+-                <span class="post__author" th:text="${post.author}">投稿者</span>
+-                <span class="post__created-at"
+-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
+-            </header>
+-            <p class="post__body" th:text="${post.body}">本文</p>
+-        </article>
+-    </section>
++    <a class="back-to-top" href="#top" aria-label="TOPへ戻る">TOP</a>
+ </main>
+ </body>
+ </html>
+diff --git a/src/test/java/com/example/tsubuyaki/db/H2SeedMigrationTest.java b/src/test/java/com/example/tsubuyaki/db/H2SeedMigrationTest.java
+index c8c49fc..266f154 100644
+--- a/src/test/java/com/example/tsubuyaki/db/H2SeedMigrationTest.java
++++ b/src/test/java/com/example/tsubuyaki/db/H2SeedMigrationTest.java
+@@ -16,8 +16,8 @@
+ class H2SeedMigrationTest {
+ 
+     @Test
+-    @DisplayName("H2シーダー_起動時_投稿10件を投入し次IDが11になる")
+-    void H2シーダー_起動時_投稿10件を投入し次Idが11になる() throws SQLException {
++    @DisplayName("H2シーダー_起動時_投稿102件を投入し次IDが103になる")
++    void H2シーダー_起動時_投稿102件を投入し次Idが103になる() throws SQLException {
+         String url = "jdbc:h2:mem:seed_" + UUID.randomUUID().toString().replace("-", "")
+                 + ";MODE=Oracle;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=true";
+ 
+@@ -28,9 +28,10 @@ class H2SeedMigrationTest {
+                 .migrate();
+ 
+         try (Connection connection = DriverManager.getConnection(url, "sa", "");
+-             Statement statement = connection.createStatement()) {
+-            assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts")).isEqualTo(10);
+-            assertThat(singleLong(statement, "SELECT NEXT VALUE FOR posts_seq")).isEqualTo(11);
++            Statement statement = connection.createStatement()) {
++            assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts")).isEqualTo(102);
++            assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts WHERE CHAR_LENGTH(body) > 100")).isEqualTo(3);
++            assertThat(singleLong(statement, "SELECT NEXT VALUE FOR posts_seq")).isEqualTo(103);
+         }
+     }
+ 
+diff --git a/src/test/java/com/example/tsubuyaki/sample/SamplePostControllerTest.java b/src/test/java/com/example/tsubuyaki/sample/SamplePostControllerTest.java
+index bcde787..5e3ae97 100644
+--- a/src/test/java/com/example/tsubuyaki/sample/SamplePostControllerTest.java
++++ b/src/test/java/com/example/tsubuyaki/sample/SamplePostControllerTest.java
+@@ -4,6 +4,8 @@
+ import com.example.tsubuyaki.service.PostService;
+ import org.junit.jupiter.api.DisplayName;
+ import org.junit.jupiter.api.Test;
++import org.springframework.data.domain.PageImpl;
++import org.springframework.data.domain.PageRequest;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+ import org.springframework.test.context.bean.override.mockito.MockitoBean;
+@@ -34,7 +36,7 @@ class SamplePostControllerTest {
+     @Test
+     @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")
+     void getPosts_rendersListView() throws Exception {
+-        given(postService.latest()).willReturn(Collections.emptyList());
++        given(postService.latestPage(0)).willReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 50), 0));
+ 
+         mockMvc.perform(get("/posts"))
+                 .andExpect(status().isOk())
