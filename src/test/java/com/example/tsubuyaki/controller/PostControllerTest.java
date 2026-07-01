@@ -16,9 +16,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -84,5 +88,61 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+    }
+
+    @Test
+    @DisplayName("投稿作成_投稿者と本文が空白のみ_posts_formを再表示しエラーを表示する")
+    void create_whenAuthorAndBodyAreBlank_redisplaysFormWithErrors() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "   ")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author", "body"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿者名を入力してください")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文を入力してください")));
+    }
+
+    @Test
+    @DisplayName("投稿作成_入力が妥当なとき_postsへリダイレクトする")
+    void create_whenValid_redirectsToPosts() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "hello"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/posts"));
+
+        verify(postService).create(eq("alice"), eq("hello"));
+    }
+
+    @Test
+    @DisplayName("投稿作成_投稿者と本文が最大文字数のとき_postsへリダイレクトし登録できる")
+    void create_whenAuthorAndBodyAreMaxLength_redirectsToPosts() throws Exception {
+        String author = "a".repeat(30);
+        String body = "b".repeat(280);
+
+        mockMvc.perform(post("/posts")
+                        .param("author", author)
+                        .param("body", body))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/posts"));
+
+        verify(postService).create(eq(author), eq(body));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿ボタン_GET_posts_newへリクエストできる")
+    void list_whenPostButtonShown_requestsPostsNew() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"get\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/new\"")));
+
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"));
     }
 }

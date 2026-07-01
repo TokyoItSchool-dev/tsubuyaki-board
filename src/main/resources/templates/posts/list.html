@@ -12,7 +12,9 @@
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
-        <a th:href="@{/posts/new}">新規投稿</a>
+        <form th:action="@{/posts/new}" method="get">
+            <button type="submit">投稿</button>
+        </form>
     </nav>
 
     <section>
