@@ -81,24 +81,11 @@ class PostServiceTest {
         given(postRepository.save(any(Post.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
-        Post savedPost = postService.create("alice", "M3 の投稿", "#2563eb");
+        Post savedPost = postService.create("alice", "M3 の投稿");
 
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("M3 の投稿");
-        assertThat(savedPost.getAvatarColor()).isEqualTo("#2563eb");
         assertThat(savedPost.getCreatedAt()).isNotNull();
-        verify(postRepository).save(savedPost);
-    }
-
-    @Test
-    @DisplayName("Service_create_avatarColor未選択_nullで保存する")
-    void create_avatarColor未選択_nullで保存する() {
-        given(postRepository.save(any(Post.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
-        Post savedPost = postService.create("alice", "M3 の投稿", "   ");
-
-        assertThat(savedPost.getAvatarColor()).isNull();
         verify(postRepository).save(savedPost);
     }
 

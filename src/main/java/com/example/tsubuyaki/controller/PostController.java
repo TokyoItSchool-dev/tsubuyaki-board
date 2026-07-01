@@ -60,7 +60,7 @@ public class PostController {
             return "posts/form";
         }
 
-        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor());
+        postService.create(postForm.getAuthor(), postForm.getBody());
         return "redirect:/posts";
     }
 

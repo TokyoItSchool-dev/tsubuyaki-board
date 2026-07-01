@@ -106,7 +106,6 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
-                .andExpect(content().string(containsString("name=\"avatarColor\"")))
                 .andExpect(content().string(containsString("新規投稿")));
     }
 
@@ -115,25 +114,11 @@ class PostControllerTest {
     void 投稿作成_正常な入力_投稿を保存して一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "M3 の投稿")
-                        .param("avatarColor", "#2563eb"))
+                        .param("body", "M3 の投稿"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "M3 の投稿", "#2563eb");
-    }
-
-    @Test
-    @DisplayName("Controller_投稿作成_avatarColor未選択_投稿を保存して一覧へリダイレクトする")
-    void 投稿作成_avatarColor未選択_投稿を保存して一覧へリダイレクトする() throws Exception {
-        mockMvc.perform(post("/posts")
-                        .param("author", "alice")
-                        .param("body", "M3 の投稿")
-                        .param("avatarColor", ""))
-                .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/posts"));
-
-        verify(postService).create("alice", "M3 の投稿", "");
+        verify(postService).create("alice", "M3 の投稿");
     }
 
     @Test
@@ -148,7 +133,7 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("投稿者名を入力してください")))
                 .andExpect(content().string(containsString("本文を入力してください")));
 
-        verify(postService, never()).create("   ", "   ", "");
+        verify(postService, never()).create("   ", "   ");
     }
 
     @Test
@@ -166,22 +151,7 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")))
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
 
-        verify(postService, never()).create(tooLongAuthor, tooLongBody, "");
-    }
-
-    @Test
-    @DisplayName("Controller_投稿作成_avatarColor不正_保存せずフォームを再表示する")
-    void 投稿作成_avatarColor不正_保存せずフォームを再表示する() throws Exception {
-        mockMvc.perform(post("/posts")
-                        .param("author", "alice")
-                        .param("body", "M3 の投稿")
-                        .param("avatarColor", "blue"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("posts/form"))
-                .andExpect(model().attributeHasFieldErrors("postForm", "avatarColor"))
-                .andExpect(content().string(containsString("アバター色は選択肢から選んでください")));
-
-        verify(postService, never()).create("alice", "M3 の投稿", "blue");
+        verify(postService, never()).create(tooLongAuthor, tooLongBody);
     }
 
     @Test
