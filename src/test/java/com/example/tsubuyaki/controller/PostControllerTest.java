@@ -96,7 +96,7 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("action=\"/posts/\"")))
+                .andExpect(content().string(containsString("action=\"/posts\"")))
                 .andExpect(content().string(containsString("method=\"get\"")))
                 .andExpect(content().string(containsString("<button type=\"submit\">更新</button>")));
     }
