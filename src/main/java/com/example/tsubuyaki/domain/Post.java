@@ -9,11 +9,15 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
 @Table(name = "posts")
 public class Post {
+
+    private static final ZoneOffset DATABASE_ZONE = ZoneOffset.UTC;
 
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
@@ -27,10 +31,10 @@ public class Post {
     private String body;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "deleted_at")
-    private Instant deletedAt;
+    private LocalDateTime deletedAt;
 
     protected Post() {
         // JPA
@@ -39,7 +43,7 @@ public class Post {
     public Post(String author, String body, Instant createdAt) {
         this.author = author;
         this.body = body;
-        this.createdAt = createdAt;
+        this.createdAt = toDatabaseTimestamp(createdAt);
     }
 
     public Long getId() {
@@ -55,15 +59,29 @@ public class Post {
     }
 
     public Instant getCreatedAt() {
-        return createdAt;
+        return toInstant(createdAt);
     }
 
     public Instant getDeletedAt() {
-        return deletedAt;
+        return toInstant(deletedAt);
     }
 
     public void markDeleted(Instant deletedAt) {
-        this.deletedAt = deletedAt;
+        this.deletedAt = toDatabaseTimestamp(deletedAt);
+    }
+
+    private static LocalDateTime toDatabaseTimestamp(Instant instant) {
+        if (instant == null) {
+            return null;
+        }
+        return LocalDateTime.ofInstant(instant, DATABASE_ZONE);
+    }
+
+    private static Instant toInstant(LocalDateTime timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        return timestamp.toInstant(DATABASE_ZONE);
     }
 
     @Override

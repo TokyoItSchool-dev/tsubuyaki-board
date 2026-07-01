@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
@@ -22,6 +23,9 @@ class PostRepositoryTest {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private TestEntityManager entityManager;
 
     @Test
     @DisplayName("投稿一覧_51件あるとき_最新50件を新着順で返す")
@@ -69,5 +73,22 @@ class PostRepositoryTest {
         Optional<Post> actual = postRepository.findByIdAndDeletedAtIsNull(post.getId());
 
         assertThat(actual).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿日時_保存して再取得したとき_UTCのInstantとして復元する")
+    void 投稿日時_保存して再取得したとき_UTCのInstantとして復元する() {
+        Instant createdAt = Instant.parse("2026-07-01T07:22:13.665Z");
+        Instant deletedAt = Instant.parse("2026-07-01T08:22:13.665Z");
+        Post post = new Post("alice", "Oracle TIMESTAMP で扱う投稿", createdAt);
+        post.markDeleted(deletedAt);
+        Post saved = postRepository.saveAndFlush(post);
+
+        entityManager.clear();
+
+        Post actual = postRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(actual.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(actual.getDeletedAt()).isEqualTo(deletedAt);
     }
 }
