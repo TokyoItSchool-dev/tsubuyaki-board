@@ -8,6 +8,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
@@ -31,6 +32,13 @@ public class PostController {
         return "posts/form";
     }
 
+    @GetMapping("/posts/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        // パス変数のidに対応する投稿を取得し、詳細テンプレートで参照できるようpost属性へ格納する。
+        model.addAttribute("post", postService.findById(id));
+        return "posts/detail";
+    }
+
     @PostMapping("/posts")
     public String create(@Valid @ModelAttribute("postForm") PostForm postForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -41,6 +49,4 @@ public class PostController {
         return "redirect:/posts";
     }
 
-    // 演習中に追加するエンドポイント:
-    //   @GetMapping("/posts/{id}")       // 詳細
 }
