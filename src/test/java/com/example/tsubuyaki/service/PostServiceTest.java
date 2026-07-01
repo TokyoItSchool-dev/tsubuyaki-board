@@ -1,5 +1,7 @@
 package com.example.tsubuyaki.service;
 
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -17,12 +19,16 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostLikeRepository postLikeRepository;
 
     @InjectMocks
     private PostService postService;
@@ -40,6 +46,24 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_latestWithLikes_いいね数とclientHashのいいね状態を付与する")
+    void 投稿一覧_latestWithLikes_いいね数とclientHashのいいね状態を付与する() {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+        given(postLikeRepository.countByPostId(42L)).willReturn(2L);
+        given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcdef12")).willReturn(true);
+
+        List<Post> latest = postService.latestWithLikes("abcdef12");
+
+        assertThat(latest).containsExactly(post);
+        assertThat(latest.get(0).getLikeCount()).isEqualTo(2);
+        assertThat(latest.get(0).isLiked()).isTrue();
+        verify(postLikeRepository).countByPostId(42L);
+        verify(postLikeRepository).existsByPostIdAndClientHash(42L, "abcdef12");
+    }
+
+    @Test
     @DisplayName("投稿詳細_findById_Repositoryのid検索結果を返す")
     void 投稿詳細_findById_RepositoryのId検索結果を返す() {
         Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
@@ -49,6 +73,56 @@ class PostServiceTest {
 
         assertThat(found).containsSame(post);
         verify(postRepository).findById(42L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_findByIdWithLike_いいね数とclientHashのいいね状態を付与する")
+    void 投稿詳細_findByIdWithLike_いいね数とclientHashのいいね状態を付与する() {
+        Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
+        org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postLikeRepository.countByPostId(42L)).willReturn(1L);
+        given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcdef12")).willReturn(false);
+
+        Optional<Post> found = postService.findByIdWithLike(42L, "abcdef12");
+
+        assertThat(found).containsSame(post);
+        assertThat(found.orElseThrow().getLikeCount()).isEqualTo(1);
+        assertThat(found.orElseThrow().isLiked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("いいねトグル_未いいねの場合_いいねを保存する")
+    void いいねトグル_未いいねの場合_いいねを保存する() {
+        Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
+        org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postLikeRepository.findByPostIdAndClientHash(42L, "abcdef12")).willReturn(Optional.empty());
+
+        Optional<Post> toggled = postService.toggleLike(42L, "abcdef12");
+
+        assertThat(toggled).containsSame(post);
+        ArgumentCaptor<PostLike> captor = ArgumentCaptor.forClass(PostLike.class);
+        verify(postLikeRepository).save(captor.capture());
+        assertThat(captor.getValue().getPost()).isSameAs(post);
+        assertThat(captor.getValue().getClientHash()).isEqualTo("abcdef12");
+        verify(postLikeRepository, never()).delete(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("いいねトグル_同一clientHashが再押下した場合_いいねを削除する")
+    void いいねトグル_同一clientHashが再押下した場合_いいねを削除する() {
+        Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
+        org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
+        PostLike like = new PostLike(post, "abcdef12", Instant.parse("2026-05-23T10:01:00Z"));
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postLikeRepository.findByPostIdAndClientHash(42L, "abcdef12")).willReturn(Optional.of(like));
+
+        Optional<Post> toggled = postService.toggleLike(42L, "abcdef12");
+
+        assertThat(toggled).containsSame(post);
+        verify(postLikeRepository).delete(like);
+        verify(postLikeRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
     @Test

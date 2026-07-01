@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -40,7 +42,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_0件の場合_まだ投稿はありませんを表示する")
     void 投稿一覧_0件の場合_まだ投稿はありませんを表示する() throws Exception {
-        given(postService.latest()).willReturn(List.of());
+        given(postService.latestWithLikes(anyString())).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -52,7 +54,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_更新ボタン_押すとpostsスラッシュへGETする")
     void 投稿一覧_更新ボタン_押すとpostsスラッシュへGetする() throws Exception {
-        given(postService.latest()).willReturn(List.of());
+        given(postService.latestWithLikes(anyString())).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -64,7 +66,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_新規投稿リンク_押すとフォームURLへ遷移できる")
     void 投稿一覧_新規投稿リンク_押すとフォームUrlへ遷移できる() throws Exception {
-        given(postService.latest()).willReturn(List.of());
+        given(postService.latestWithLikes(anyString())).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -80,7 +82,7 @@ class PostControllerTest {
                 "alice",
                 "本文は長くても画面上で折り返して表示する",
                 Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.latest()).willReturn(List.of(post));
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
 
         MvcResult result = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -96,7 +98,7 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿枠にカーソルを合わせた場合_枠色変更用クラスを適用する")
     void 投稿一覧_投稿枠にカーソルを合わせた場合_枠色変更用クラスを適用する() throws Exception {
         Post post = postWithId(42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.latest()).willReturn(List.of(post));
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -107,14 +109,14 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿枠内のどこを押下しても_対象の詳細URLへ遷移する")
     void 投稿一覧_投稿枠内のどこを押下しても_対象の詳細Urlへ遷移する() throws Exception {
         Post post = postWithId(42L, "alice", "リンク対象の本文", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.latest()).willReturn(List.of(post));
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
 
         MvcResult result = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         String html = result.getResponse().getContentAsString();
-        int linkStart = html.indexOf("<a class=\"post post--link\" href=\"/posts/42\"");
+        int linkStart = html.indexOf("<a class=\"post__main-link\" href=\"/posts/42\"");
         int author = html.indexOf("alice");
         int body = html.indexOf("リンク対象の本文");
         int createdAt = html.indexOf("2026-05-23");
@@ -128,12 +130,81 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_各投稿の右下に_白抜きハートのいいねトグルを表示する")
+    void 投稿一覧_各投稿の右下に_白抜きハートのいいねトグルを表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"));
+        post.applyLikeState(0, false);
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post__like-form\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/42/likes\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"like-toggle like-toggle--empty\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("♡")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("class=\"like-count\""))));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_いいねトグル押下_posts_id_likesへ送信し一覧へ戻る")
+    void 投稿一覧_いいねトグル押下_postsIdLikesへ送信し一覧へ戻る() throws Exception {
+        given(postService.toggleLike(42L, "829dd182")).willReturn(Optional.of(postWithId(
+                42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"))));
+
+        mockMvc.perform(post("/posts/42/likes")
+                        .param("returnTo", "/posts")
+                        .header("User-Agent", "JUnit")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.10");
+                            return request;
+                        }))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).toggleLike(42L, "829dd182");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_未いいねの投稿を押下後_塗りつぶしハートだけを表示する")
+    void 投稿一覧_未いいねの投稿を押下後_塗りつぶしハートだけを表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"));
+        post.applyLikeState(1, true);
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"like-toggle like-toggle--liked\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("♥")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("class=\"like-count\""))));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_同一clientHashで再押下_白抜きハートだけを表示する")
+    void 投稿一覧_同一clientHashで再押下_白抜きハートだけを表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"));
+        post.applyLikeState(0, false);
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"like-toggle like-toggle--empty\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("♡")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("class=\"like-count\""))));
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在する投稿idの場合_ステータス200で詳細画面を表示する")
     void 投稿詳細_存在する投稿Idの場合_ステータス200で詳細画面を表示する() throws Exception {
         Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.findById(42L)).willReturn(Optional.of(post));
+        given(postService.findByIdWithLike(42L, "1ad93342")).willReturn(Optional.of(post));
 
-        mockMvc.perform(get("/posts/42"))
+        mockMvc.perform(get("/posts/42").header("User-Agent", "JUnit").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post));
@@ -143,7 +214,7 @@ class PostControllerTest {
     @DisplayName("投稿詳細_存在する投稿idの場合_投稿者内容投稿日を表示する")
     void 投稿詳細_存在する投稿Idの場合_投稿者内容投稿日を表示する() throws Exception {
         Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.findById(42L)).willReturn(Optional.of(post));
+        given(postService.findByIdWithLike(eq(42L), anyString())).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/42"))
                 .andExpect(status().isOk())
@@ -156,9 +227,12 @@ class PostControllerTest {
     @DisplayName("投稿詳細_存在する投稿idの場合_詳細用レイアウトクラスを表示し本文ラベルは表示しない")
     void 投稿詳細_存在する投稿Idの場合_詳細用レイアウトクラスを表示し本文ラベルは表示しない() throws Exception {
         Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.findById(42L)).willReturn(Optional.of(post));
+        given(postService.findByIdWithLike(42L, "1ad93342")).willReturn(Optional.of(post));
 
-        mockMvc.perform(get("/posts/42"))
+        mockMvc.perform(get("/posts/42").header("User-Agent", "JUnit").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail-nav\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail\"")))
@@ -171,10 +245,71 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在しない投稿idの場合_404を返す")
     void 投稿詳細_存在しない投稿Idの場合_404を返す() throws Exception {
-        given(postService.findById(999L)).willReturn(Optional.empty());
+        given(postService.findByIdWithLike(999L, "1ad93342")).willReturn(Optional.empty());
 
-        mockMvc.perform(get("/posts/999"))
+        mockMvc.perform(get("/posts/999").header("User-Agent", "JUnit").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿詳細_本文枠のすぐ下に_いいね数と投稿時間を同じ高さで表示する")
+    void 投稿詳細_本文枠のすぐ下に_いいね数と投稿時間を同じ高さで表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        post.applyLikeState(3, false);
+        given(postService.findByIdWithLike(42L, "1ad93342")).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/42").header("User-Agent", "JUnit").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail__meta-row\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail__like-panel\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"like-count\">3</span>")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        int bodyBox = html.indexOf("class=\"post-detail__body-box\"");
+        int metaRow = html.indexOf("class=\"post-detail__meta-row\"");
+        int likePanel = html.indexOf("class=\"post-detail__like-panel\"");
+        int createdAt = html.indexOf("class=\"post-detail__created-at\"");
+        assertThat(bodyBox).isNotNegative();
+        assertThat(metaRow).isGreaterThan(bodyBox);
+        assertThat(likePanel).isGreaterThan(metaRow);
+        assertThat(createdAt).isGreaterThan(likePanel);
+        assertThat(createdAt).isLessThan(html.indexOf("</article>", metaRow));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_本文枠外の下の左側に_いいねトグルを表示し詳細へ戻る")
+    void 投稿詳細_本文枠外の下の左側に_いいねトグルを表示し詳細へ戻る() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        post.applyLikeState(4, true);
+        given(postService.findByIdWithLike(42L, "1ad93342")).willReturn(Optional.of(post));
+        given(postService.toggleLike(42L, "1ad93342")).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42").header("User-Agent", "JUnit").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/42/likes\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"like-toggle like-toggle--liked\"")));
+
+        mockMvc.perform(post("/posts/42/likes")
+                        .param("returnTo", "/posts/42")
+                        .header("User-Agent", "JUnit")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        }))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/42"));
+
+        verify(postService).toggleLike(42L, "1ad93342");
     }
 
     @Test

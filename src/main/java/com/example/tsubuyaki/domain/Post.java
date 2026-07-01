@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -28,6 +29,12 @@ public class Post {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Transient
+    private long likeCount;
+
+    @Transient
+    private boolean liked;
 
     protected Post() {
         // JPA
@@ -53,6 +60,19 @@ public class Post {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public long getLikeCount() {
+        return likeCount;
+    }
+
+    public boolean isLiked() {
+        return liked;
+    }
+
+    public void applyLikeState(long likeCount, boolean liked) {
+        this.likeCount = likeCount;
+        this.liked = liked;
     }
 
     @Override

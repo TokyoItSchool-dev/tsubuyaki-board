@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ class PostRepositoryTest {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private PostLikeRepository postLikeRepository;
+
     @Test
     @DisplayName("投稿一覧_51件以上の投稿がある場合_新着50件だけを新着順で取得する")
     void 投稿一覧_51件以上の投稿がある場合_新着50件だけを新着順で取得する() {
@@ -38,6 +42,30 @@ class PostRepositoryTest {
         assertThat(latest).hasSize(50);
         assertThat(latest).extracting(Post::getBody)
                 .containsExactlyElementsOf(expectedBodiesFrom50To1());
+    }
+
+    @Test
+    @DisplayName("いいね_投稿idとclientHash_件数と存在有無を取得できる")
+    void いいね_投稿IdとclientHash_件数と存在有無を取得できる() {
+        Post post = postRepository.save(new Post("alice", "本文", Instant.parse("2026-05-23T00:00:00Z")));
+        postLikeRepository.save(new PostLike(post, "abcdef12", Instant.parse("2026-05-23T00:01:00Z")));
+        postLikeRepository.save(new PostLike(post, "12345678", Instant.parse("2026-05-23T00:02:00Z")));
+        postLikeRepository.flush();
+
+        assertThat(postLikeRepository.countByPostId(post.getId())).isEqualTo(2);
+        assertThat(postLikeRepository.existsByPostIdAndClientHash(post.getId(), "abcdef12")).isTrue();
+        assertThat(postLikeRepository.existsByPostIdAndClientHash(post.getId(), "87654321")).isFalse();
+    }
+
+    @Test
+    @DisplayName("いいね_投稿idとclientHash_同一clientHashのいいねを取得できる")
+    void いいね_投稿IdとClientHash_同一clientHashのいいねを取得できる() {
+        Post post = postRepository.save(new Post("alice", "本文", Instant.parse("2026-05-23T00:00:00Z")));
+        PostLike like = postLikeRepository.save(new PostLike(post, "abcdef12", Instant.parse("2026-05-23T00:01:00Z")));
+        postLikeRepository.flush();
+
+        assertThat(postLikeRepository.findByPostIdAndClientHash(post.getId(), "abcdef12")).contains(like);
+        assertThat(postLikeRepository.findByPostIdAndClientHash(post.getId(), "87654321")).isEmpty();
     }
 
     private static List<String> expectedBodiesFrom50To1() {

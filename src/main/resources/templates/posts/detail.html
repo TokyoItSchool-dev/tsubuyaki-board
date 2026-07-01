@@ -20,9 +20,22 @@
         <section class="post-detail__body-box">
             <p class="post-detail__body" th:text="${post.body}">本文</p>
         </section>
-        <time class="post-detail__created-at"
-              th:datetime="${post.createdAt}"
-              th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <div class="post-detail__meta-row">
+            <div class="post-detail__like-panel">
+                <form class="post-detail__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                    <input type="hidden" name="returnTo" th:value="@{/posts/{id}(id=${post.id})}">
+                    <button type="submit"
+                            th:class="${post.liked} ? 'like-toggle like-toggle--liked' : 'like-toggle like-toggle--empty'"
+                            aria-label="いいね切り替え">
+                        <span class="like-heart" th:text="${post.liked} ? '♥' : '♡'">♡</span>
+                        <span class="like-count" th:text="${post.likeCount}">0</span>
+                    </button>
+                </form>
+            </div>
+            <time class="post-detail__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        </div>
     </article>
 </main>
 </body>

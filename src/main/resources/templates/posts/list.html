@@ -20,13 +20,23 @@
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
-        <a class="post post--link" th:each="post : ${posts}" th:href="@{/posts/{id}(id=${post.id})}">
-            <p class="post__author" th:text="${post.author}">投稿者</p>
-            <p class="post__body" th:text="${post.body}">本文</p>
-            <time class="post__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-        </a>
+        <article class="post post--link" th:each="post : ${posts}">
+            <a class="post__main-link" th:href="@{/posts/{id}(id=${post.id})}">
+                <p class="post__author" th:text="${post.author}">投稿者</p>
+                <p class="post__body" th:text="${post.body}">本文</p>
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </a>
+            <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                <input type="hidden" name="returnTo" value="/posts">
+                <button type="submit"
+                        th:class="${post.liked} ? 'like-toggle like-toggle--liked' : 'like-toggle like-toggle--empty'"
+                        aria-label="いいね切り替え">
+                    <span class="like-heart" th:text="${post.liked} ? '♥' : '♡'">♡</span>
+                </button>
+            </form>
+        </article>
     </section>
 </main>
 </body>
