@@ -11,7 +11,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -123,13 +126,24 @@ class PostControllerTest {
     void 投稿詳細_投稿が削除されていないとき_detailを表示し投稿をビューに渡す() throws Exception {
         Post post = new Post("alice", "詳細を表示する投稿", Instant.parse("2026-05-23T10:00:00Z"));
         given(postService.findDetailPost(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(2L);
+        given(postService.hasLiked(1L, clientHash("192.0.2.10", "MockBrowser/1.0"))).willReturn(true);
 
-        mockMvc.perform(get("/posts/1"))
+        mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "MockBrowser/1.0"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post))
+                .andExpect(model().attribute("likeCount", 2L))
+                .andExpect(model().attribute("liked", true))
                 .andExpect(content().string(containsString("alice")))
-                .andExpect(content().string(containsString("詳細を表示する投稿")));
+                .andExpect(content().string(containsString("詳細を表示する投稿")))
+                .andExpect(content().string(containsString("いいね 2")))
+                .andExpect(content().string(containsString("いいね解除")));
     }
 
     @Test
@@ -151,6 +165,21 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("href=\"/posts\"")))
                 .andExpect(content().string(containsString("一覧に戻る")));
+    }
+
+    @Test
+    @DisplayName("いいねトグル_POST_posts_id_likes_Serviceでトグルし詳細へリダイレクトする")
+    void いいねトグル_POST_posts_id_likes_Serviceでトグルし詳細へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "MockBrowser/1.0"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).toggleLike(1L, clientHash("192.0.2.10", "MockBrowser/1.0"));
     }
 
     @Test
@@ -198,5 +227,15 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts"));
 
         verify(postService).createPost("alice", "はじめての投稿");
+    }
+
+    private static String clientHash(String ipAddress, String userAgent) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest((ipAddress + userAgent).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hashed).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 が利用できません", e);
+        }
     }
 }

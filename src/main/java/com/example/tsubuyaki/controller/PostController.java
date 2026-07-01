@@ -3,6 +3,7 @@ package com.example.tsubuyaki.controller;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -13,6 +14,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 
 @Controller
@@ -37,10 +42,23 @@ public class PostController {
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
+        String clientHash = clientHash(request);
         model.addAttribute("post", postService.findDetailPost(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("likeCount", postService.countLikes(id));
+        model.addAttribute("liked", postService.hasLiked(id, clientHash));
         return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        try {
+            postService.toggleLike(id, clientHash(request));
+        } catch (java.util.NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "投稿が見つかりません", e);
+        }
+        return "redirect:/posts/" + id;
     }
 
     @PostMapping("/posts")
@@ -58,5 +76,25 @@ public class PostController {
             return List.of();
         }
         return posts;
+    }
+
+    private static String clientHash(HttpServletRequest request) {
+        String remoteAddress = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+        String source = nullToEmpty(remoteAddress) + nullToEmpty(userAgent);
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest(source.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hashed).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 が利用できません", e);
+        }
+    }
+
+    private static String nullToEmpty(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value;
     }
 }
