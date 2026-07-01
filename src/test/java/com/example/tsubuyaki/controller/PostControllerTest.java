@@ -51,6 +51,8 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("q", ""))
+                .andExpect(content().string(containsString("name=\"q\"")))
                 .andExpect(content().string(containsString("新しい投稿")));
     }
 
@@ -62,6 +64,39 @@ class PostControllerTest {
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("Controller_キーワード検索_GET_posts_q指定_検索結果をmodelに渡す")
+    void キーワード検索_GET_posts_q指定_検索結果をmodelに渡す() throws Exception {
+        List<Post> posts = List.of(
+                new Post("alice", "検索フォームを実装", Instant.parse("2026-06-26T10:00:00Z")));
+        given(postService.search("検索")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", "検索"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("q", "検索"))
+                .andExpect(content().string(containsString("検索フォームを実装")));
+
+        verify(postService).search("検索");
+    }
+
+    @Test
+    @DisplayName("Controller_キーワード検索_q空文字_通常一覧をmodelに渡す")
+    void キーワード検索_q空文字_通常一覧をmodelに渡す() throws Exception {
+        List<Post> posts = List.of(
+                new Post("alice", "通常一覧", Instant.parse("2026-06-26T10:00:00Z")));
+        given(postService.latest()).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", "   "))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("q", ""));
+
+        verify(postService).latest();
+        verify(postService, never()).search("   ");
     }
 
     @Test

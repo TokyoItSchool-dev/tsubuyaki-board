@@ -27,6 +27,14 @@ public class PostService {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    public List<Post> search(String keyword) {
+        String trimmedKeyword = nullToEmpty(keyword).trim();
+        if (trimmedKeyword.isEmpty()) {
+            return latest();
+        }
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(trimmedKeyword);
+    }
+
     public Optional<Post> findById(Long id) {
         return repository.findById(id);
     }
@@ -55,5 +63,9 @@ public class PostService {
     public Post create(String author, String body) {
         Post post = new Post(author.trim(), body.trim(), Instant.now());
         return repository.save(post);
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

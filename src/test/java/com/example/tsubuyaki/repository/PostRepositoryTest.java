@@ -68,4 +68,19 @@ class PostRepositoryTest {
                 .extracting(Post::getAuthor, Post::getBody, Post::getCreatedAt)
                 .containsExactly("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
     }
+
+    @Test
+    @DisplayName("Repository_キーワード検索_body部分一致を新着順で返す")
+    void キーワード検索_body部分一致を新着順で返す() {
+        postRepository.save(new Post("alice", "朝会で検索機能を相談", Instant.parse("2026-06-26T09:00:00Z")));
+        postRepository.save(new Post("bob", "ランチの話題", Instant.parse("2026-06-26T10:00:00Z")));
+        postRepository.save(new Post("carol", "検索フォームを実装", Instant.parse("2026-06-26T11:00:00Z")));
+        postRepository.flush();
+
+        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索");
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("検索フォームを実装", "朝会で検索機能を相談");
+    }
 }
