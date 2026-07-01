@@ -2,6 +2,7 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.web.dto.PostDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +18,13 @@ public class PostService {
         this.repository = repository;
     }
 
-    public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+    public List<PostDto> latest() {
+        List<Post> posts = repository.findTop50ByOrderByCreatedAtDesc();
+        if (posts == null) {
+            return List.of();
+        }
+        return posts.stream()
+                .map(PostDto::from)
+                .toList();
     }
 }

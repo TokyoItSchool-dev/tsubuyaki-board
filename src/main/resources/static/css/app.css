@@ -31,6 +31,21 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.page-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.page-nav form {
+    margin: 0;
+}
+
+.page-nav button {
+    cursor: pointer;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -45,6 +60,7 @@ h1 {
 }
 
 .post__created-at {
+    display: block;
     color: var(--color-muted);
     font-size: 0.85rem;
 }
@@ -53,4 +69,5 @@ h1 {
     margin-top: 0.5rem;
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
 }
