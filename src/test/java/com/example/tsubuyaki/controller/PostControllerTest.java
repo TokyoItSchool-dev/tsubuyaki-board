@@ -128,7 +128,8 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
-                .andExpect(model().attributeHasNoErrors("postForm"));
+                .andExpect(model().attributeHasNoErrors("postForm"))
+                .andExpect(model().attributeExists("avatarColors"));
     }
 
     @Test
@@ -138,6 +139,9 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("name=\"author\"")))
                 .andExpect(content().string(containsString("name=\"body\"")))
+                .andExpect(content().string(containsString("name=\"avatarColor\"")))
+                .andExpect(content().string(containsString("value=\"red\"")))
+                .andExpect(content().string(containsString("value=\"blue\"")))
                 .andExpect(content().string(containsString("method=\"post\"")))
                 .andExpect(content().string(containsString("action=\"/posts\"")))
                 .andExpect(content().string(not(containsString("投稿者名を入力してください"))))
@@ -156,7 +160,7 @@ class PostControllerTest {
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"))
                 .andExpect(content().string(containsString("投稿者")));
 
-        verify(postService, never()).create(author, "本文です");
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @ParameterizedTest
@@ -171,7 +175,7 @@ class PostControllerTest {
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文")));
 
-        verify(postService, never()).create("tanaka", body);
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     private static Stream<String> invalidBodies() {
@@ -190,7 +194,7 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("投稿者名を入力してください")))
                 .andExpect(content().string(containsString("本文を入力してください")));
 
-        verify(postService, never()).create("   ", "   ");
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -198,11 +202,25 @@ class PostControllerTest {
     void create_validInput_createsPostAndRedirectsToPosts() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "tanaka")
-                        .param("body", "投稿本文です"))
+                        .param("body", "投稿本文です")
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("tanaka", "投稿本文です");
+        verify(postService).create("tanaka", "投稿本文です", "blue");
+    }
+
+    @Test
+    @DisplayName("投稿作成_avatarColor未選択_登録してpostsへリダイレクトする")
+    void create_withoutAvatarColor_createsPostAndRedirectsToPosts() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "tanaka")
+                        .param("body", "投稿本文です")
+                        .param("avatarColor", ""))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("tanaka", "投稿本文です", "");
     }
 
     @Test
@@ -211,7 +229,8 @@ class PostControllerTest {
         Post post = new Post(
                 "tanaka",
                 "詳細画面に表示する本文です",
-                LocalDateTime.parse("2026-05-23T09:00:00"));
+                LocalDateTime.parse("2026-05-23T09:00:00"),
+                "red");
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postService.countLikes(1L)).willReturn(3L);
 
@@ -222,6 +241,7 @@ class PostControllerTest {
                 .andExpect(model().attribute("postId", 1L))
                 .andExpect(model().attribute("likeCount", 3L))
                 .andExpect(content().string(containsString("tanaka")))
+                .andExpect(content().string(containsString("post__avatar post__avatar--red")))
                 .andExpect(content().string(containsString("詳細画面に表示する本文です")))
                 .andExpect(content().string(containsString("2026-05-23 09:00")))
                 .andExpect(content().string(containsString("いいね 3")))

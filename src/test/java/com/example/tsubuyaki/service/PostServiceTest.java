@@ -86,13 +86,25 @@ class PostServiceTest {
     void 投稿作成_正常入力_前後空白を除去してRepositoryに保存する() {
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
 
-        postService.create("  tanaka  ", "  投稿本文です  ");
+        postService.create("  tanaka  ", "  投稿本文です  ", "blue");
 
         verify(postRepository).save(captor.capture());
         Post savedPost = captor.getValue();
         assertThat(savedPost.getAuthor()).isEqualTo("tanaka");
         assertThat(savedPost.getBody()).isEqualTo("投稿本文です");
+        assertThat(savedPost.getAvatarColor()).isEqualTo("blue");
         assertThat(savedPost.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿作成_avatarColor未選択_既定色grayでRepositoryに保存する")
+    void 投稿作成_avatarColor未選択_既定色grayでRepositoryに保存する() {
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+
+        postService.create("tanaka", "投稿本文です", "   ");
+
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getAvatarColor()).isEqualTo("gray");
     }
 
     @Test

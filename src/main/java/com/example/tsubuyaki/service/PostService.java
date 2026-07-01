@@ -11,10 +11,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
 public class PostService {
+
+    private static final String DEFAULT_AVATAR_COLOR = "gray";
+    private static final Set<String> AVATAR_COLORS = Set.of("red", "blue", "green", "yellow", "gray");
 
     private final PostRepository repository;
     private final PostLikeRepository postLikeRepository;
@@ -58,7 +62,20 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body) {
-        Post post = new Post(author.trim(), body.trim(), LocalDateTime.now());
+        return create(author, body, DEFAULT_AVATAR_COLOR);
+    }
+
+    @Transactional
+    public Post create(String author, String body, String avatarColor) {
+        Post post = new Post(author.trim(), body.trim(), LocalDateTime.now(), normalizeAvatarColor(avatarColor));
         return repository.save(post);
+    }
+
+    private static String normalizeAvatarColor(String avatarColor) {
+        if (avatarColor == null || avatarColor.trim().isEmpty()) {
+            return DEFAULT_AVATAR_COLOR;
+        }
+        String normalized = avatarColor.trim();
+        return AVATAR_COLORS.contains(normalized) ? normalized : DEFAULT_AVATAR_COLOR;
     }
 }

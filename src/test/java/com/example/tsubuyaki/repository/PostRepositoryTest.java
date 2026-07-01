@@ -54,4 +54,18 @@ class PostRepositoryTest {
         assertThat(posts).extracting(Post::getAuthor).doesNotContain("検索さん");
         assertThat(posts).extracting(Post::getBody).doesNotContain("検索対象の本文-1");
     }
+
+    @Test
+    @DisplayName("投稿作成_avatarColor選択_投稿と一緒に保存される")
+    void save_withAvatarColor_persistsAvatarColor() {
+        Post saved = postRepository.save(new Post(
+                "tanaka",
+                "アバター色を保存します",
+                LocalDateTime.parse("2026-05-23T09:00:00"),
+                "green"));
+
+        Post found = postRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(found.getAvatarColor()).isEqualTo("green");
+    }
 }

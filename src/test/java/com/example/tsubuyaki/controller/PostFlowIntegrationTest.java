@@ -40,13 +40,37 @@ class PostFlowIntegrationTest {
     void 投稿作成_登録成功後_投稿一覧にデータが反映される() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "integration-user")
-                        .param("body", "統合テストから登録した本文です"))
+                        .param("body", "統合テストから登録した本文です")
+                        .param("avatarColor", "yellow"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("integration-user")))
+                .andExpect(content().string(containsString("post__avatar post__avatar--yellow")))
                 .andExpect(content().string(containsString("統合テストから登録した本文です")));
+    }
+
+    @Test
+    @DisplayName("投稿作成_avatarColor未選択_既定色で一覧と詳細に表示される")
+    void 投稿作成_avatarColor未選択_既定色で一覧と詳細に表示される() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "no-color-user")
+                        .param("body", "色未選択の投稿です")
+                        .param("avatarColor", ""))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("no-color-user")))
+                .andExpect(content().string(containsString("post__avatar post__avatar--gray")));
+
+        Long postId = postRepository.findAll().get(0).getId();
+        mockMvc.perform(get("/posts/" + postId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("no-color-user")))
+                .andExpect(content().string(containsString("post__avatar post__avatar--gray")));
     }
 }

@@ -15,7 +15,13 @@
 
     <article class="post post--detail">
         <div class="post__content">
-            <span class="post__author" th:text="${post.author}">投稿者</span>
+            <div class="post__author-row">
+                <span class="post__avatar"
+                      th:classappend="|post__avatar--${post.avatarColor}|"
+                      th:title="${post.avatarColor}"
+                      aria-hidden="true"></span>
+                <span class="post__author" th:text="${post.author}">投稿者</span>
+            </div>
             <p class="post__body" th:text="${post.body}">本文</p>
             <time class="post__created-at"
                   th:datetime="${post.createdAt}"
