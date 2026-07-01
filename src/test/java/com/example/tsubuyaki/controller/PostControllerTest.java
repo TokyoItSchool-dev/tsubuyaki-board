@@ -17,9 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -67,5 +71,32 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+    }
+
+    @Test
+    @DisplayName("投稿登録_入力が妥当なとき_投稿一覧へリダイレクトする")
+    void 投稿登録_入力が妥当なとき_投稿一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "今日の共有です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "今日の共有です");
+    }
+
+    @Test
+    @DisplayName("投稿登録_空白のみのとき_フォームを再表示してエラーを表示する")
+    void 投稿登録_空白のみのとき_フォームを再表示してエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "   ")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author", "body"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verify(postService, never()).create("   ", "   ");
     }
 }
