@@ -39,4 +39,17 @@ class PostRepositoryTest {
                 .startsWith("body50", "body49", "body48")
                 .doesNotContain("body0");
     }
+
+    @Test
+    @DisplayName("キーワード検索_本文に含む投稿があるとき_新着順で返す")
+    void findTop50ByBodyContainingOrderByCreatedAtDesc_returnsMatchedPostsInDescendingOrder() {
+        postRepository.save(new Post("alice", "週次MTGの議事録", Instant.parse("2026-05-23T09:00:00Z")));
+        postRepository.save(new Post("bob", "ランチ相談", Instant.parse("2026-05-23T10:00:00Z")));
+        postRepository.save(new Post("carol", "MTG資料を更新", Instant.parse("2026-05-23T11:00:00Z")));
+
+        List<Post> actual = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("MTG");
+
+        assertThat(actual).extracting(Post::getBody)
+                .containsExactly("MTG資料を更新", "週次MTGの議事録");
+    }
 }
