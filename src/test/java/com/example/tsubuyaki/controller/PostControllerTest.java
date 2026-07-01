@@ -20,9 +20,13 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -98,6 +102,109 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(content().string(containsString("<form action=\"/posts\" method=\"post\">")))
+                .andExpect(content().string(containsString("<button type=\"submit\">投稿</button>")))
                 .andExpect(content().string(containsString("新規投稿")));
+    }
+
+    @Test
+    @DisplayName("投稿作成_author空文字_フォームを再表示しエラーを表示する")
+    void create_whenAuthorBlank_returnsFormWithError() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "")
+                        .param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_author空白のみ_フォームを再表示しエラーを表示する")
+    void create_whenAuthorWhitespace_returnsFormWithError() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "   ")
+                        .param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_author31文字_フォームを再表示しエラーを表示する")
+    void create_whenAuthorTooLong_returnsFormWithError() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "a".repeat(31))
+                        .param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_body空文字_フォームを再表示しエラーを表示する")
+    void create_whenBodyBlank_returnsFormWithError() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_body空白のみ_フォームを再表示しエラーを表示する")
+    void create_whenBodyWhitespace_returnsFormWithError() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_body281文字_フォームを再表示しエラーを表示する")
+    void create_whenBodyTooLong_returnsFormWithError() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "b".repeat(281)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿作成_入力正常_投稿を保存して一覧へリダイレクトする")
+    void create_whenValid_savesPostAndRedirectsToList() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "登録した投稿"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts"));
+
+        then(postService).should().create(assertThatForm("alice", "登録した投稿"));
+    }
+
+    private PostForm assertThatForm(String author, String body) {
+        return org.mockito.ArgumentMatchers.argThat(form ->
+                author.equals(form.getAuthor()) && body.equals(form.getBody()));
     }
 }
