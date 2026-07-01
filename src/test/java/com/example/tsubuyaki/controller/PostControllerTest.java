@@ -198,6 +198,22 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_存在するIDのとき_削除ボタンを表示する")
+    void detail_存在するIDのとき_削除ボタンを表示する() throws Exception {
+        Post post = post("alice", "削除対象の投稿です", Instant.parse("2026-06-30T01:15:00Z"));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("method=\"post\" action=\"/posts/10/delete\"");
+        assertThat(html).contains("<button type=\"submit\">削除</button>");
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在しないIDのとき_404を返す")
     void detail_存在しないIDのとき_404を返す() throws Exception {
         given(postService.findById(999L)).willReturn(Optional.empty());
@@ -224,6 +240,16 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts/10"));
 
         verify(postService).toggleLike(10L, clientHash(ipAddress, userAgent));
+    }
+
+    @Test
+    @DisplayName("投稿削除_POSTしたとき_Serviceで削除し一覧へリダイレクトする")
+    void delete_POSTしたとき_Serviceで削除し一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/posts/10/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(10L);
     }
 
     @Test

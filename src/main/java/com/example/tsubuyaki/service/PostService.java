@@ -30,11 +30,11 @@ public class PostService {
     }
 
     public List<Post> searchByBodyContaining(String keyword) {
-        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword);
+        return repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(keyword);
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findByIdAndDeletedAtIsNull(id);
     }
 
     public long countLikes(Long postId) {
@@ -62,5 +62,11 @@ public class PostService {
     @Transactional
     public void create(String author, String body, String avatarColor) {
         repository.save(new Post(author, body, Instant.now(), avatarColor));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        repository.findByIdAndDeletedAtIsNull(id)
+                .ifPresent(post -> post.markDeleted(Instant.now()));
     }
 }

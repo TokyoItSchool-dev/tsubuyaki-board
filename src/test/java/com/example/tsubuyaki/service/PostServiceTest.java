@@ -43,18 +43,18 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("投稿詳細_IDを指定したとき_RepositoryのfindByIdを使う")
-    void findById_IDを指定したとき_RepositoryのfindByIdを使う() {
+    @DisplayName("投稿詳細_IDを指定したとき_Repositoryの未削除findByIdを使う")
+    void findById_IDを指定したとき_Repositoryの未削除findByIdを使う() {
         Optional<Post> expected = Optional.of(new Post(
                 "alice",
                 "詳細表示の本文です",
                 Instant.parse("2026-06-30T10:00:00Z")));
-        given(postRepository.findById(10L)).willReturn(expected);
+        given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(expected);
 
         Optional<Post> actual = postService.findById(10L);
 
         assertThat(actual).isSameAs(expected);
-        verify(postRepository).findById(10L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(10L);
     }
 
     @Test
@@ -97,5 +97,23 @@ class PostServiceTest {
                         && "green".equals(post.getAvatarColor())
                         && !post.getCreatedAt().isBefore(before)
                         && !post.getCreatedAt().isAfter(after)));
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在する未削除投稿のとき_deletedAtを設定する")
+    void delete_存在する未削除投稿のとき_deletedAtを設定する() {
+        Post post = new Post(
+                "alice",
+                "削除対象の投稿です",
+                Instant.parse("2026-06-30T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(post));
+        Instant before = Instant.now();
+
+        postService.delete(10L);
+
+        Instant after = Instant.now();
+        assertThat(post.getDeletedAt()).isNotNull();
+        assertThat(post.getDeletedAt()).isBetween(before, after);
+        verify(postRepository).findByIdAndDeletedAtIsNull(10L);
     }
 }
