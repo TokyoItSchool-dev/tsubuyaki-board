@@ -7,11 +7,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -137,11 +140,25 @@ class PostControllerTest {
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(matchesPattern("(?s).*<article class=\"post\">\\s*"
-                        + "<div class=\"post__author\">alice</div>\\s*"
+                        + "<div class=\"post__author\">.*</div>\\s*"
                         + "<p class=\"post__body\">長い本文でも読みやすく折り返して表示する投稿です。</p>\\s*"
                         + "<div class=\"post__meta\">\\s*"
                         + "<time class=\"post__created-at\".*>2026-05-23 19:15</time>\\s*"
                         + "<a href=\"/posts/1\">詳細</a>\\s*</div>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿あり_投稿者名の左に頭文字アバターを表示する")
+    void 投稿一覧_投稿あり_投稿者名の左に頭文字アバターを表示する() throws Exception {
+        Post post = new Post("alice", "hello", "#e91e63", Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<div class=\"post__author\">\\s*"
+                        + "<span class=\"post__avatar\" style=\"background-color: #e91e63\">A</span>\\s*"
+                        + "<span class=\"post__author-name\">alice</span>\\s*</div>.*")));
     }
 
     @Test
@@ -171,9 +188,23 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("<h1>投稿詳細</h1>")))
                 .andExpect(content().string(containsString("<a href=\"/posts\">一覧に戻る</a>")))
                 .andExpect(content().string(matchesPattern("(?s).*<article class=\"post\">\\s*"
-                        + "<div class=\"post__author\">alice</div>\\s*"
+                        + "<div class=\"post__author\">.*</div>\\s*"
                         + "<p class=\"post__body\">hello</p>\\s*"
                         + ".*<time class=\"post__created-at\".*>2026-05-23 19:15</time>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_投稿者名の左に頭文字アバターを表示する")
+    void 投稿詳細_投稿者名の左に頭文字アバターを表示する() throws Exception {
+        Post post = new Post("kaana", "hello", "#3498db", Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<div class=\"post__author\">\\s*"
+                        + "<span class=\"post__avatar\" style=\"background-color: #3498db\">K</span>\\s*"
+                        + "<span class=\"post__author-name\">kaana</span>\\s*</div>.*")));
     }
 
     @Test
@@ -230,15 +261,35 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿登録_妥当な入力_投稿を作成して一覧へリダイレクトする")
-    void 投稿登録_妥当な入力_投稿を作成して一覧へリダイレクトする() throws Exception {
-        mockMvc.perform(post("/posts")
-                        .param("author", "alice")
-                        .param("body", "hello"))
+    @DisplayName("投稿作成フォーム_avatarColorを選択できる")
+    void 投稿作成フォーム_avatarColorを選択できる() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<label for=\"avatarColor\">アバター色</label>\\s*"
+                        + "<input[^>]+type=\"color\"[^>]+id=\"avatarColor\"[^>]+name=\"avatarColor\""
+                        + "[^>]+value=\"#3498db\"[^>]*>.*")));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "false, #3498db, #3498db",
+        "true, #e91e63, #e91e63"
+    })
+    @DisplayName("投稿登録_avatarColor指定有無_投稿を作成して一覧へリダイレクトする")
+    void 投稿登録_avatarColor指定有無_投稿を作成して一覧へリダイレクトする(
+            boolean includeAvatarColor, String avatarColor, String expectedColor) throws Exception {
+        MockHttpServletRequestBuilder request = post("/posts")
+                .param("author", "alice")
+                .param("body", "hello");
+        if (includeAvatarColor) {
+            request.param("avatarColor", avatarColor);
+        }
+
+        mockMvc.perform(request)
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        then(postService).should().create("alice", "hello");
+        then(postService).should().create("alice", "hello", expectedColor);
     }
 
     @Test
@@ -250,7 +301,7 @@ class PostControllerTest {
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        then(postService).should().create("alice", "hello");
+        then(postService).should().create("alice", "hello", "#3498db");
     }
 
     @Test

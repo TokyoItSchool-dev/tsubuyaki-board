@@ -54,4 +54,18 @@ class PostRepositoryTest {
                 .startsWith("needle body52", "needle body51", "needle body50")
                 .doesNotContain("needle body1", "検索対象外の本文");
     }
+
+    @Test
+    @DisplayName("投稿保存_avatarColorを保持できる")
+    void 投稿保存_avatarColorを保持できる() {
+        Post saved = postRepository.save(new Post(
+                "alice",
+                "hello",
+                "#e91e63",
+                Instant.parse("2026-05-23T10:00:00Z")));
+
+        Post found = postRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(found.getAvatarColor()).isEqualTo("#e91e63");
+    }
 }

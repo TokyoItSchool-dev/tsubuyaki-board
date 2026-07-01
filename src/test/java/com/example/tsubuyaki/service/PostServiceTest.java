@@ -89,8 +89,8 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("投稿登録_create_投稿を作成してRepositoryへ保存する")
-    void 投稿登録_create_投稿を作成してRepositoryへ保存する() {
+    @DisplayName("投稿登録_create_投稿をデフォルトアバター色でRepositoryへ保存する")
+    void 投稿登録_create_投稿をデフォルトアバター色でRepositoryへ保存する() {
         given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
         Instant before = Instant.now();
 
@@ -103,7 +103,44 @@ class PostServiceTest {
         assertThat(created).isSameAs(saved);
         assertThat(saved.getAuthor()).isEqualTo("alice");
         assertThat(saved.getBody()).isEqualTo("hello");
+        assertThat(saved.getAvatarColor()).isEqualTo("#3498db");
         assertThat(saved.getCreatedAt()).isBetween(before, after);
+    }
+
+    @Test
+    @DisplayName("投稿登録_create_avatarColorつき投稿を保存する")
+    void 投稿登録_create_avatarColorつき投稿を保存する() {
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        postService.create("alice", "hello", "#e91e63");
+
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getAvatarColor()).isEqualTo("#e91e63");
+    }
+
+    @Test
+    @DisplayName("投稿登録_create_avatarColor空文字_デフォルト色で保存する")
+    void 投稿登録_create_avatarColor空文字_デフォルト色で保存する() {
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        postService.create("alice", "hello", "   ");
+
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getAvatarColor()).isEqualTo("#3498db");
+    }
+
+    @Test
+    @DisplayName("投稿登録_create_avatarColor不正値_デフォルト色で保存する")
+    void 投稿登録_create_avatarColor不正値_デフォルト色で保存する() {
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        postService.create("alice", "hello", "red; color: transparent");
+
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getAvatarColor()).isEqualTo("#3498db");
     }
 
     @Test
