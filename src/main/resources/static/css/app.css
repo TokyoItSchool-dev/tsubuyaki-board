@@ -35,6 +35,12 @@ h1 {
     margin: 1rem 0;
 }
 
+.error {
+    color: #e11d48;
+    margin-top: 1px;
+    font-size: 0.85rem;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
