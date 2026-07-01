@@ -24,7 +24,7 @@ public class PostController {
     @GetMapping("/posts/new")
     public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());
-        return "posts/form";
+        return "posts/form.html";
     }
 
     // 演習中に追加するエンドポイント:
