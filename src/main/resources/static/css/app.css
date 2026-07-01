@@ -35,6 +35,25 @@ h1 {
     margin: 1rem 0;
 }
 
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+}
+
+.search-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.search-form button {
+    padding: 0.4rem 0.8rem;
+}
+
 .error {
     color: #e11d48;
     margin-top: 1px;
