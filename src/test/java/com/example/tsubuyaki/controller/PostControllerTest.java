@@ -1,6 +1,6 @@
-package com.example.tsubuyaki.sample;
+package com.example.tsubuyaki.controller;
 
-import com.example.tsubuyaki.controller.PostController;
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,7 +9,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Collections;
+import java.time.Instant;
+import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -17,13 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
-/**
- * Controller テストの雛形。TDD の見本として残す (削除禁止)。
- *
- * <p>@WebMvcTest で Spring の MVC スライスのみ起動し、Service はモック化する。</p>
- */
 @WebMvcTest(PostController.class)
-class SamplePostControllerTest {
+class PostControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,13 +28,16 @@ class SamplePostControllerTest {
     private PostService postService;
 
     @Test
-    @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")
-    void getPosts_rendersListView() throws Exception {
-        given(postService.findLatestPosts()).willReturn(Collections.emptyList());
+    @DisplayName("投稿一覧_GET_posts_最新投稿を新着順でビューに渡す")
+    void 投稿一覧_GET_posts_最新投稿を新着順でビューに渡す() throws Exception {
+        List<Post> latestPosts = List.of(
+                new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z")),
+                new Post("bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z")));
+        given(postService.findLatestPosts()).willReturn(latestPosts);
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
-                .andExpect(model().attributeExists("posts"));
+                .andExpect(model().attribute("posts", latestPosts));
     }
 }

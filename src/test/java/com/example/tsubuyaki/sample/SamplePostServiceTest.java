@@ -9,6 +9,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+
+import static org.mockito.BDDMockito.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -26,10 +29,10 @@ class SamplePostServiceTest {
     private PostService postService;
 
     @Test
-    @DisplayName("Service_latest_未実装のとき_空リストを返す")
-    void latest_returnsEmpty_byDefault() {
-        // 現在の PostService.latest() は TODO 状態で空リストを返す。
-        // 受講生が実装したら、このテストは別シナリオに置き換える。
-        assertThat(postService.latest()).isEmpty();
+    @DisplayName("Service_最新投稿取得_投稿がないとき_空リストを返す")
+    void findLatestPosts_returnsEmpty_whenNoPosts() {
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
+
+        assertThat(postService.findLatestPosts()).isEmpty();
     }
 }
