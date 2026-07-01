@@ -59,8 +59,11 @@ class PostListFeatureTest {
                 .getResponse()
                 .getContentAsString();
 
+        Long latestPostId = postRepository.findTop50ByOrderByCreatedAtDesc().getFirst().getId();
+
         assertThat(html).contains("user50", "body50", "2026-05-23 18:50");
         assertThat(html).doesNotContain("user0", "body0");
+        assertThat(html).contains("href=\"/posts/" + latestPostId + "\"");
         assertThat(html).containsSubsequence("user50", "body50", "2026-05-23 18:50");
     }
 }
