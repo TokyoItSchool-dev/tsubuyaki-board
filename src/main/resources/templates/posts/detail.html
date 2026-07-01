@@ -25,6 +25,11 @@
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
         </header>
         <p class="post__body" th:text="${post.body}">本文</p>
+        <nav class="post__tags" th:if="${!#sets.isEmpty(post.tags)}">
+            <a th:each="tag : ${post.tags}"
+               th:href="@{/tags/{name}(name=${tag.name})}"
+               th:text="'#' + ${tag.name}">#tag</a>
+        </nav>
         <footer>
             <span>いいね <span th:text="${likeCount}">0</span></span>
             <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">

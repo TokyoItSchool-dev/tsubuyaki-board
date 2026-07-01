@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.domain.User;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
@@ -44,8 +45,10 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿があるとき_最新50件をビューに渡す")
     void 投稿一覧_投稿があるとき_最新50件をビューに渡す() throws Exception {
-        List<Post> posts = List.of(
-                new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"), "#ef4444"),
+        Post latest = new Post("alice", "新しい投稿 #spring",
+                Instant.parse("2026-05-23T10:00:00Z"), "#ef4444");
+        latest.addTag(new Tag("spring"));
+        List<Post> posts = List.of(latest,
                 new Post("bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z"), "#6b7280"));
         given(postService.findLatest50()).willReturn(posts);
 
@@ -59,7 +62,9 @@ class PostControllerTest {
                 .andExpect(content().string(matchesPattern("(?s).*<span class=\"post__avatar\""
                         + "\\s+style=\"--avatar-color: #ef4444\""
                         + "\\s+aria-hidden=\"true\"></span>\\s+"
-                        + "<span class=\"post__author\">alice</span>.*")));
+                        + "<span class=\"post__author\">alice</span>.*")))
+                .andExpect(content().string(containsString("href=\"/tags/spring\"")))
+                .andExpect(content().string(containsString("#spring")));
 
         verify(postService).findLatest50();
     }

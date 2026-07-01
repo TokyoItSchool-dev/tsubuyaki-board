@@ -1,8 +1,8 @@
 package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.domain.User;
-import com.example.tsubuyaki.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +25,9 @@ class PostRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
 
     @Test
     @DisplayName("本文検索_キーワードを含む投稿だけ_新着順で返す")
@@ -53,5 +56,34 @@ class PostRepositoryTest {
 
         assertThat(found.getUser().getId()).isEqualTo(user.getId());
         assertThat(found.getAvatarColor()).isEqualTo("#ef4444");
+    }
+
+    @Test
+    @DisplayName("タグ検索_指定タグに紐づく投稿だけ_新着順で返す")
+    void タグ検索_指定タグに紐づく投稿だけ_新着順で返す() {
+        Tag spring = tagRepository.save(new Tag("spring"));
+        Tag java = tagRepository.save(new Tag("java"));
+        Post oldMatch = new Post("alice", "#spring 古い投稿",
+                Instant.parse("2026-05-23T09:00:00Z"));
+        oldMatch.addTag(spring);
+        Post newMatch = new Post("bob", "#spring 新しい投稿",
+                Instant.parse("2026-05-23T11:00:00Z"));
+        newMatch.addTag(spring);
+        Post other = new Post("carol", "#java の投稿",
+                Instant.parse("2026-05-23T10:00:00Z"));
+        other.addTag(java);
+        postRepository.saveAll(List.of(oldMatch, newMatch, other));
+
+        List<Post> posts = postRepository.findDistinctTop50ByTagsNameOrderByCreatedAtDesc("spring");
+
+        assertThat(posts).containsExactly(newMatch, oldMatch);
+    }
+
+    @Test
+    @DisplayName("タグ検索_存在しないタグのとき_空配列を返す")
+    void タグ検索_存在しないタグのとき_空配列を返す() {
+        List<Post> posts = postRepository.findDistinctTop50ByTagsNameOrderByCreatedAtDesc("missing");
+
+        assertThat(posts).isEmpty();
     }
 }

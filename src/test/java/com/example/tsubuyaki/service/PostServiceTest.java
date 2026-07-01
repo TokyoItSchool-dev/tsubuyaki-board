@@ -2,9 +2,11 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.domain.User;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import com.example.tsubuyaki.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -35,6 +39,9 @@ class PostServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private TagRepository tagRepository;
+
     @InjectMocks
     private PostService postService;
 
@@ -42,7 +49,7 @@ class PostServiceTest {
     @DisplayName("投稿取得_存在するidのとき_Repositoryの結果を返す")
     void 投稿取得_存在するidのとき_Repositoryの結果を返す() {
         Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findWithTagsById(1L)).willReturn(Optional.of(post));
 
         Optional<Post> result = postService.findById(1L);
 
@@ -122,6 +129,58 @@ class PostServiceTest {
         assertThat(created.getUser()).isSameAs(user);
         assertThat(created.getAvatarColor()).isEqualTo("#22c55e");
         verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
+    }
+
+    @Test
+    @DisplayName("投稿作成_本文にタグが存在しないとき_タグを保存しない")
+    void 投稿作成_本文にタグが存在しないとき_タグを保存しない() {
+        given(userRepository.findByName("alice")).willReturn(Optional.empty());
+        given(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        given(postRepository.save(org.mockito.ArgumentMatchers.any(Post.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Post created = postService.create("alice", "タグなしの投稿です", "#ef4444");
+
+        assertThat(created.getTags()).isEmpty();
+        verify(tagRepository, never()).findByName(org.mockito.ArgumentMatchers.anyString());
+        verify(tagRepository, never()).save(org.mockito.ArgumentMatchers.any(Tag.class));
+    }
+
+    @Test
+    @DisplayName("投稿作成_本文にタグがあるとき_既存タグを再利用し新規タグを保存する")
+    void 投稿作成_本文にタグがあるとき_既存タグを再利用し新規タグを保存する() {
+        Tag spring = new Tag("spring");
+        given(userRepository.findByName("alice")).willReturn(Optional.empty());
+        given(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        given(tagRepository.findByName("spring")).willReturn(Optional.of(spring));
+        given(tagRepository.findByName("java")).willReturn(Optional.empty());
+        given(tagRepository.save(org.mockito.ArgumentMatchers.any(Tag.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        given(postRepository.save(org.mockito.ArgumentMatchers.any(Post.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Post created = postService.create("alice", "#spring　#java #spring", "#ef4444");
+
+        Set<String> tagNames = created.getTags().stream()
+                .map(Tag::getName)
+                .collect(Collectors.toSet());
+        assertThat(tagNames).containsExactlyInAnyOrder("spring", "java");
+        verify(tagRepository).save(org.mockito.ArgumentMatchers.argThat(tag -> "java".equals(tag.getName())));
+        verify(tagRepository, never()).save(org.mockito.ArgumentMatchers.argThat(tag -> "spring".equals(tag.getName())));
+    }
+
+    @Test
+    @DisplayName("タグ別投稿取得_タグ名を指定したとき_Repositoryの結果を返す")
+    void タグ別投稿取得_タグ名を指定したとき_Repositoryの結果を返す() {
+        List<Post> posts = List.of(new Post("alice", "#spring 投稿",
+                Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findDistinctTop50ByTagsNameOrderByCreatedAtDesc("spring")).willReturn(posts);
+
+        List<Post> result = postService.findByTagName("spring");
+
+        assertThat(result).isSameAs(posts);
     }
 
     @Test

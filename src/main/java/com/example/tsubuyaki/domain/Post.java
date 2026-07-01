@@ -7,12 +7,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "posts")
@@ -32,6 +36,12 @@ public class Post {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @ManyToMany
+    @JoinTable(name = "post_tags",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags = new LinkedHashSet<>();
 
     protected Post() {
         // JPA
@@ -69,6 +79,14 @@ public class Post {
 
     public String getAvatarColor() {
         return user.getAvatarColor();
+    }
+
+    public Set<Tag> getTags() {
+        return Set.copyOf(tags);
+    }
+
+    public void addTag(Tag tag) {
+        tags.add(tag);
     }
 
     @Override
