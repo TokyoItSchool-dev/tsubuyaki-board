@@ -25,11 +25,11 @@ class PostNewFormFeatureTest {
     private PostService postService;
 
     @Test
-    @DisplayName("投稿作成フォーム_GET_posts_new_posts_form_htmlとPostFormをmodelに渡す")
-    void 投稿作成フォーム_GET_posts_new_posts_form_htmlとPostFormをmodelに渡す() throws Exception {
+    @DisplayName("投稿作成フォーム_GET_posts_new_posts_formとPostFormをmodelに渡す")
+    void 投稿作成フォーム_GET_posts_new_posts_formとPostFormをmodelに渡す() throws Exception {
         mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("posts/form.html"))
+                .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeExists("postForm"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
     }
