@@ -58,15 +58,47 @@ CI検証は成功しているが、実際に画面表示の確認はできてい
 
 ## プロンプト 2
 
-**フェーズ**:
+**フェーズ**:M3対応
 
 **プロンプト本文**:
 
 ```
+投稿登録機能を作成する。
+    - 入力項目は PostForm の author, body を使う
+    - 投稿者 author は必須、30文字まで、空白のみはNG
+    - 本文 body は必須、280文字まで、空白のみはNG
+    - 登録後、投稿一覧画面で登録した投稿が見えること
 
+    以下の観点のテストを用意してから本機能の実装を行う。
+    - GET /posts/new で postForm が model に積まれ、posts/form.html を表示できること
+    - author が空文字または空白のみの場合、登録せず posts/form を再表示しエラーを表示すること
+    - author が31文字以上の場合、登録せず posts/form を再表示しエラーを表示すること
+    - body が空文字または空白のみの場合、登録せず posts/form を再表示しエラーを表示すること
+    - body が281文字以上の場合、登録せず posts/form を再表示しエラーを表示すること
+    - 入力が正常な場合、PostService が投稿者・本文・投稿日を保存すること
+    - 入力が正常な場合、POST /posts 後に /posts へリダイレクトすること
+    - 登録後、GET /posts で登録した投稿が一覧に表示されること
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+```
+M3 投稿登録機能を実装しました。
+
+  差分:
+
+  - 成功時は PostService.create(...) で保存し、redirect:/posts
+  - src/main/java/com/example/tsubuyaki/service/PostService.java:33 で createdAt = Instant.now() を設定して
+    保存
+
+      - PostServiceTest
+      - PostCreateFlowTest
+
+  検証:
+
+  - ./mvnw -B -Ph2 -Dtest=PostControllerTest,PostServiceTest,PostCreateFlowTest test 成功、16件
+  - ./mvnw -B -Ph2 verify 成功、22件
+  - Checkstyle 0、SpotBugs 0、JaCoCo OK
+```
 
 **振り返り**:
 
