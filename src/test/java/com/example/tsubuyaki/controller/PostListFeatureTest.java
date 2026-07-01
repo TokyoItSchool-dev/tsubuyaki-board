@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -42,9 +42,9 @@ class PostListFeatureTest {
                 .andExpect(model().attributeExists("posts"))
                 .andExpect(content().string(containsString("まだ投稿はありません")));
 
-        Instant base = Instant.parse("2026-05-23T09:00:00Z");
+        LocalDateTime base = LocalDateTime.of(2026, 5, 23, 18, 0);
         for (int i = 0; i < 51; i++) {
-            postRepository.save(new Post("user" + i, "body" + i, base.plusSeconds(i * 60L)));
+            postRepository.save(new Post("user" + i, "body" + i, base.plusMinutes(i)));
         }
         postRepository.flush();
 

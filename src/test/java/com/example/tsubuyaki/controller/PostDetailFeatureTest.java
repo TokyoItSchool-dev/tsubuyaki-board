@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,7 +37,7 @@ class PostDetailFeatureTest {
         Post savedPost = postRepository.save(new Post(
                 "detail-user",
                 "detail-body",
-                Instant.parse("2026-05-23T09:00:00Z")));
+                LocalDateTime.of(2026, 5, 23, 18, 0)));
         postRepository.flush();
 
         mockMvc.perform(get("/posts/{id}", savedPost.getId()))
