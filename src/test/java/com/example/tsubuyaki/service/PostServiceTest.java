@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,6 +27,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostLikeRepository postLikeRepository;
 
     @InjectMocks
     private PostService postService;
@@ -66,5 +72,56 @@ class PostServiceTest {
 
         assertThat(post).containsSame(expectedPost);
         verify(postRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("いいね_初回_toggleLikeでいいねを保存する")
+    void toggleLike_whenFirstLike_savesLike() {
+        Post post = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postLikeRepository.findByPostIdAndClientHash(1L, "aaaaaaaa")).willReturn(Optional.empty());
+
+        boolean toggled = postService.toggleLike(1L, "aaaaaaaa");
+
+        assertThat(toggled).isTrue();
+        verify(postLikeRepository).save(argThat(like ->
+                like.getPost() == post && "aaaaaaaa".equals(like.getClientHash())));
+    }
+
+    @Test
+    @DisplayName("いいね_同じclientHashで再度toggleLike_いいねを削除する")
+    void toggleLike_whenSameClientHashLikesAgain_deletesLike() {
+        Post post = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"));
+        PostLike like = new PostLike(post, "aaaaaaaa");
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postLikeRepository.findByPostIdAndClientHash(1L, "aaaaaaaa")).willReturn(Optional.of(like));
+
+        boolean toggled = postService.toggleLike(1L, "aaaaaaaa");
+
+        assertThat(toggled).isTrue();
+        verify(postLikeRepository).delete(like);
+        verify(postLikeRepository, never()).save(any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("いいね_存在しない投稿ID_toggleLikeはfalseを返す")
+    void toggleLike_whenPostDoesNotExist_returnsFalse() {
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        boolean toggled = postService.toggleLike(999L, "aaaaaaaa");
+
+        assertThat(toggled).isFalse();
+        verify(postLikeRepository, never()).save(any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("いいね数_countLikes_Repositoryから投稿IDで件数を取得する")
+    void countLikes_returnsCountFromRepository() {
+        given(postLikeRepository.countByPostId(1L)).willReturn(3L);
+
+        long count = postService.countLikes(1L);
+
+        assertThat(count).isEqualTo(3L);
+        verify(postLikeRepository).countByPostId(1L);
     }
 }
