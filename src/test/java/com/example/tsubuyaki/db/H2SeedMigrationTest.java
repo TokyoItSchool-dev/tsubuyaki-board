@@ -19,7 +19,7 @@ class H2SeedMigrationTest {
     @DisplayName("H2シーダー_起動時_投稿10件を投入し次IDが11になる")
     void H2シーダー_起動時_投稿10件を投入し次Idが11になる() throws SQLException {
         String url = "jdbc:h2:mem:seed_" + UUID.randomUUID().toString().replace("-", "")
-                + ";MODE=Oracle;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=true";
+                + ";MODE=Oracle;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_UPPER=true";
 
         Flyway.configure()
                 .dataSource(url, "sa", "")

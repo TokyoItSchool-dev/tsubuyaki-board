@@ -29,8 +29,13 @@ class SamplePostServiceTest {
     private PostService postService;
 
     @Test
+<<<<<<< Updated upstream
     @DisplayName("Service_latest_Repositoryの最新50件を返す")
     void latest_returnsLatest50FromRepository() {
+=======
+    @DisplayName("Service_latest_Repositoryが空のとき_空リストを返す")
+    void latest_returnsEmpty_whenRepositoryIsEmpty() {
+>>>>>>> Stashed changes
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
 
         assertThat(postService.latest()).isEmpty();
