@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ class PostServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private PostLikeRepository postLikeRepository;
+
     @InjectMocks
     private PostService postService;
 
@@ -41,5 +46,29 @@ class PostServiceTest {
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("本文です");
         assertThat(savedPost.getCreatedAt()).isBetween(before, after);
+    }
+
+    @Test
+    @DisplayName("いいね切り替え_未登録の場合_いいねを登録する")
+    void いいね切り替え_未登録の場合_いいねを登録する() {
+        given(postLikeRepository.existsByPostIdAndClientHash(1L, "abcd1234")).willReturn(false);
+
+        postService.toggleLike(1L, "abcd1234");
+
+        ArgumentCaptor<PostLike> captor = ArgumentCaptor.forClass(PostLike.class);
+        then(postLikeRepository).should().save(captor.capture());
+        PostLike savedLike = captor.getValue();
+        assertThat(savedLike.getPostId()).isEqualTo(1L);
+        assertThat(savedLike.getClientHash()).isEqualTo("abcd1234");
+    }
+
+    @Test
+    @DisplayName("いいね切り替え_同一clientHashが登録済みの場合_いいねを解除する")
+    void いいね切り替え_同一clientHashが登録済みの場合_いいねを解除する() {
+        given(postLikeRepository.existsByPostIdAndClientHash(1L, "abcd1234")).willReturn(true);
+
+        postService.toggleLike(1L, "abcd1234");
+
+        then(postLikeRepository).should().deleteByPostIdAndClientHash(1L, "abcd1234");
     }
 }

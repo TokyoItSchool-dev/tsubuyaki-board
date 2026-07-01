@@ -8,12 +8,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -159,12 +163,50 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_存在するidの場合_いいね数とLikeボタンを表示する")
+    void 投稿詳細_存在するidの場合_いいね数とLikeボタンを表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.countLikes(1L)).willReturn(3L);
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("likeCount", 3L))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("いいね 3")
+                .contains("action=\"/posts/1/likes\"")
+                .contains("method=\"post\"")
+                .contains(">Like<");
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在しないidの場合_404を返す")
     void 投稿詳細_存在しないidの場合_404を返す() throws Exception {
         given(postService.findPost(999L)).willReturn(Optional.empty());
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("いいね切り替え_POST_posts_id_likes_clientHashを渡して詳細へリダイレクトする")
+    void いいね切り替え_POST_posts_id_likes_clientHashを渡して詳細へリダイレクトする() throws Exception {
+        String remoteAddress = "203.0.113.10";
+        String userAgent = "JUnit Browser";
+
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .header("User-Agent", userAgent))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(postService).should().toggleLike(1L, clientHash(remoteAddress, userAgent));
     }
 
     @Test
@@ -251,5 +293,21 @@ class PostControllerTest {
                 .contains("name=\"body\"");
         then(postService).should(never()).createPost(org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.anyString());
+    }
+
+    private String clientHash(String remoteAddress, String userAgent) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest((remoteAddress + userAgent).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm is not available", e);
+        }
+    }
+
+    private Post postWithId(Long id) {
+        Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
     }
 }

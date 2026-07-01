@@ -19,6 +19,10 @@
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <div class="post__likes" th:text="|いいね ${likeCount}|">いいね 0</div>
+        <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+            <button type="submit">Like</button>
+        </form>
     </article>
 </main>
 </body>
