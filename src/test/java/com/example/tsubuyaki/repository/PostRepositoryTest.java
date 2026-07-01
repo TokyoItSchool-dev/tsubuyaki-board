@@ -29,8 +29,8 @@ class PostRepositoryTest {
     }
 
     @Test
-    @DisplayName("投稿一覧_最新50件取得_新着順で50件だけ返す")
-    void 投稿一覧_最新50件取得_新着順で50件だけ返す() {
+    @DisplayName("投稿一覧_51件以上あるとき_新着50件だけを新着順で返す")
+    void 投稿一覧_51件以上あるとき_新着50件だけを新着順で返す() {
         Instant baseTime = Instant.parse("2026-05-23T09:00:00Z");
         List<Post> posts = IntStream.rangeClosed(1, 51)
                 .mapToObj(index -> new Post("user" + index, "投稿" + index, baseTime.plusSeconds(index)))

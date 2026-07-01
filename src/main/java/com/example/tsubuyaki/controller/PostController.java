@@ -15,7 +15,7 @@ public class PostController {
         this.postService = postService;
     }
 
-    @GetMapping({ "/", "/posts" })
+    @GetMapping({ "/", "/posts", "/posts/" })
     public String list(Model model) {
         model.addAttribute("posts", postService.findLatestPosts());
         return "posts/list";
