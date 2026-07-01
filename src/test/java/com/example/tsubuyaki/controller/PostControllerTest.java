@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -80,6 +81,27 @@ class PostControllerTest {
         assertThat(authorIndex).isGreaterThanOrEqualTo(0);
         assertThat(bodyIndex).isGreaterThan(authorIndex);
         assertThat(createdAtIndex).isGreaterThan(bodyIndex);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するid_投稿をModelに入れて詳細画面を表示する")
+    void 投稿詳細_存在するid_投稿をModelに入れて詳細画面を表示する() throws Exception {
+        Post post = new Post("alice", "詳細表示を確認します", Instant.parse("2026-06-26T09:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/{id}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないid_404を返す")
+    void 投稿詳細_存在しないid_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/{id}", 999L))
+                .andExpect(status().isNotFound());
     }
 
     @Test
