@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,8 +17,11 @@ public class PostService {
 
     private final PostRepository repository;
 
-    public PostService(PostRepository repository) {
+    private final PostLikeRepository likeRepository;
+
+    public PostService(PostRepository repository, PostLikeRepository likeRepository) {
         this.repository = repository;
+        this.likeRepository = likeRepository;
     }
 
     public List<Post> latest() {
@@ -30,5 +35,16 @@ public class PostService {
 
     public Optional<Post> findById(Long id) {
         return repository.findById(id);
+    }
+
+    public long likeCount(Long postId) {
+        return likeRepository.countByPostId(postId);
+    }
+
+    @Transactional
+    public void toggleLike(Long postId, String clientHash) {
+        likeRepository.findByPostIdAndClientHash(postId, clientHash)
+                .ifPresentOrElse(likeRepository::delete,
+                        () -> likeRepository.save(new PostLike(postId, clientHash, Instant.now())));
     }
 }
