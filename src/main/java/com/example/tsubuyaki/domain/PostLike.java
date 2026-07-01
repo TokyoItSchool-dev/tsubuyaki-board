@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.type.descriptor.jdbc.TimestampJdbcType;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -30,7 +32,8 @@ public class PostLike {
     @Column(name = "client_hash", length = 8, nullable = false)
     private String clientHash;
 
-    @Column(name = "created_at", nullable = false)
+    @JdbcType(TimestampJdbcType.class)
+    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
     private LocalDateTime createdAt;
 
     protected PostLike() {

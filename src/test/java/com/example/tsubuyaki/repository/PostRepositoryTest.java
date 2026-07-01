@@ -36,4 +36,22 @@ class PostRepositoryTest {
         assertThat(posts.get(49).getAuthor()).isEqualTo("user-2");
         assertThat(posts).extracting(Post::getAuthor).doesNotContain("user-1");
     }
+
+    @Test
+    @DisplayName("投稿検索_q指定_bodyの部分一致だけを新着順で最大50件返す")
+    void findTop50ByBodyContainingOrderByCreatedAtDesc_keyword_returnsBodyMatchesOnlyLatest50() {
+        LocalDateTime base = LocalDateTime.parse("2026-05-23T00:00:00");
+        postRepository.save(new Post("検索さん", "本文は一致しません", base.plusSeconds(1)));
+        for (int i = 1; i <= 51; i++) {
+            postRepository.save(new Post("user-" + i, "検索対象の本文-" + i, base.plusSeconds(i + 1)));
+        }
+
+        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
+
+        assertThat(posts).hasSize(50);
+        assertThat(posts.get(0).getBody()).isEqualTo("検索対象の本文-51");
+        assertThat(posts.get(49).getBody()).isEqualTo("検索対象の本文-2");
+        assertThat(posts).extracting(Post::getAuthor).doesNotContain("検索さん");
+        assertThat(posts).extracting(Post::getBody).doesNotContain("検索対象の本文-1");
+    }
 }

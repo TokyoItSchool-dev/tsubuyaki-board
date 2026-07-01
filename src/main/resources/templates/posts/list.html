@@ -18,24 +18,24 @@
         <button type="submit">更新</button>
     </form>
 
-    <section th:with="keyword=${param.keyword != null ? param.keyword[0] : ''},
-                      searching=${!#strings.isEmpty(keyword)}">
+    <section th:with="query=${q == null ? '' : q},
+                      searching=${!#strings.isEmpty(#strings.trim(query))}">
         <form class="post-search" th:action="@{/posts}" method="get">
-            <label class="post-search__label" for="keyword">キーワード検索</label>
+            <label class="post-search__label" for="q">キーワード検索</label>
             <div class="post-search__controls">
-                <input id="keyword"
+                <input id="q"
                        type="search"
-                       name="keyword"
+                       name="q"
                        maxlength="100"
-                       placeholder="本文または投稿者で検索"
-                       th:value="${keyword}">
+                       placeholder="本文で検索"
+                       th:value="${query}">
                 <button type="submit">検索</button>
                 <a class="post-search__clear" th:if="${searching}" th:href="@{/posts}">クリア</a>
             </div>
         </form>
         <p class="search-summary"
            th:if="${searching}"
-           th:text="|「${keyword}」の検索結果|">「キーワード」の検索結果</p>
+           th:text="|「${#strings.trim(query)}」の検索結果|">「キーワード」の検索結果</p>
 
         <p th:if="${#lists.isEmpty(posts) && !searching}">まだ投稿はありません</p>
         <p th:if="${#lists.isEmpty(posts) && searching}">該当する投稿はありません</p>

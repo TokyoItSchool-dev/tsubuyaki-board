@@ -7,6 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.type.descriptor.jdbc.TimestampJdbcType;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -26,7 +28,8 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
-    @Column(name = "created_at", nullable = false)
+    @JdbcType(TimestampJdbcType.class)
+    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
     private LocalDateTime createdAt;
 
     protected Post() {

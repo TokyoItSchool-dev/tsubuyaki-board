@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -47,19 +48,22 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_0件の場合_まだ投稿はありませんを表示する")
     void list_empty_rendersEmptyMessage() throws Exception {
-        given(postService.latest()).willReturn(List.of());
+        given(postService.search(null)).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", List.of()))
+                .andExpect(model().attribute("q", ""))
                 .andExpect(content().string(containsString("まだ投稿はありません")));
+
+        verify(postService).search(isNull());
     }
 
     @Test
     @DisplayName("投稿一覧_更新ボタン_押すとpostsスラッシュへGETリクエストする")
     void list_refreshButton_requestsPostsSlash() throws Exception {
-        given(postService.latest()).willReturn(List.of());
+        given(postService.search(null)).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -71,7 +75,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿は投稿者内容投稿日の順に表示する")
     void list_postFields_renderAuthorBodyCreatedAtInOrder() throws Exception {
-        given(postService.latest()).willReturn(List.of(new Post(
+        given(postService.search(null)).willReturn(List.of(new Post(
                 "tanaka",
                 "表示順を確認する本文です",
                 LocalDateTime.parse("2026-05-23T09:00:00"))));
@@ -84,6 +88,37 @@ class PostControllerTest {
 
         assertThat(html.indexOf("tanaka")).isLessThan(html.indexOf("表示順を確認する本文です"));
         assertThat(html.indexOf("表示順を確認する本文です")).isLessThan(html.indexOf("2026-05-23 09:00"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_q指定_body検索結果をlistビューへ表示する")
+    void list_withQ_rendersSearchResultsInListView() throws Exception {
+        Post post = new Post("tanaka", "研修メモです", LocalDateTime.parse("2026-05-23T09:00:00"));
+        given(postService.search("研修")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", "研修"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(model().attribute("q", "研修"))
+                .andExpect(content().string(containsString("研修メモです")))
+                .andExpect(content().string(containsString("「研修」の検索結果")));
+
+        verify(postService).search("研修");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索ボックス_画面上部にqでGET送信するフォームを表示する")
+    void list_searchForm_rendersGetFormWithQInput() throws Exception {
+        given(postService.search(null)).willReturn(List.of());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"post-search\"")))
+                .andExpect(content().string(containsString("action=\"/posts\"")))
+                .andExpect(content().string(containsString("method=\"get\"")))
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("type=\"search\"")));
     }
 
     @Test

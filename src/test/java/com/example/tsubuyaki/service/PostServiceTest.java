@@ -46,6 +46,42 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_q未指定_新着50件を取得する")
+    void 投稿検索_q未指定_新着50件を取得する() {
+        List<Post> posts = List.of(new Post("alice", "new", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> foundPosts = postService.search(null);
+
+        assertThat(foundPosts).isEqualTo(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_q空文字_新着50件を取得する")
+    void 投稿検索_q空文字_新着50件を取得する() {
+        List<Post> posts = List.of(new Post("alice", "new", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> foundPosts = postService.search("   ");
+
+        assertThat(foundPosts).isEqualTo(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_q指定_body部分一致を新着順で最大50件取得する")
+    void 投稿検索_q指定_body部分一致を新着順で最大50件取得する() {
+        List<Post> posts = List.of(new Post("alice", "研修メモ", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("研修")).willReturn(posts);
+
+        List<Post> foundPosts = postService.search("  研修  ");
+
+        assertThat(foundPosts).isEqualTo(posts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("研修");
+    }
+
+    @Test
     @DisplayName("投稿作成_正常入力_前後空白を除去してRepositoryに保存する")
     void 投稿作成_正常入力_前後空白を除去してRepositoryに保存する() {
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
