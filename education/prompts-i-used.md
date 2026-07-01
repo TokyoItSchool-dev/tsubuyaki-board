@@ -288,6 +288,74 @@ commit f8057d5e1b4b3e6fff046d209e748be64abe3a8f
 
 ## プロンプト 6
 
+**フェーズ**:M3: 投稿登録
+
+**プロンプト本文**:
+
+```
+投稿登録機能（POST /posts ）を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+- テーブル「posts」にデータ登録を行う
+- バリデーション: author 1～30 文字、body 1～280 文字、空白のみおよび文字数超過 NG
+- 成功: 302 で /posts にリダイレクト
+- 失敗: 200 で posts/form を再表示しエラー内容を表示
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- バリデーションテスト: author 1～30 文字、body 1～280 文字、空白のみおよび文字数超過 NG
+- 成功時：302リダイレクトされ、保存処理が呼ばれること
+- 失敗時：200 OKで `posts/form` が返ること
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 効いた
+
+変更ファイル
+  - src/test/java/com/example/tsubuyaki/controller/PostCreateFeatureTest.java
+      - 正常系、境界値、空白のみ、文字数超過、失敗時の posts/form 再表示を 1 本のテストで確認
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java
+      - POST /posts を追加
+      - 成功時は保存して redirect:/posts
+      - バリデーションエラー時は posts/form
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java
+      - posts テーブルへ Post を保存する create を追加
+
+  確認
+
+  - Red: PostService#create(String,String) 未実装で失敗確認
+  - Green: 最小実装後、追加テスト成功
+  - 全体テスト: ./mvnw -B -Ph2 test 成功
+      - Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット
+
+  - ab3e137 feat(post): 投稿登録を実装
+
+
+**振り返り**
+:
+投稿登録機能は追加出来た。
+ソースについて確認したが、問題なく実装が出来ている。
+また、「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+
+
+## プロンプト 7
+
 **フェーズ**:
 
 **プロンプト本文**:
