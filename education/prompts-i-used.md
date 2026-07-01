@@ -780,6 +780,204 @@ Red: src/test/java/com/example/tsubuyaki/controller/PostLikeFeatureTest.java の
 
 ## プロンプト 12
 
+**フェーズ**:S3: 投稿者名フィールド拡張
+
+**プロンプト本文**:
+
+```
+投稿内容の機能拡張について TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+- 投稿作成画面（posts/form.html）にて投稿者名を必須入力とし、項目名を赤で強調する
+  - 投稿者名が入力されていない場合、エラーメッセージを表示する
+- 投稿作成画面（posts/form.html）にて投稿の背景色の選択項目を追加する（本文の下）
+  - 色は6色のカラーパターン（白、赤、紫、青、緑、黄）から選択可能とする。デフォルトは白とする。
+  - カラーパターンは薄めの配色とする
+  - カラーパターンはカラーパレットとして各色画面上に表示し、直感的に選択可能とする
+  - 選択した色については、postsテーブルにカラーコードとして保存する
+- 投稿一覧画面の各投稿（posts/list.html）および詳細画面の投稿部（posts/detail.html）の背景色は、postsテーブルに保存した背景色をセットする
+  - postsテーブルに背景色がセットされていない場合、背景色を白とする
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- 投稿作成画面（posts/form.html）にて、投稿者名が未入力の場合は、失敗: 200 で posts/form を再表示しエラー内容を表示すること
+- 投稿作成画面（posts/form.html）にカラーパレットが6色分横並びで表示されること
+- 選択した色については、postsテーブルにカラーコードとして保存されること
+- 投稿一覧画面の各投稿（posts/list.html）および詳細画面の投稿部（posts/detail.html）の背景色は、、postsテーブルに保存した背景色となること
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 部分的に効いた
+Red: src/test/java/com/example/tsubuyaki/controller/PostBackgroundColorFeatureTest.java を 1 本追加し、フォームの
+  必須エラー、6 色パレット、DB 保存、一覧/詳細の背景色反映を先に失敗させました。
+
+  主な変更:
+
+  - src/main/java/com/example/tsubuyaki/web/dto/PostForm.java, src/main/resources/templates/posts/form.html: 投稿者
+    名ラベルの赤強調、6 色カラーパレット、背景色バリデーションを追加
+
+  - src/main/java/com/example/tsubuyaki/domain/Post.java, src/main/java/com/example/tsubuyaki/domain/
+    PostBackgroundColor.java, src/main/resources/db/migration/V3__add_post_background_color.sql:
+    posts.background_color を追加し、未設定時は白に正規化
+
+  - src/main/resources/templates/posts/list.html, src/main/resources/templates/posts/detail.html, src/main/
+    resources/static/css/app.css: 保存済み背景色を投稿表示に反映し、パレット表示を整備
+
+  検証:
+  ./mvnw -B -Ph2 test は Tests run: 13, Failures: 0, Errors: 0, Skipped: 0 で成功。
+
+  コミット:
+  cd7a935 feat(post): 投稿背景色を選択できるようにする
+
+**振り返り**:
+投稿内容の機能拡張は追加出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+実装内容については、投稿作成画面（posts/form.html）のレイアウトが崩れてしまっている状態
+そのため、プロンプト 13にて修正を行う
+
+
+## プロンプト 13
+
+**フェーズ**:S3: 投稿者名フィールド拡張：レイアウト修正
+
+**プロンプト本文**:
+
+```
+投稿作成画面のレイアウト修正について TDD で実装してください。
+
+背景:
+- 投稿作成画面（posts/form.html）の各項目について、間隔が狭いため、レイアウトが崩れている状態
+
+修正方針:
+- 投稿作成画面（posts/form.html）の各項目について、見やすいよう、間隔を調整する
+- 色選択のカラーパレットのデザインについて、以下に変更する
+  - 丸チェックの表示を削除
+  - 角丸ボタン風に変更
+  - 選択されている、またはマウスオーバーされているボタンは協調表示する
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+以下の観点のテストを用意してから本機能の実装を行う。
+- 修正方針の通り、デザインが修正されていること
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+```
+
+**結果**: 効いた
+ Red/Green/Refactor の流れで、投稿作成フォームのレイアウトとカラーパレット表示を検証するテストを追加し、最小実装後
+  に構造上の追加リファクタは不要と判断しました。
+
+  変更した主な3ファイル:
+
+  - src/test/java/com/example/tsubuyaki/controller/PostNewFormFeatureTest.java
+  - src/main/resources/templates/posts/form.html
+  - src/main/resources/static/css/app.css
+
+  確認:
+
+  - ./mvnw -B -Ph2 -Dtest=PostNewFormFeatureTest test 成功
+  - ./mvnw -B -Ph2 test 成功
+  - diff --check 問題なし
+  - コミット: e75e421 feat(post): 投稿作成フォームのレイアウトを調整
+
+
+**振り返り**:
+投稿作成画面のレイアウト修正は出来た。
+ソースについても、当該箇所の修正、WEBアプリも動いていることが確認出来た。
+一覧及び詳細画面のレイアウトについても、より見やすくするため、プロンプト 14にて修正を行う
+
+
+## プロンプト 13
+
+**フェーズ**:S3: 投稿者名フィールド拡張：レイアウト修正
+
+**プロンプト本文**:
+
+```
+投稿一覧画面の各投稿および詳細画面の投稿部のレイアウト修正について TDD で実装してください。
+
+背景:
+- 投稿一覧画面の各投稿（posts/list.html）および詳細画面の投稿部（posts/detail.html）について、レイアウトをより見やすくしたい
+
+修正方針:
+- 投稿一覧画面の各投稿（posts/list.html）および詳細画面の投稿部（posts/detail.html）について、以下レイアウト修正を行う
+  - 投稿者、内容、投稿日、いいね数、いいねボタン の表示順は変更なし
+  - 各項目が見やすいよう、サイズおよび間隔を調整する
+    - サイズ大：内容
+    - サイズ中：投稿者、投稿日、いいね数、いいねボタン
+  - いいねボタンは角丸ボタン風にデザイン変更を行う（サイズは変更なし）
+  - いいねボタンのキャプションは「いいね！」とする
+  - いいね数、いいねボタン は横並びとする
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+受入基準:
+以下の観点のテストを用意してから本機能の実装を行う。
+- 修正方針の通り、デザインが修正されていること
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+
+```
+
+**結果**: 効いた
+  Red では PostCardLayoutFeatureTest を1本追加し、一覧・詳細の投稿カード構造、いいね数とボタンの横並び、ボタン表記
+  「いいね！」、CSSのサイズ・間隔・角丸指定を検証しました。Green で posts/list.html / posts/detail.html / app.css
+  を修正し、既存のいいねテストも新キャプション仕様へ合わせました。
+
+  確認:
+
+  - ./mvnw -B -Ph2 -Dtest=PostCardLayoutFeatureTest test 成功
+  - ./mvnw -B -Ph2 test 成功: Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
+  - コミット: 0b88de4 feat(post): 投稿カードのレイアウトを調整
+
+  変更ファイル:
+
+  - src/main/resources/templates/posts/list.html
+  - src/main/resources/templates/posts/detail.html
+  - src/main/resources/static/css/app.css
+  - src/test/java/com/example/tsubuyaki/controller/PostCardLayoutFeatureTest.java
+  - src/test/java/com/example/tsubuyaki/controller/PostLikeFeatureTest.java
+
+**振り返り**:
+一覧及び詳細画面のレイアウト修正は出来た。
+ソースについても、当該箇所の修正、WEBアプリも動いていることが確認出来た。
+
+
+## プロンプト 14
+
 **フェーズ**:
 
 **プロンプト本文**:
