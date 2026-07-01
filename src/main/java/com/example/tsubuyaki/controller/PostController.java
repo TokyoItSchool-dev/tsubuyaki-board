@@ -24,6 +24,9 @@ import java.util.List;
 @Controller
 public class PostController {
 
+    private static final List<String> AUTHOR_ICON_COLORS = List.of(
+            "#2563EB", "#0891B2", "#16A34A", "#F97316", "#DB2777");
+
     private final PostService postService;
 
     public PostController(PostService postService) {
@@ -52,6 +55,7 @@ public class PostController {
     @GetMapping("/posts/new")
     public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());
+        addAuthorIconColors(model);
         return "posts/form";
     }
 
@@ -63,11 +67,12 @@ public class PostController {
     }
 
     @PostMapping("/posts")
-    public String create(@Valid PostForm postForm, BindingResult bindingResult) {
+    public String create(@Valid PostForm postForm, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
+            addAuthorIconColors(model);
             return "posts/form";
         }
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getAuthorIconColor());
         return "redirect:/posts";
     }
 
@@ -87,6 +92,10 @@ public class PostController {
             return detailPath;
         }
         return "/posts";
+    }
+
+    private static void addAuthorIconColors(Model model) {
+        model.addAttribute("authorIconColors", AUTHOR_ICON_COLORS);
     }
 
     private static String clientHash(HttpServletRequest request) {

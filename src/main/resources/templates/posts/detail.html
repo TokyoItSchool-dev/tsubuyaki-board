@@ -14,8 +14,12 @@
     </nav>
 
     <article class="post-detail">
-        <p class="post-detail__author">
-            <span>投稿者：</span><span th:text="${post.author}">投稿者</span>
+        <p class="post-detail__author author-line">
+            <span>投稿者：</span>
+            <span class="author-icon"
+                  th:style="'background-color: ' + ${post.authorIconColor}"
+                  th:text="${post.authorInitial}">投</span>
+            <span th:text="${post.author}">投稿者</span>
         </p>
         <section class="post-detail__body-box">
             <p class="post-detail__body" th:text="${post.body}">本文</p>

@@ -32,7 +32,7 @@ class PostRepositoryTest {
         Instant base = Instant.parse("2026-05-23T00:00:00Z");
         List<Post> posts = new ArrayList<>();
         for (int i = 0; i < 51; i++) {
-            posts.add(new Post("user" + i, "body" + i, base.plusSeconds(i)));
+            posts.add(new Post("user" + i, "body" + i, "#2563EB", base.plusSeconds(i)));
         }
         postRepository.saveAll(posts);
         postRepository.flush();
@@ -50,9 +50,9 @@ class PostRepositoryTest {
         Instant base = Instant.parse("2026-05-23T00:00:00Z");
         List<Post> posts = new ArrayList<>();
         for (int i = 0; i < 55; i++) {
-            posts.add(new Post("user" + i, "検索対象 body" + i, base.plusSeconds(i)));
+            posts.add(new Post("user" + i, "検索対象 body" + i, "#2563EB", base.plusSeconds(i)));
         }
-        posts.add(new Post("bob", "対象外 body", base.plusSeconds(100)));
+        posts.add(new Post("bob", "対象外 body", "#2563EB", base.plusSeconds(100)));
         postRepository.saveAll(posts);
         postRepository.flush();
 
@@ -69,7 +69,8 @@ class PostRepositoryTest {
     @Test
     @DisplayName("いいね_投稿idとclientHash_件数と存在有無を取得できる")
     void いいね_投稿IdとclientHash_件数と存在有無を取得できる() {
-        Post post = postRepository.save(new Post("alice", "本文", Instant.parse("2026-05-23T00:00:00Z")));
+        Post post = postRepository.save(new Post("alice", "本文", "#2563EB",
+                Instant.parse("2026-05-23T00:00:00Z")));
         postLikeRepository.save(new PostLike(post, "abcdef12", Instant.parse("2026-05-23T00:01:00Z")));
         postLikeRepository.save(new PostLike(post, "12345678", Instant.parse("2026-05-23T00:02:00Z")));
         postLikeRepository.flush();
@@ -82,12 +83,25 @@ class PostRepositoryTest {
     @Test
     @DisplayName("いいね_投稿idとclientHash_同一clientHashのいいねを取得できる")
     void いいね_投稿IdとClientHash_同一clientHashのいいねを取得できる() {
-        Post post = postRepository.save(new Post("alice", "本文", Instant.parse("2026-05-23T00:00:00Z")));
+        Post post = postRepository.save(new Post("alice", "本文", "#2563EB",
+                Instant.parse("2026-05-23T00:00:00Z")));
         PostLike like = postLikeRepository.save(new PostLike(post, "abcdef12", Instant.parse("2026-05-23T00:01:00Z")));
         postLikeRepository.flush();
 
         assertThat(postLikeRepository.findByPostIdAndClientHash(post.getId(), "abcdef12")).contains(like);
         assertThat(postLikeRepository.findByPostIdAndClientHash(post.getId(), "87654321")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿作成_選択したアイコン色を投稿データとして保存できる")
+    void 投稿作成_選択したアイコン色を投稿データとして保存できる() {
+        Post saved = postRepository.save(new Post("alice", "本文", "#F97316",
+                Instant.parse("2026-05-23T00:00:00Z")));
+        postRepository.flush();
+
+        Post found = postRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(found.getAuthorIconColor()).isEqualTo("#F97316");
     }
 
     private static List<String> expectedBodiesFrom50To1() {

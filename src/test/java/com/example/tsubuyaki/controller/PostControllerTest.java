@@ -164,6 +164,50 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿者名の左側に_選択色背景で白文字の丸型アイコンを表示する")
+    void 投稿一覧_投稿者名の左側に_選択色背景で白文字の丸型アイコンを表示する() throws Exception {
+        Post post = postWithId(
+                42L,
+                "alice",
+                "本文",
+                "#F97316",
+                Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post__author author-line\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"author-icon\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("style=\"background-color: #F97316\"")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        int icon = html.indexOf("class=\"author-icon\"");
+        int initial = html.indexOf(">a</span>", icon);
+        int author = html.indexOf("alice", initial);
+        assertThat(icon).isNotNegative();
+        assertThat(initial).isGreaterThan(icon);
+        assertThat(author).isGreaterThan(initial);
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿者名が英数字記号日本語の場合_先頭1文字をアイコンに表示する")
+    void 投稿一覧_投稿者名が英数字記号日本語の場合_先頭1文字をアイコンに表示する() throws Exception {
+        Post english = postWithId(42L, "alice", "本文1", "#2563EB", Instant.parse("2026-05-23T10:15:00Z"));
+        Post number = postWithId(43L, "1user", "本文2", "#0891B2", Instant.parse("2026-05-23T10:14:00Z"));
+        Post symbol = postWithId(44L, "@user", "本文3", "#16A34A", Instant.parse("2026-05-23T10:13:00Z"));
+        Post japanese = postWithId(45L, "山田", "本文4", "#DB2777", Instant.parse("2026-05-23T10:12:00Z"));
+        given(postService.latestWithLikes(anyString())).willReturn(List.of(english, number, symbol, japanese));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains(">a</span>", ">1</span>", ">@</span>", ">山</span>");
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿枠にカーソルを合わせた場合_枠色変更用クラスを適用する")
     void 投稿一覧_投稿枠にカーソルを合わせた場合_枠色変更用クラスを適用する() throws Exception {
         Post post = postWithId(42L, "alice", "本文", Instant.parse("2026-05-23T10:15:00Z"));
@@ -318,6 +362,28 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_投稿者名の左側に_選択色背景で白文字の丸型アイコンを表示する")
+    void 投稿詳細_投稿者名の左側に_選択色背景で白文字の丸型アイコンを表示する() throws Exception {
+        Post post = postWithId(42L, "山田", "詳細の本文", "#DB2777", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findByIdWithLike(eq(42L), anyString())).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"post-detail__author author-line\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"author-icon\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("style=\"background-color: #DB2777\"")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        int icon = html.indexOf("class=\"author-icon\"");
+        int initial = html.indexOf(">山</span>", icon);
+        int author = html.indexOf("山田", initial);
+        assertThat(icon).isNotNegative();
+        assertThat(initial).isGreaterThan(icon);
+        assertThat(author).isGreaterThan(initial);
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在する投稿idの場合_詳細用レイアウトクラスを表示し本文ラベルは表示しない")
     void 投稿詳細_存在する投稿Idの場合_詳細用レイアウトクラスを表示し本文ラベルは表示しない() throws Exception {
         Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
@@ -417,6 +483,30 @@ class PostControllerTest {
                         org.hamcrest.Matchers.nullValue())))
                 .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
                         org.hamcrest.Matchers.nullValue())));
+    }
+
+    @Test
+    @DisplayName("新規投稿フォーム_投稿者欄の下に5色の丸いカラー選択肢を表示し左端を初期選択する")
+    void 新規投稿フォーム_投稿者欄の下に5色の丸いカラー選択肢を表示し左端を初期選択する() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("authorIconColor",
+                        org.hamcrest.Matchers.equalTo("#2563EB"))))
+                .andExpect(model().attribute("authorIconColors",
+                        List.of("#2563EB", "#0891B2", "#16A34A", "#F97316", "#DB2777")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"color-picker\"")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(countOccurrences(html, "class=\"color-picker__option\"")).isEqualTo(5);
+        assertThat(html).contains(
+                "value=\"#2563EB\"",
+                "checked=\"checked\"",
+                "value=\"#0891B2\"",
+                "value=\"#16A34A\"",
+                "value=\"#F97316\"",
+                "value=\"#DB2777\"");
+        assertThat(countOccurrences(html, "class=\"color-picker__swatch\"")).isEqualTo(5);
     }
 
     @Test
@@ -522,16 +612,33 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿作成_入力が妥当な場合_投稿後にpostsへリダイレクトする")
     void 投稿作成_入力が妥当な場合_投稿後にpostsへリダイレクトする() throws Exception {
-        mockMvc.perform(post("/posts").param("author", "alice").param("body", "本文"))
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "本文")
+                        .param("authorIconColor", "#F97316"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "本文");
+        verify(postService).create("alice", "本文", "#F97316");
     }
 
     private static Post postWithId(Long id, String author, String body, Instant createdAt) {
-        Post post = new Post(author, body, createdAt);
+        return postWithId(id, author, body, "#2563EB", createdAt);
+    }
+
+    private static Post postWithId(Long id, String author, String body, String authorIconColor, Instant createdAt) {
+        Post post = new Post(author, body, authorIconColor, createdAt);
         ReflectionTestUtils.setField(post, "id", id);
         return post;
+    }
+
+    private static int countOccurrences(String text, String fragment) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(fragment, index)) >= 0) {
+            count++;
+            index += fragment.length();
+        }
+        return count;
     }
 }

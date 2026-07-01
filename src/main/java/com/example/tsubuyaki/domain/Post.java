@@ -27,6 +27,9 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
+    @Column(name = "author_icon_color", length = 7, nullable = false)
+    private String authorIconColor;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -41,8 +44,13 @@ public class Post {
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, body, "#2563EB", createdAt);
+    }
+
+    public Post(String author, String body, String authorIconColor, Instant createdAt) {
         this.author = author;
         this.body = body;
+        this.authorIconColor = authorIconColor;
         this.createdAt = createdAt;
     }
 
@@ -56,6 +64,17 @@ public class Post {
 
     public String getBody() {
         return body;
+    }
+
+    public String getAuthorIconColor() {
+        return authorIconColor;
+    }
+
+    public String getAuthorInitial() {
+        if (author == null || author.isEmpty()) {
+            return "";
+        }
+        return author.substring(0, author.offsetByCodePoints(0, 1));
     }
 
     public Instant getCreatedAt() {

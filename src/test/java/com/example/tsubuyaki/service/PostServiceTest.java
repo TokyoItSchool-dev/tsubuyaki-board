@@ -36,7 +36,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿一覧_latest_Repositoryの新着50件取得結果を返す")
     void 投稿一覧_latest_Repositoryの新着50件取得結果を返す() {
-        List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        List<Post> posts = List.of(new Post("alice", "hello", "#2563EB", Instant.parse("2026-05-23T10:00:00Z")));
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> latest = postService.latest();
@@ -48,7 +48,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿一覧_latestWithLikes_いいね数とclientHashのいいね状態を付与する")
     void 投稿一覧_latestWithLikes_いいね数とclientHashのいいね状態を付与する() {
-        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "hello", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
         given(postLikeRepository.countByPostId(42L)).willReturn(2L);
@@ -66,7 +66,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿検索_searchWithLikes_本文部分一致の新着50件にいいね状態を付与する")
     void 投稿検索_searchWithLikes_本文部分一致の新着50件にいいね状態を付与する() {
-        Post post = new Post("alice", "検索対象の本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "検索対象の本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
         given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象")).willReturn(List.of(post));
         given(postLikeRepository.countByPostId(42L)).willReturn(3L);
@@ -96,7 +96,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿詳細_findById_Repositoryのid検索結果を返す")
     void 投稿詳細_findById_RepositoryのId検索結果を返す() {
-        Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         given(postRepository.findById(42L)).willReturn(Optional.of(post));
 
         Optional<Post> found = postService.findById(42L);
@@ -108,7 +108,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿詳細_findByIdWithLike_いいね数とclientHashのいいね状態を付与する")
     void 投稿詳細_findByIdWithLike_いいね数とclientHashのいいね状態を付与する() {
-        Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
         given(postRepository.findById(42L)).willReturn(Optional.of(post));
         given(postLikeRepository.countByPostId(42L)).willReturn(1L);
@@ -124,7 +124,7 @@ class PostServiceTest {
     @Test
     @DisplayName("いいねトグル_未いいねの場合_いいねを保存する")
     void いいねトグル_未いいねの場合_いいねを保存する() {
-        Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
         given(postRepository.findById(42L)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "abcdef12")).willReturn(Optional.empty());
@@ -142,7 +142,7 @@ class PostServiceTest {
     @Test
     @DisplayName("いいねトグル_同一clientHashが再押下した場合_いいねを削除する")
     void いいねトグル_同一clientHashが再押下した場合_いいねを削除する() {
-        Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
         PostLike like = new PostLike(post, "abcdef12", Instant.parse("2026-05-23T10:01:00Z"));
         given(postRepository.findById(42L)).willReturn(Optional.of(post));
@@ -160,7 +160,7 @@ class PostServiceTest {
     void 投稿作成_create_投稿者と本文を現在日時つきで保存する() {
         Instant before = Instant.now();
 
-        postService.create("alice", "本文");
+        postService.create("alice", "本文", "#F97316");
 
         Instant after = Instant.now();
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
@@ -168,6 +168,7 @@ class PostServiceTest {
         Post savedPost = captor.getValue();
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("本文");
+        assertThat(savedPost.getAuthorIconColor()).isEqualTo("#F97316");
         assertThat(savedPost.getCreatedAt()).isBetween(before, after);
     }
 }
