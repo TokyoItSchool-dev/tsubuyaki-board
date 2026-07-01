@@ -199,6 +199,12 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <append>false</append>
+                            <includes>
+                                <include>com.example.tsubuyaki.*</include>
+                            </includes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>jacoco-report</id>
