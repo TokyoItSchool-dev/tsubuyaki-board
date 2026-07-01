@@ -5,7 +5,7 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -19,7 +19,11 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        // TODO: 演習で実装する (最新 50 件を新着順で返す)
-        return Collections.emptyList();
+        return repository.findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Transactional
+    public Post create(String author, String body) {
+        return repository.save(new Post(author, body, Instant.now()));
     }
 }
