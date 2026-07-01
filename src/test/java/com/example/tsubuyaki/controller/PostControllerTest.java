@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -165,5 +166,32 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts"));
 
         verify(postService).create("tanaka", "投稿本文です");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するID_posts_detailビューを表示しmodelに投稿を積む")
+    void detail_existingId_rendersDetailViewWithPostModel() throws Exception {
+        Post post = new Post(
+                "tanaka",
+                "詳細画面に表示する本文です",
+                Instant.parse("2026-05-23T09:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("tanaka")))
+                .andExpect(content().string(containsString("詳細画面に表示する本文です")))
+                .andExpect(content().string(containsString("2026-05-23 18:00")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないID_404を返す")
+    void detail_missingId_returnsNotFound() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 }
