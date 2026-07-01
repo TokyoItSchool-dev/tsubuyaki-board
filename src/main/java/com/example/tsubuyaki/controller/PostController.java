@@ -4,6 +4,7 @@ import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.validation.Valid;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -11,7 +12,9 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.server.ResponseStatusException;
 
 @Controller
 public class PostController {
@@ -34,6 +37,13 @@ public class PostController {
         return "posts/form";
     }
 
+    @GetMapping("/posts/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        model.addAttribute("post", postService.find(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        return "posts/detail";
+    }
+
     @PostMapping("/posts")
     public String create(@Valid @ModelAttribute("postForm") PostForm postForm,
                          BindingResult bindingResult) {
@@ -49,7 +59,4 @@ public class PostController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(false));
     }
-
-    // 演習中に追加するエンドポイント:
-    //   @GetMapping("/posts/{id}")       // 詳細
 }

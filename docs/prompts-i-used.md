@@ -214,3 +214,31 @@ Implement the plan.
 
 Oracle 日時修正とブラウザ標準バリデーション無効化の差分を対象に、未関連の `secret` 系セットアップファイルを除外してコミットした。
 コミット前に `./mvnw -B -Ph2 test` と `./mvnw -B -Ph2 verify` がどちらも成功した。
+
+---
+
+## プロンプト 11
+
+**フェーズ**: 投稿詳細
+
+**プロンプト本文**:
+
+```
+投稿詳細 GET /posts/{id} をTDDで実装して下さい。
+- posts/detail.html を表示
+- 存在しない id は 404
+@WebMvcTest + MockMvc で失敗するテストを 1 本書き (RED)、
+それを通す最小実装を書き (GREEN)、最後に重複と命名を整えてください (REFACTOR)。
+完了したら ./mvnw -B -Ph2 test が緑になることを確認します。
+./mvnw -B -Ph2 verify が緑となったことを確認して下さい。
+/review を実行して正常終了であることを確認して下さい。
+Conventional Commits 形式（feat(post): ...）でコミットしてください。
+```
+
+**結果**: 効いた
+
+**振り返り**:
+
+`@WebMvcTest + MockMvc` で投稿詳細表示の RED を作り、`PostService.find` と `GET /posts/{id}`、
+`posts/detail.html` の最小実装で GREEN にした。存在しない id は 404 を返すテストも追加した。
+`./mvnw -B -Ph2 test` と `./mvnw -B -Ph2 verify` はどちらも成功し、レビュー観点も OK だった。

@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -77,6 +78,30 @@ class PostControllerTest {
         assertThat(html).contains("suzuki", "表示順を確認します", "2026-06-26 10:00");
         assertThat(html.indexOf("suzuki")).isLessThan(html.indexOf("表示順を確認します"));
         assertThat(html.indexOf("表示順を確認します")).isLessThan(html.indexOf("2026-06-26 10:00"));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するid_投稿をビューに渡し詳細画面を表示する")
+    void 投稿詳細_存在するid_投稿をビューに渡し詳細画面を表示する() throws Exception {
+        Post post = new Post("suzuki", "詳細を確認します", LocalDateTime.of(2026, 6, 26, 11, 30));
+        given(postService.find(123L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/123"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("suzuki")))
+                .andExpect(content().string(containsString("詳細を確認します")))
+                .andExpect(content().string(containsString("2026-06-26 11:30")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないid_404を返す")
+    void 投稿詳細_存在しないid_404を返す() throws Exception {
+        given(postService.find(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
