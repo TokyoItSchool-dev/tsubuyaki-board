@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -127,7 +128,40 @@ class PostControllerTest {
                 .andExpect(content().string(matchesPattern("(?s).*<article class=\"post\">\\s*"
                         + "<div class=\"post__author\">alice</div>\\s*"
                         + "<p class=\"post__body\">hello</p>\\s*"
-                        + "<time class=\"post__created-at\".*>2026-05-23 19:15</time>.*")));
+                        + ".*<time class=\"post__created-at\".*>2026-05-23 19:15</time>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するid_likeCountをmodelに渡す")
+    void 投稿詳細_存在するid_likeCountをmodelに渡す() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(1312L);
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("likeCount", 1312L));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいねボタン_本文の下かつ作成日の上に表示する")
+    void 投稿詳細_いいねボタン_本文の下かつ作成日の上に表示する() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(1312L);
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<p class=\"post__body\">hello</p>\\s*"
+                        + "<form class=\"post__like-form\" action=\"/posts/1/likes\" method=\"post\">.*"
+                        + "<button[^>]*class=\"post__like-button\"[^>]*>\\s*"
+                        + "<span class=\"post__like-heart\"[^>]*>♥</span>\\s*"
+                        + "<span class=\"post__like-count\">1312</span>\\s*"
+                        + "<span class=\"post__like-label\">いいね</span>\\s*</button>\\s*</form>\\s*"
+                        + "<time class=\"post__created-at\".*")));
     }
 
     @Test
@@ -256,5 +290,43 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
 
         verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("いいね_POST_posts_id_likes_clientHashでトグルし詳細へリダイレクトする")
+    void いいね_PostPostsIdLikes_clientHashでトグルし詳細へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.1");
+                            return request;
+                        })
+                        .header("User-Agent", "Mozilla/5.0"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(postService).should().toggleLike(1L, "c44b2068");
+    }
+
+    @Test
+    @DisplayName("いいねトグル_同一クライアント2回押下_同じclientHashで2回トグルする")
+    void いいねトグル_同一クライアント2回押下_同じclientHashで2回トグルする() throws Exception {
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.1");
+                            return request;
+                        })
+                        .header("User-Agent", "Mozilla/5.0"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.1");
+                            return request;
+                        })
+                        .header("User-Agent", "Mozilla/5.0"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(postService).should(times(2)).toggleLike(1L, "c44b2068");
     }
 }
