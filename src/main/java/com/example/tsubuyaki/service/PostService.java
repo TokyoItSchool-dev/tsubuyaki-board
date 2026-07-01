@@ -6,6 +6,7 @@ import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,6 +26,14 @@ public class PostService {
 
     public List<Post> latest() {
         return postRepository.findTop50ByOrderByCreatedAtDesc();
+    }
+
+    public List<Post> search(String query) {
+        if (!StringUtils.hasText(query)) {
+            return latest();
+        }
+
+        return postRepository.findByBodyContainingOrderByCreatedAtDesc(query);
     }
 
     public Optional<Post> findById(Long id) {

@@ -51,19 +51,89 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿一覧_更新ボタン_押すとpostsにGETリクエストする")
-    void list_hasRefreshButtonRequestingPosts() throws Exception {
+    @DisplayName("投稿一覧_検索ボックス_一覧画面上部に表示する")
+    void list_hasSearchBoxAtTop() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        String html = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("検索")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html.indexOf("name=\"q\"")).isLessThan(html.indexOf("まだ投稿はありません"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索ボタン_GET_postsへ送信する")
+    void list_searchButtonSubmitsGetToPosts() throws Exception {
         given(postService.latest()).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("method=\"get\"")))
-                .andExpect(content().string(containsString("action=\"/posts/\"")))
-                .andExpect(content().string(containsString("更新")));
+                .andExpect(content().string(containsString("action=\"/posts\"")))
+                .andExpect(content().string(containsString("type=\"submit\"")))
+                .andExpect(content().string(containsString("検索")));
 
         mockMvc.perform(get("/posts/"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"));
+    }
+
+    @Test
+    @DisplayName("投稿検索_GET_posts_q指定_bodyにキーワードを含む投稿だけを表示する")
+    void list_whenQueryPresent_showsSearchResult() throws Exception {
+        Post post = new Post("alice", "abcを含む投稿", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.search("abc")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", "abc"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(content().string(containsString("abcを含む投稿")));
+
+        verify(postService).search("abc");
+        verify(postService, never()).latest();
+    }
+
+    @Test
+    @DisplayName("投稿検索_q空_通常の新着50件を表示する")
+    void list_whenQueryEmpty_showsLatestPosts() throws Exception {
+        Post post = new Post("alice", "通常一覧の投稿", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", ""))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(content().string(containsString("通常一覧の投稿")));
+
+        verify(postService).latest();
+        verify(postService, never()).search(anyString());
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索結果0件_まだ投稿はありませんを表示する")
+    void list_whenSearchResultEmpty_showsEmptyMessage() throws Exception {
+        given(postService.search("none")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts").param("q", "none"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("posts", Collections.emptyList()))
+                .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_入力した検索語_フォームに保持する")
+    void list_whenQueryPresent_keepsSearchWordInForm() throws Exception {
+        given(postService.search("abc")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts").param("q", "abc"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("q", "abc"))
+                .andExpect(content().string(containsString("value=\"abc\"")));
     }
 
     @Test

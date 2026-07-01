@@ -41,6 +41,22 @@ class PostRepositoryTest {
     }
 
     @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿だけを新着順で返す")
+    void findByBodyContainingOrderByCreatedAtDesc_returnsMatchingPosts() {
+        postRepository.saveAll(List.of(
+                new Post("alice", "abcを含む古い投稿", Instant.parse("2026-05-23T01:00:00Z")),
+                new Post("bob", "含まない投稿", Instant.parse("2026-05-23T02:00:00Z")),
+                new Post("carol", "新しいabc投稿", Instant.parse("2026-05-23T03:00:00Z"))
+        ));
+
+        List<Post> posts = postRepository.findByBodyContainingOrderByCreatedAtDesc("abc");
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("新しいabc投稿", "abcを含む古い投稿");
+    }
+
+    @Test
     @DisplayName("投稿編集_保存済み投稿を更新すると変更後の値で取得できる")
     void save_whenExistingPostUpdated_persistsUpdatedValues() {
         Post post = postRepository.save(new Post(
