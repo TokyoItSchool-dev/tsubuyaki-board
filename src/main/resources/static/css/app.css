@@ -69,7 +69,29 @@ h1 {
 }
 
 .post__author {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 600;
+}
+
+.post__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.post__author-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .post__created-at {

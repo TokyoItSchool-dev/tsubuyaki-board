@@ -25,7 +25,10 @@
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <div class="post__author" th:text="${post.author}">投稿者</div>
+            <div class="post__author">
+                <span class="post__avatar" th:style="'background-color: ' + ${post.avatarColor}" th:text="${#strings.toUpperCase(#strings.substring(post.author, 0, 1))}">A</span>
+                <span class="post__author-name" th:text="${post.author}">投稿者</span>
+            </div>
             <p class="post__body" th:text="${post.body}">本文</p>
             <div class="post__meta">
                 <time class="post__created-at"
