@@ -10,7 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +69,7 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿あり_投稿者内容投稿日の順に表示する")
     void 投稿一覧_投稿あり_投稿者内容投稿日の順に表示する() throws Exception {
         given(postService.latest()).willReturn(List.of(
-                new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"))));
+                new Post("alice", "本文です", LocalDateTime.parse("2026-05-23T10:00:00"))));
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -93,7 +93,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在するid_該当Postをビューに渡す")
     void 投稿詳細_存在するid_該当Postをビューに渡す() throws Exception {
-        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "詳細本文です", LocalDateTime.parse("2026-05-23T10:00:00"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/1"))
