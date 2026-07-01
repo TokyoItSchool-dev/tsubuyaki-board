@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,17 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_新規投稿リンク_押すとフォームURLへ遷移できる")
+    void 投稿一覧_新規投稿リンク_押すとフォームUrlへ遷移できる() throws Exception {
+        given(postService.latest()).willReturn(List.of());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/posts/new\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("新規投稿")));
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する")
     void 投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する() throws Exception {
         Post post = new Post(
@@ -79,6 +91,10 @@ class PostControllerTest {
         mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
-                .andExpect(model().attributeExists("postForm"));
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.instanceOf(PostForm.class)))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("author",
+                        org.hamcrest.Matchers.nullValue())))
+                .andExpect(model().attribute("postForm", org.hamcrest.Matchers.hasProperty("body",
+                        org.hamcrest.Matchers.nullValue())));
     }
 }
