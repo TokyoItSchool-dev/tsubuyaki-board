@@ -4,15 +4,15 @@
 -- =========================================================================
 
 MERGE INTO app_users (id, name, avatar_color) KEY(id) VALUES
-    (1,  'tanaka', '#6b7280'),
-    (2,  'suzuki', '#6b7280'),
-    (3,  'sato', '#6b7280'),
-    (4,  'ito', '#6b7280'),
-    (5,  'kobayashi', '#6b7280'),
-    (6,  'yamada', '#6b7280'),
-    (7,  'nakamura', '#6b7280'),
-    (8,  'kato', '#6b7280'),
-    (9,  'yoshida', '#6b7280'),
+    (1,  'tanaka', '#ef4444'),
+    (2,  'suzuki', '#22c55e'),
+    (3,  'sato', '#3b82f6'),
+    (4,  'ito', '#f59e0b'),
+    (5,  'kobayashi', '#8b5cf6'),
+    (6,  'yamada', '#ec4899'),
+    (7,  'nakamura', '#14b8a6'),
+    (8,  'kato', '#84cc16'),
+    (9,  'yoshida', '#06b6d4'),
     (10, 'watanabe', '#6b7280');
 
 MERGE INTO posts (id, body, created_at, user_id) KEY(id) VALUES
