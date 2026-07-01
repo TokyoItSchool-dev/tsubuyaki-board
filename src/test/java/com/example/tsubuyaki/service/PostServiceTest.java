@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,13 +57,26 @@ class PostServiceTest {
         List<Post> searchResults = List.of(
                 new Post("alice", "検索キーワードを含む投稿", Instant.parse("2026-05-23T10:00:00Z"))
         );
-        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索キーワード"))
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索キーワード"))
                 .willReturn(searchResults);
 
         List<Post> posts = postService.searchPosts("検索キーワード");
 
         assertThat(posts).isSameAs(searchResults);
-        then(postRepository).should().findTop50ByBodyContainingOrderByCreatedAtDesc("検索キーワード");
+        then(postRepository).should().findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索キーワード");
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在する投稿の場合_deletedAtに削除日時を設定する")
+    void 投稿削除_存在する投稿の場合_deletedAtに削除日時を設定する() {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        Instant before = Instant.now();
+
+        postService.deletePost(1L);
+
+        Instant after = Instant.now();
+        assertThat(post.getDeletedAt()).isBetween(before, after);
     }
 
     @Test

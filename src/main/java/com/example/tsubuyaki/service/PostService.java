@@ -28,11 +28,11 @@ public class PostService {
     }
 
     public List<Post> findLatestPosts() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     public List<Post> searchPosts(String keyword) {
-        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword);
+        return repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(keyword);
     }
 
     public Optional<Post> findPost(Long id) {
@@ -51,6 +51,11 @@ public class PostService {
     @Transactional
     public Post createPost(String author, String body, String avatarColor) {
         return repository.save(new Post(author, body, avatarColor, Instant.now()));
+    }
+
+    @Transactional
+    public void deletePost(Long id) {
+        repository.findById(id).ifPresent(post -> post.markDeleted(Instant.now()));
     }
 
     @Transactional

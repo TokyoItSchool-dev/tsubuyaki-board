@@ -70,4 +70,19 @@ class PostRepositoryTest {
 
         assertThat(foundPost.getAvatarColor()).isEqualTo("purple");
     }
+
+    @Test
+    @DisplayName("投稿一覧_論理削除済みの投稿は表示しない")
+    void 投稿一覧_論理削除済みの投稿は表示しない() {
+        Instant baseTime = Instant.parse("2026-05-23T00:00:00Z");
+        Post visiblePost = postRepository.save(new Post("alice", "表示される投稿", baseTime.plusSeconds(1)));
+        Post deletedPost = postRepository.save(new Post("bob", "削除済み投稿", baseTime.plusSeconds(2)));
+        deletedPost.markDeleted(baseTime.plusSeconds(3));
+        postRepository.flush();
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(posts).contains(visiblePost);
+        assertThat(posts).doesNotContain(deletedPost);
+    }
 }

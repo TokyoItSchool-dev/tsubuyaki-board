@@ -23,6 +23,9 @@
         <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
             <button type="submit">Like</button>
         </form>
+        <form class="post__delete-form" th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+            <button type="submit">削除</button>
+        </form>
     </article>
 </main>
 </body>

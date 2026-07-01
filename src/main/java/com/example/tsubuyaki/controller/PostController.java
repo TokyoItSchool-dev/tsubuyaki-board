@@ -74,6 +74,12 @@ public class PostController {
         return "redirect:/posts/" + id;
     }
 
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        postService.deletePost(id);
+        return "redirect:/posts";
+    }
+
     @PostMapping("/posts")
     public String create(@Valid @ModelAttribute("postForm") PostForm postForm,
             BindingResult bindingResult, Model model) {
