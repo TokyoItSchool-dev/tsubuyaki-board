@@ -23,6 +23,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -176,14 +178,20 @@ class PostControllerTest {
                 "詳細画面に表示する本文です",
                 Instant.parse("2026-05-23T09:00:00Z"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(3L);
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post))
+                .andExpect(model().attribute("postId", 1L))
+                .andExpect(model().attribute("likeCount", 3L))
                 .andExpect(content().string(containsString("tanaka")))
                 .andExpect(content().string(containsString("詳細画面に表示する本文です")))
-                .andExpect(content().string(containsString("2026-05-23 18:00")));
+                .andExpect(content().string(containsString("2026-05-23 18:00")))
+                .andExpect(content().string(containsString("いいね 3")))
+                .andExpect(content().string(containsString("action=\"/posts/1/likes\"")))
+                .andExpect(content().string(containsString("method=\"post\"")));
     }
 
     @Test
@@ -193,5 +201,36 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("いいね_POST_リクエスト情報からclientHashを作りトグルして詳細へ戻る")
+    void like_validPost_togglesLikeAndRedirectsToDetail() throws Exception {
+        given(postService.findById(1L)).willReturn(Optional.of(new Post(
+                "tanaka",
+                "本文",
+                Instant.parse("2026-05-23T09:00:00Z"))));
+
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "MockBrowser/1.0"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).toggleLike(1L, "17a8e6e2");
+    }
+
+    @Test
+    @DisplayName("いいね_POST_存在しない投稿ID_404を返す")
+    void like_missingPost_returnsNotFound() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(post("/posts/999/likes"))
+                .andExpect(status().isNotFound());
+
+        verify(postService, never()).toggleLike(eq(999L), anyString());
     }
 }

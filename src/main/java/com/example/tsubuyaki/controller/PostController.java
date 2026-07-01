@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +12,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -51,8 +57,32 @@ public class PostController {
         return postService.findById(id)
                 .map(post -> {
                     model.addAttribute("post", post);
+                    model.addAttribute("postId", id);
+                    model.addAttribute("likeCount", postService.countLikes(id));
                     return "posts/detail";
                 })
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND));
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        if (postService.findById(id).isEmpty()) {
+            throw new ResponseStatusException(NOT_FOUND);
+        }
+
+        postService.toggleLike(id, clientHash(request));
+        return "redirect:/posts/" + id;
+    }
+
+    private static String clientHash(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        String source = request.getRemoteAddr() + (userAgent == null ? "" : userAgent);
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(source.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
     }
 }
