@@ -5,12 +5,12 @@ import jakarta.validation.constraints.Size;
 
 public class PostForm {
 
-    @NotBlank(message = "投稿者名を入力してください")
-    @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
+    @NotBlank(message = "投稿者は必須です。")
+    @Size(max = 30, message = "投稿者は30文字以内で入力してください。")
     private String author;
 
-    @NotBlank(message = "本文を入力してください")
-    @Size(max = 280, message = "本文は 280 文字以内で入力してください")
+    @NotBlank(message = "本文は必須です。")
+    @Size(max = 280, message = "本文は280文字以内で入力してください。")
     private String body;
 
     public PostForm() {

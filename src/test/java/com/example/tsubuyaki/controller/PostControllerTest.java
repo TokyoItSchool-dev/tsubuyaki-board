@@ -21,15 +21,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("h2")
-class PostListControllerTest {
+class PostControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -109,5 +111,54 @@ class PostListControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeExists("postForm"));
+    }
+
+    @Test
+    @DisplayName("投稿登録_成功_302でpostsへリダイレクトし投稿を保存する")
+    void create_whenValid_redirectsToPostsAndSavesPost() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "hello"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        List<Post> posts = postRepository.findAll();
+        assertThat(posts).hasSize(1);
+        assertThat(posts.get(0).getAuthor()).isEqualTo("alice");
+        assertThat(posts.get(0).getBody()).isEqualTo("hello");
+        assertThat(posts.get(0).getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿登録_必須エラー_項目名は必須ですを表示しフォームを再表示する")
+    void create_whenRequiredError_showsMessagesAndRendersForm() throws Exception {
+        MvcResult result = mockMvc.perform(post("/posts")
+                        .param("author", "")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(content().string(containsString("投稿者は必須です。")))
+                .andExpect(content().string(containsString("本文は必須です。")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html.indexOf("一覧に戻る")).isLessThan(html.indexOf("投稿者は必須です。"));
+        assertThat(html.indexOf("本文は必須です。")).isLessThan(html.indexOf("<label for=\"author\">投稿者</label>"));
+        assertThat(html).contains("class=\"form-errors\"");
+        assertThat(postRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿登録_桁数エラー_項目名は桁数文字以内で入力してくださいを表示しフォームを再表示する")
+    void create_whenLengthError_showsMessagesAndRendersForm() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "a".repeat(31))
+                        .param("body", "b".repeat(281)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(content().string(containsString("投稿者は30文字以内で入力してください。")))
+                .andExpect(content().string(containsString("本文は280文字以内で入力してください。")));
+
+        assertThat(postRepository.findAll()).isEmpty();
     }
 }
