@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 
 @Controller
 public class PostController {
@@ -29,8 +31,21 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model, HttpServletRequest request) {
-        model.addAttribute("posts", postService.latestWithLikes(clientHash(request)));
+    public String list(
+            @RequestParam(name = "q", required = false) String query,
+            Model model,
+            HttpServletRequest request) {
+        String normalizedQuery = query == null ? "" : query.trim();
+        boolean searchExecuted = !normalizedQuery.isEmpty();
+        List<Post> posts = searchExecuted
+                ? postService.searchWithLikes(normalizedQuery, clientHash(request))
+                : postService.latestWithLikes(clientHash(request));
+        long searchResultCount = searchExecuted ? postService.countSearchResults(normalizedQuery) : posts.size();
+
+        model.addAttribute("posts", posts);
+        model.addAttribute("query", normalizedQuery);
+        model.addAttribute("searchExecuted", searchExecuted);
+        model.addAttribute("searchResultCount", searchResultCount);
         return "posts/list";
     }
 

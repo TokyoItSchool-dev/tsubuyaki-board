@@ -33,6 +33,16 @@ public class PostService {
         return posts;
     }
 
+    public List<Post> searchWithLikes(String keyword, String clientHash) {
+        List<Post> posts = repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword);
+        posts.forEach(post -> applyLikeState(post, clientHash));
+        return posts;
+    }
+
+    public long countSearchResults(String keyword) {
+        return repository.countByBodyContaining(keyword);
+    }
+
     public Optional<Post> findById(Long id) {
         return repository.findById(id);
     }

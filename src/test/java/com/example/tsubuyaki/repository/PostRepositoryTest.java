@@ -45,6 +45,28 @@ class PostRepositoryTest {
     }
 
     @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿だけを最大50件新着順で取得する")
+    void 投稿検索_本文にキーワードを含む投稿だけを最大50件新着順で取得する() {
+        Instant base = Instant.parse("2026-05-23T00:00:00Z");
+        List<Post> posts = new ArrayList<>();
+        for (int i = 0; i < 55; i++) {
+            posts.add(new Post("user" + i, "検索対象 body" + i, base.plusSeconds(i)));
+        }
+        posts.add(new Post("bob", "対象外 body", base.plusSeconds(100)));
+        postRepository.saveAll(posts);
+        postRepository.flush();
+
+        List<Post> found = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
+        long count = postRepository.countByBodyContaining("検索対象");
+
+        assertThat(found).hasSize(50);
+        assertThat(count).isEqualTo(55);
+        assertThat(found).allSatisfy(post -> assertThat(post.getBody()).contains("検索対象"));
+        assertThat(found).extracting(Post::getBody)
+                .containsExactlyElementsOf(expectedSearchBodiesFrom54To5());
+    }
+
+    @Test
     @DisplayName("いいね_投稿idとclientHash_件数と存在有無を取得できる")
     void いいね_投稿IdとclientHash_件数と存在有無を取得できる() {
         Post post = postRepository.save(new Post("alice", "本文", Instant.parse("2026-05-23T00:00:00Z")));
@@ -72,6 +94,14 @@ class PostRepositoryTest {
         List<String> bodies = new ArrayList<>();
         for (int i = 50; i >= 1; i--) {
             bodies.add("body" + i);
+        }
+        return bodies;
+    }
+
+    private static List<String> expectedSearchBodiesFrom54To5() {
+        List<String> bodies = new ArrayList<>();
+        for (int i = 54; i >= 5; i--) {
+            bodies.add("検索対象 body" + i);
         }
         return bodies;
     }

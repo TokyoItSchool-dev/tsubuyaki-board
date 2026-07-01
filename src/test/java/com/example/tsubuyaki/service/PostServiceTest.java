@@ -64,6 +64,36 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_searchWithLikes_本文部分一致の新着50件にいいね状態を付与する")
+    void 投稿検索_searchWithLikes_本文部分一致の新着50件にいいね状態を付与する() {
+        Post post = new Post("alice", "検索対象の本文", Instant.parse("2026-05-23T10:00:00Z"));
+        org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象")).willReturn(List.of(post));
+        given(postLikeRepository.countByPostId(42L)).willReturn(3L);
+        given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcdef12")).willReturn(false);
+
+        List<Post> found = postService.searchWithLikes("検索対象", "abcdef12");
+
+        assertThat(found).containsExactly(post);
+        assertThat(found.get(0).getLikeCount()).isEqualTo(3);
+        assertThat(found.get(0).isLiked()).isFalse();
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
+        verify(postLikeRepository).countByPostId(42L);
+        verify(postLikeRepository).existsByPostIdAndClientHash(42L, "abcdef12");
+    }
+
+    @Test
+    @DisplayName("投稿検索_countSearchResults_本文部分一致の件数を返す")
+    void 投稿検索_countSearchResults_本文部分一致の件数を返す() {
+        given(postRepository.countByBodyContaining("検索対象")).willReturn(55L);
+
+        long count = postService.countSearchResults("検索対象");
+
+        assertThat(count).isEqualTo(55);
+        verify(postRepository).countByBodyContaining("検索対象");
+    }
+
+    @Test
     @DisplayName("投稿詳細_findById_Repositoryのid検索結果を返す")
     void 投稿詳細_findById_RepositoryのId検索結果を返す() {
         Post post = new Post("alice", "本文", Instant.parse("2026-05-23T10:00:00Z"));

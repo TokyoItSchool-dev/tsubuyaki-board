@@ -14,12 +14,23 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="search-box" th:action="@{/posts}" method="get">
+        <input class="search-box__input"
+               type="search"
+               name="q"
+               th:value="${query}"
+               placeholder="キーワードを入力"
+               aria-label="キーワード検索">
+        <button class="search-box__button" type="submit">検索</button>
+    </form>
     <form class="toolbar" th:action="@{/posts/}" method="get">
         <button type="submit">更新</button>
     </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <p class="search-result-count" th:if="${searchExecuted}"
+           th:text="|検索結果：${searchResultCount}件|">検索結果：0件</p>
+        <p th:if="${!searchExecuted and #lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post post--link" th:each="post : ${posts}">
             <a class="post__main-link" th:href="@{/posts/{id}(id=${post.id})}">
                 <p class="post__author" th:text="${post.author}">投稿者</p>

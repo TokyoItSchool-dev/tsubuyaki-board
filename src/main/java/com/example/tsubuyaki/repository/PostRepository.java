@@ -8,4 +8,8 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     List<Post> findTop50ByOrderByCreatedAtDesc();
+
+    List<Post> findTop50ByBodyContainingOrderByCreatedAtDesc(String keyword);
+
+    long countByBodyContaining(String keyword);
 }

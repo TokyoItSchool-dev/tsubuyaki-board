@@ -75,6 +75,75 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_上部に枠なし下線付き検索ボックスとグレーのプレースホルダーを表示する")
+    void 投稿一覧_上部に枠なし下線付き検索ボックスとグレーのプレースホルダーを表示する() throws Exception {
+        given(postService.latestWithLikes(anyString())).willReturn(List.of());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"search-box\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"search-box__input\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("placeholder=\"キーワードを入力\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"search-box__button\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("検索")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索ボックス_検索ボタン押下でGET_posts_qへ送信できる")
+    void 投稿一覧_検索ボックス_検索ボタン押下でGetPostsQへ送信できる() throws Exception {
+        given(postService.latestWithLikes(anyString())).willReturn(List.of());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"get\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"q\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("type=\"submit\"")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_q指定_本文部分一致の投稿だけを表示し結果件数と検索キーワードを保持する")
+    void 投稿検索_q指定_本文部分一致の投稿だけを表示し結果件数と検索キーワードを保持する() throws Exception {
+        Post older = postWithId(41L, "alice", "検索対象の古い本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post newer = postWithId(42L, "bob", "検索対象の新しい本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.searchWithLikes(eq("検索対象"), anyString())).willReturn(List.of(newer, older));
+        given(postService.countSearchResults("検索対象")).willReturn(2L);
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", "検索対象"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("query", "検索対象"))
+                .andExpect(model().attribute("searchExecuted", true))
+                .andExpect(model().attribute("searchResultCount", 2L))
+                .andExpect(model().attribute("posts", List.of(newer, older)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("検索結果：2件")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"検索対象\"")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("検索対象の新しい本文", "検索対象の古い本文");
+        assertThat(html.indexOf("検索対象の新しい本文")).isLessThan(html.indexOf("検索対象の古い本文"));
+    }
+
+    @Test
+    @DisplayName("投稿検索_q指定_0件の場合_検索結果0件だけを表示し通常の空一覧文言を表示しない")
+    void 投稿検索_q指定_0件の場合_検索結果0件だけを表示し通常の空一覧文言を表示しない() throws Exception {
+        given(postService.searchWithLikes(eq("なし"), anyString())).willReturn(List.of());
+        given(postService.countSearchResults("なし")).willReturn(0L);
+
+        mockMvc.perform(get("/posts").param("q", "なし"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("query", "なし"))
+                .andExpect(model().attribute("searchExecuted", true))
+                .andExpect(model().attribute("searchResultCount", 0L))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("検索結果：0件")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("まだ投稿はありません"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("class=\"post post--link\""))));
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する")
     void 投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する() throws Exception {
         Post post = postWithId(
