@@ -15,6 +15,8 @@ import java.util.Objects;
 @Table(name = "posts")
 public class Post {
 
+    public static final String DEFAULT_AVATAR_COLOR = "blue";
+
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "posts_seq_gen")
@@ -26,6 +28,9 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
+    @Column(name = "avatar_color", length = 20, nullable = false)
+    private String avatarColor;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -34,8 +39,13 @@ public class Post {
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, body, DEFAULT_AVATAR_COLOR, createdAt);
+    }
+
+    public Post(String author, String body, String avatarColor, Instant createdAt) {
         this.author = author;
         this.body = body;
+        this.avatarColor = avatarColor;
         this.createdAt = createdAt;
     }
 
@@ -51,13 +61,22 @@ public class Post {
         return body;
     }
 
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
 
     public void update(String author, String body) {
+        update(author, body, DEFAULT_AVATAR_COLOR);
+    }
+
+    public void update(String author, String body, String avatarColor) {
         this.author = author;
         this.body = body;
+        this.avatarColor = avatarColor;
     }
 
     @Override

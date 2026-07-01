@@ -42,14 +42,24 @@ public class PostService {
 
     @Transactional
     public void create(String author, String body) {
-        postRepository.save(new Post(author, body, Instant.now()));
+        create(author, body, Post.DEFAULT_AVATAR_COLOR);
+    }
+
+    @Transactional
+    public void create(String author, String body, String avatarColor) {
+        postRepository.save(new Post(author, body, avatarColor, Instant.now()));
     }
 
     @Transactional
     public Optional<Post> update(Long id, String author, String body) {
+        return update(id, author, body, Post.DEFAULT_AVATAR_COLOR);
+    }
+
+    @Transactional
+    public Optional<Post> update(Long id, String author, String body, String avatarColor) {
         return postRepository.findById(id)
                 .map(post -> {
-                    post.update(author, body);
+                    post.update(author, body, avatarColor);
                     postRepository.save(post);
                     return post;
                 });

@@ -24,6 +24,14 @@
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
+        <div>
+            <label for="avatarColor">アバター色</label>
+            <select id="avatarColor" th:field="*{avatarColor}">
+                <option th:each="avatarColorOption : ${avatarColors}"
+                        th:value="${avatarColorOption}"
+                        th:text="${avatarColorOption}">blue</option>
+            </select>
+        </div>
         <button type="submit">登録</button>
         <a th:href="${cancelUrl}">キャンセル</a>
     </form>

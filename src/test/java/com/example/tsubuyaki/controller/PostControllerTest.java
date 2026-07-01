@@ -155,6 +155,20 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿表示_投稿者名の横にアバター色を表示する")
+    void list_displaysAvatarColorNextToAuthor() throws Exception {
+        given(postService.latest()).willReturn(List.of(
+                new Post("alice", "本文です", "purple", Instant.parse("2026-05-23T01:00:00Z"))
+        ));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("● purple")))
+                .andExpect(content().string(containsString("post__avatar-color--purple")));
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿ごとに編集リンクを表示する")
     void list_displaysEditLinkForEachPost() throws Exception {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
@@ -201,6 +215,23 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿作成フォーム_アバター色_selectで選択肢とデフォルトblueを表示する")
+    void newForm_hasAvatarColorSelectAndDefaultBlue() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("avatarColors", List.of("red", "blue", "green", "yellow", "purple")))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("avatarColor", org.hamcrest.Matchers.equalTo("blue"))))
+                .andExpect(content().string(containsString("name=\"avatarColor\"")))
+                .andExpect(content().string(containsString("<select")))
+                .andExpect(content().string(containsString("value=\"red\"")))
+                .andExpect(content().string(containsString("value=\"blue\"")))
+                .andExpect(content().string(containsString("value=\"green\"")))
+                .andExpect(content().string(containsString("value=\"yellow\"")))
+                .andExpect(content().string(containsString("value=\"purple\"")));
+    }
+
+    @Test
     @DisplayName("投稿作成フォーム_登録ボタン_POST_postsへ送信する")
     void newForm_submitButtonPostsToPosts() throws Exception {
         mockMvc.perform(get("/posts/new"))
@@ -224,15 +255,18 @@ class PostControllerTest {
     void create_whenAuthorBlank_redisplaysFormAndKeepsInput() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "   ")
-                        .param("body", "本文です"))
+                        .param("body", "本文です")
+                        .param("avatarColor", "green"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"))
                 .andExpect(model().attribute("postForm",
                         org.hamcrest.Matchers.hasProperty("author", org.hamcrest.Matchers.equalTo("   "))))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("avatarColor", org.hamcrest.Matchers.equalTo("green"))))
                 .andExpect(content().string(containsString("投稿者名を入力してください")));
 
-        verify(postService, never()).create(anyString(), anyString());
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -240,13 +274,14 @@ class PostControllerTest {
     void create_whenBodyBlank_redisplaysForm() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "   "))
+                        .param("body", "   ")
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文を入力してください")));
 
-        verify(postService, never()).create(anyString(), anyString());
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -254,13 +289,14 @@ class PostControllerTest {
     void create_whenAuthorTooLong_redisplaysForm() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "a".repeat(31))
-                        .param("body", "本文です"))
+                        .param("body", "本文です")
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"))
                 .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")));
 
-        verify(postService, never()).create(anyString(), anyString());
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -268,31 +304,33 @@ class PostControllerTest {
     void create_whenBodyTooLong_redisplaysForm() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "a".repeat(281)))
+                        .param("body", "a".repeat(281))
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
 
-        verify(postService, never()).create(anyString(), anyString());
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
-    @DisplayName("投稿作成_入力正常_postsへリダイレクトし保存する")
-    void create_whenValid_redirectsToPostsAndCreatesPost() throws Exception {
+    @DisplayName("投稿作成_入力正常_postsへリダイレクトしアバター色を保存する")
+    void create_whenValid_redirectsToPostsAndCreatesPostWithAvatarColor() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "本文です"))
+                        .param("body", "本文です")
+                        .param("avatarColor", "purple"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "本文です");
+        verify(postService).create("alice", "本文です", "purple");
     }
 
     @Test
     @DisplayName("投稿詳細_存在するid_posts_detailを表示しpostをビューに渡す")
     void detail_whenPostExists_showsDetailAndSetsPost() throws Exception {
-        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        Post post = new Post("alice", "詳細本文です", "green", Instant.parse("2026-05-23T01:00:00Z"));
         given(postService.findById(42L)).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/42"))
@@ -300,6 +338,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post))
                 .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("green")))
                 .andExpect(content().string(containsString("詳細本文です")))
                 .andExpect(content().string(containsString("2026-05-23 10:00")));
     }
@@ -397,7 +436,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿編集フォーム_存在するid_既存値をフォームに表示する")
     void editForm_whenPostExists_showsFormWithExistingValues() throws Exception {
-        Post post = new Post("alice", "編集前本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        Post post = new Post("alice", "編集前本文です", "purple", Instant.parse("2026-05-23T01:00:00Z"));
         given(postService.findById(42L)).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/42/edit"))
@@ -407,8 +446,11 @@ class PostControllerTest {
                         org.hamcrest.Matchers.hasProperty("author", org.hamcrest.Matchers.equalTo("alice"))))
                 .andExpect(model().attribute("postForm",
                         org.hamcrest.Matchers.hasProperty("body", org.hamcrest.Matchers.equalTo("編集前本文です"))))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("avatarColor", org.hamcrest.Matchers.equalTo("purple"))))
                 .andExpect(content().string(containsString("value=\"alice\"")))
                 .andExpect(content().string(containsString("編集前本文です")))
+                .andExpect(content().string(containsString("value=\"purple\" selected=\"selected\"")))
                 .andExpect(content().string(containsString("action=\"/posts/42\"")))
                 .andExpect(content().string(containsString("href=\"/posts/42\"")));
     }
@@ -427,7 +469,8 @@ class PostControllerTest {
     void update_whenAuthorBlank_redisplaysFormAndKeepsInput() throws Exception {
         mockMvc.perform(post("/posts/42")
                         .param("author", "   ")
-                        .param("body", "入力中の本文です"))
+                        .param("body", "入力中の本文です")
+                        .param("avatarColor", "yellow"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"))
@@ -435,12 +478,14 @@ class PostControllerTest {
                         org.hamcrest.Matchers.hasProperty("author", org.hamcrest.Matchers.equalTo("   "))))
                 .andExpect(model().attribute("postForm",
                         org.hamcrest.Matchers.hasProperty("body", org.hamcrest.Matchers.equalTo("入力中の本文です"))))
+                .andExpect(model().attribute("postForm",
+                        org.hamcrest.Matchers.hasProperty("avatarColor", org.hamcrest.Matchers.equalTo("yellow"))))
                 .andExpect(content().string(containsString("投稿者名を入力してください")))
                 .andExpect(content().string(containsString("action=\"/posts/42\"")))
                 .andExpect(content().string(containsString("入力中の本文です")));
 
         verify(postService, never()).update(
-                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -448,14 +493,15 @@ class PostControllerTest {
     void update_whenBodyBlank_redisplaysForm() throws Exception {
         mockMvc.perform(post("/posts/42")
                         .param("author", "alice")
-                        .param("body", "   "))
+                        .param("body", "   ")
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文を入力してください")));
 
         verify(postService, never()).update(
-                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -463,14 +509,15 @@ class PostControllerTest {
     void update_whenAuthorTooLong_redisplaysForm() throws Exception {
         mockMvc.perform(post("/posts/42")
                         .param("author", "a".repeat(31))
-                        .param("body", "本文です"))
+                        .param("body", "本文です")
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"))
                 .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")));
 
         verify(postService, never()).update(
-                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -478,29 +525,31 @@ class PostControllerTest {
     void update_whenBodyTooLong_redisplaysForm() throws Exception {
         mockMvc.perform(post("/posts/42")
                         .param("author", "alice")
-                        .param("body", "a".repeat(281)))
+                        .param("body", "a".repeat(281))
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
 
         verify(postService, never()).update(
-                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString());
+                org.mockito.ArgumentMatchers.anyLong(), anyString(), anyString(), anyString());
     }
 
     @Test
-    @DisplayName("投稿編集_入力正常_詳細へリダイレクトし更新する")
-    void update_whenValid_redirectsToDetailAndUpdatesPost() throws Exception {
-        given(postService.update(42L, "alice", "更新後本文です"))
+    @DisplayName("投稿編集_入力正常_詳細へリダイレクトしアバター色を更新する")
+    void update_whenValid_redirectsToDetailAndUpdatesPostWithAvatarColor() throws Exception {
+        given(postService.update(42L, "alice", "更新後本文です", "green"))
                 .willReturn(Optional.of(new Post("alice", "更新後本文です",
-                        Instant.parse("2026-05-23T01:00:00Z"))));
+                        "green", Instant.parse("2026-05-23T01:00:00Z"))));
 
         mockMvc.perform(post("/posts/42")
                         .param("author", "alice")
-                        .param("body", "更新後本文です"))
+                        .param("body", "更新後本文です")
+                        .param("avatarColor", "green"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts/42"));
 
-        verify(postService).update(42L, "alice", "更新後本文です");
+        verify(postService).update(42L, "alice", "更新後本文です", "green");
     }
 }

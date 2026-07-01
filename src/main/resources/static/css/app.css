@@ -48,6 +48,31 @@ h1 {
     margin-right: 0.5rem;
 }
 
+.post__avatar-color {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.post__avatar-color--red {
+    color: #dc2626;
+}
+
+.post__avatar-color--blue {
+    color: #2563eb;
+}
+
+.post__avatar-color--green {
+    color: #16a34a;
+}
+
+.post__avatar-color--yellow {
+    color: #ca8a04;
+}
+
+.post__avatar-color--purple {
+    color: #9333ea;
+}
+
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;

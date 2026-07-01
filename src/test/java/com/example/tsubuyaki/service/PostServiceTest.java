@@ -79,15 +79,16 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("投稿作成_入力正常_Postに変換してRepositoryへ保存する")
-    void create_whenValid_savesPost() {
-        postService.create("alice", "本文です");
+    @DisplayName("投稿作成_入力正常_アバター色を含むPostに変換してRepositoryへ保存する")
+    void create_whenValid_savesPostWithAvatarColor() {
+        postService.create("alice", "本文です", "purple");
 
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
         verify(postRepository).save(captor.capture());
         Post savedPost = captor.getValue();
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("本文です");
+        assertThat(savedPost.getAvatarColor()).isEqualTo("purple");
         assertThat(savedPost.getCreatedAt()).isNotNull();
     }
 
@@ -104,16 +105,17 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("投稿編集_存在するid_投稿を更新してRepositoryへ保存する")
-    void update_whenPostExists_updatesAndSavesPost() {
+    @DisplayName("投稿編集_存在するid_アバター色を含む投稿を更新してRepositoryへ保存する")
+    void update_whenPostExists_updatesAndSavesPostWithAvatarColor() {
         Post post = new Post("alice", "更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
         given(postRepository.findById(42L)).willReturn(Optional.of(post));
 
-        Optional<Post> actual = postService.update(42L, "bob", "更新後本文です");
+        Optional<Post> actual = postService.update(42L, "bob", "更新後本文です", "green");
 
         assertThat(actual).containsSame(post);
         assertThat(post.getAuthor()).isEqualTo("bob");
         assertThat(post.getBody()).isEqualTo("更新後本文です");
+        assertThat(post.getAvatarColor()).isEqualTo("green");
         verify(postRepository).findById(42L);
         verify(postRepository).save(post);
     }

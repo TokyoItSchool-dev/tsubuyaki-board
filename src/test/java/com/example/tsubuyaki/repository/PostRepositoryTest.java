@@ -60,9 +60,9 @@ class PostRepositoryTest {
     @DisplayName("投稿編集_保存済み投稿を更新すると変更後の値で取得できる")
     void save_whenExistingPostUpdated_persistsUpdatedValues() {
         Post post = postRepository.save(new Post(
-                "alice", "更新前本文です", Instant.parse("2026-05-23T00:00:00Z")));
+                "alice", "更新前本文です", "blue", Instant.parse("2026-05-23T00:00:00Z")));
 
-        post.update("bob", "更新後本文です");
+        post.update("bob", "更新後本文です", "green");
         postRepository.saveAndFlush(post);
 
         assertThat(postRepository.findById(post.getId()))
@@ -70,6 +70,7 @@ class PostRepositoryTest {
                 .satisfies(updated -> {
                     assertThat(updated.getAuthor()).isEqualTo("bob");
                     assertThat(updated.getBody()).isEqualTo("更新後本文です");
+                    assertThat(updated.getAvatarColor()).isEqualTo("green");
                     assertThat(updated.getCreatedAt()).isEqualTo(Instant.parse("2026-05-23T00:00:00Z"));
                 });
     }

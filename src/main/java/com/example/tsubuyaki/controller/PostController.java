@@ -18,8 +18,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Controller
 public class PostController {
+
+    private static final List<String> AVATAR_COLORS = List.of("red", "blue", "green", "yellow", "purple");
 
     private final PostService postService;
     private final ClientHashGenerator clientHashGenerator = new ClientHashGenerator();
@@ -71,7 +75,7 @@ public class PostController {
             return "posts/form";
         }
 
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor());
         return "redirect:/posts";
     }
 
@@ -82,6 +86,7 @@ public class PostController {
                     PostForm form = new PostForm();
                     form.setAuthor(post.getAuthor());
                     form.setBody(post.getBody());
+                    form.setAvatarColor(post.getAvatarColor());
                     return form;
                 })
                 .orElseThrow(() -> new ResponseStatusException(
@@ -102,7 +107,7 @@ public class PostController {
             return "posts/form";
         }
 
-        postService.update(id, postForm.getAuthor(), postForm.getBody())
+        postService.update(id, postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "投稿が見つかりません"));
         return "redirect:/posts/" + id;
@@ -112,12 +117,14 @@ public class PostController {
         model.addAttribute("formTitle", "新規投稿");
         model.addAttribute("formAction", "/posts");
         model.addAttribute("cancelUrl", "/posts");
+        model.addAttribute("avatarColors", AVATAR_COLORS);
     }
 
     private void setupEditForm(Model model, Long id) {
         model.addAttribute("formTitle", "投稿編集");
         model.addAttribute("formAction", "/posts/" + id);
         model.addAttribute("cancelUrl", "/posts/" + id);
+        model.addAttribute("avatarColors", AVATAR_COLORS);
     }
 
     private String clientHash(HttpServletRequest request) {
