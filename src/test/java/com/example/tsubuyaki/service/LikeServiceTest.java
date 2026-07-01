@@ -34,7 +34,7 @@ class LikeServiceTest {
     @DisplayName("いいね_同じclientHashが未登録のとき_いいねを追加する")
     void toggleLike_同じclientHashが未登録のとき_いいねを追加する() {
         Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(1L, "abcd1234")).willReturn(Optional.empty());
 
         postService.toggleLike(1L, "abcd1234");

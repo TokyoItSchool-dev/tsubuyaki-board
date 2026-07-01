@@ -24,7 +24,7 @@ class PostRepositoryTest {
 
     @Test
     @DisplayName("投稿一覧_投稿が51件あるとき_新着順で最大50件を返す")
-    void findTop50ByOrderByCreatedAtDesc_投稿が51件あるとき_新着順で最大50件を返す() {
+    void findTop50ByDeletedAtIsNullOrderByCreatedAtDesc_投稿が51件あるとき_新着順で最大50件を返す() {
         postRepository.deleteAll();
         Instant base = Instant.parse("2026-05-23T10:00:00Z");
         List<Post> posts = IntStream.rangeClosed(1, 51)
@@ -35,7 +35,7 @@ class PostRepositoryTest {
                 .toList();
         postRepository.saveAll(posts);
 
-        List<Post> actual = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> actual = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(actual).hasSize(50);
         assertThat(actual).extracting(Post::getBody)
@@ -45,7 +45,7 @@ class PostRepositoryTest {
 
     @Test
     @DisplayName("キーワード検索_本文に一致する投稿が51件あるとき_新着順で最大50件を返す")
-    void findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc_一致する投稿が51件あるとき_新着順で最大50件を返す() {
+    void findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc_一致する投稿が51件あるとき_新着順で最大50件を返す() {
         postRepository.deleteAll();
         Instant base = Instant.parse("2026-05-23T10:00:00Z");
         List<Post> posts = IntStream.rangeClosed(1, 51)
@@ -57,7 +57,8 @@ class PostRepositoryTest {
         postRepository.saveAll(posts);
         postRepository.save(new Post("other", "no match", base.plusSeconds(100)));
 
-        List<Post> actual = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("KEYWORD");
+        List<Post> actual = postRepository
+                .findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("KEYWORD");
 
         assertThat(actual).hasSize(50);
         assertThat(actual).extracting(Post::getBody)

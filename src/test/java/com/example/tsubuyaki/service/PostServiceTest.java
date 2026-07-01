@@ -33,12 +33,12 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")),
                 new Post("bob", "hi", Instant.parse("2026-05-23T09:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> actual = postService.latest();
 
         assertThat(actual).containsExactlyElementsOf(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
@@ -71,23 +71,24 @@ class PostServiceTest {
     @DisplayName("投稿詳細_存在するidのとき_Repositoryの取得結果を返す")
     void findById_存在するidのとき_Repositoryの取得結果を返す() {
         Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
 
         Optional<Post> actual = postService.findById(1L);
 
         assertThat(actual).contains(post);
-        verify(postRepository).findById(1L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(1L);
     }
 
     @Test
     @DisplayName("キーワード検索_検索語があるとき_空白を除いてRepositoryに委譲する")
     void searchByBody_検索語があるとき_空白を除いてRepositoryに委譲する() {
         List<Post> posts = List.of(new Post("alice", "hello keyword", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword")).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword"))
+                .willReturn(posts);
 
         List<Post> actual = postService.searchByBody(" keyword ");
 
         assertThat(actual).containsExactlyElementsOf(posts);
-        verify(postRepository).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword");
+        verify(postRepository).findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword");
     }
 }

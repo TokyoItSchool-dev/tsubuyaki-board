@@ -24,14 +24,14 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     public List<Post> searchByBody(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return latest();
         }
-        return repository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(keyword.trim());
+        return repository.findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(keyword.trim());
     }
 
     @Transactional
@@ -45,7 +45,17 @@ public class PostService {
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findByIdAndDeletedAtIsNull(id);
+    }
+
+    @Transactional
+    public boolean delete(Long id) {
+        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(id);
+        if (post.isEmpty()) {
+            return false;
+        }
+        post.get().delete(Instant.now());
+        return true;
     }
 
     @Transactional
@@ -55,7 +65,7 @@ public class PostService {
             likeRepository.delete(existing.get());
             return;
         }
-        Post post = repository.findById(postId).orElseThrow();
+        Post post = repository.findByIdAndDeletedAtIsNull(postId).orElseThrow();
         likeRepository.save(new PostLike(post, clientHash));
     }
 
