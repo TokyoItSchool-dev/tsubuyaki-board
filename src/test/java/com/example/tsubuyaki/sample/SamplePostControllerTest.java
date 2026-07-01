@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.sample;
 
 import com.example.tsubuyaki.controller.PostController;
+import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,10 +32,13 @@ class SamplePostControllerTest {
     @MockitoBean
     private PostService postService;
 
+    @MockitoBean
+    private PostLikeService postLikeService;
+
     @Test
     @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")
     void getPosts_rendersListView() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.search(null)).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())

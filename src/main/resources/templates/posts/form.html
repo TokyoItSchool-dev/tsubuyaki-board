@@ -14,8 +14,8 @@
         <a th:href="@{/posts}">一覧に戻る</a>
     </nav>
 
-    <!-- postForm に投稿者と本文をバインドし、投稿ボタン押下時に POST /posts へ送信する。 -->
-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
+    <!-- postForm に投稿者と本文をバインドし、投稿ボタン押下時に POST /post へ送信する。 -->
+    <form action="/post" th:action="@{/post}" th:object="${postForm}" method="post">
         <div>
             <!-- 投稿者入力欄。PostForm.author にバインドする。 -->
             <label for="author">投稿者</label>

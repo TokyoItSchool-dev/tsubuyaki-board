@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -29,15 +29,15 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
-    // 投稿作成日時をUTC基準の Instant として保存する。
+    // Oracle の TIMESTAMP(6) はタイムゾーンを持たないため、LocalDateTime として保存する。
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     protected Post() {
         // JPA がエンティティを復元するための引数なしコンストラクタ。
     }
 
-    public Post(String author, String body, Instant createdAt) {
+    public Post(String author, String body, LocalDateTime createdAt) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
@@ -55,7 +55,7 @@ public class Post {
         return body;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 

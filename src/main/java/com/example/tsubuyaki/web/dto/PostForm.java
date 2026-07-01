@@ -4,7 +4,7 @@ import com.example.tsubuyaki.domain.Post;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class PostForm {
 
@@ -40,7 +40,7 @@ public class PostForm {
     }
 
     // Controller から渡された作成日時を使って、保存対象の Post エンティティへ変換する。
-    public Post toPost(Instant createdAt) {
+    public Post toPost(LocalDateTime createdAt) {
         return new Post(author, body, createdAt);
     }
 }

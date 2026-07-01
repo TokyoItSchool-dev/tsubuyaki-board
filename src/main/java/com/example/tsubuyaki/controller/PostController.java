@@ -1,16 +1,28 @@
 package com.example.tsubuyaki.controller;
 
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.HexFormat;
+import java.util.Objects;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
+import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 
@@ -19,16 +31,30 @@ public class PostController {
 
     // Controller は画面からのリクエストを受け取り、業務処理を Service に委譲する。
     private final PostService postService;
+    private final PostLikeService postLikeService;
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService, PostLikeService postLikeService) {
         this.postService = postService;
+        this.postLikeService = postLikeService;
     }
 
-    // 投稿一覧画面を表示する。Service から取得した最新投稿を posts としてビューへ渡す。
+    // 投稿一覧画面を表示する。q があれば本文検索し、結果を posts としてビューへ渡す。
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String q, Model model) {
+        model.addAttribute("posts", postService.search(q));
+        model.addAttribute("q", q);
         return "posts/list";
+    }
+
+    // 投稿詳細画面を表示する。URLのIDに一致する投稿を post としてビューへ渡す。
+    @GetMapping("/posts/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        // 指定IDの投稿が存在しない場合は 404 Not Found を返す。
+        Post post = postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("post", post);
+        model.addAttribute("likeCount", postLikeService.countLikes(id));
+        return "posts/detail";
     }
 
     // 新規投稿画面を表示する。フォーム入力値を受け取るための postForm を model に積む。
@@ -39,7 +65,7 @@ public class PostController {
     }
 
     // 投稿ボタン押下時の処理。入力値を検証し、問題がなければ投稿を保存して一覧へ戻す。
-    @PostMapping({ "/posts", "/posts/new" })
+    @PostMapping({ "/post", "/posts", "/posts/new" })
     public String create(@Valid @ModelAttribute("postForm") PostForm postForm, BindingResult bindingResult) {
         // 入力エラーがある場合は INSERT せず、同じフォーム画面にエラーを表示する。
         if (bindingResult.hasErrors()) {
@@ -47,11 +73,31 @@ public class PostController {
         }
 
         // フォームDTOをPostエンティティへ変換し、Service経由でRepository.saveを実行する。
-        postService.create(postForm.toPost(Instant.now()));
+        postService.create(postForm.toPost(LocalDateTime.now()));
         // POST後の再送信を避けるため、一覧画面へリダイレクトする。
         return "redirect:/posts";
     }
 
-    // 演習中に追加するエンドポイント:
-    //   @GetMapping("/posts/{id}")       // 詳細
+    // Likeボタン押下時の処理。クライアントを識別し、いいねの追加・解除をトグルする。
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        postLikeService.toggleLike(id, clientHash(request));
+        return "redirect:/posts/" + id;
+    }
+
+    // IPアドレス + User-Agent をSHA-256でハッシュ化し、先頭8文字をclientHashとして使う。
+    private String clientHash(HttpServletRequest request) {
+        String remoteAddress = Objects.toString(request.getRemoteAddr(), "");
+        String userAgent = Objects.toString(request.getHeader("User-Agent"), "");
+        byte[] digest = sha256(remoteAddress + userAgent);
+        return HexFormat.of().formatHex(digest).substring(0, 8);
+    }
+
+    private byte[] sha256(String source) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(source.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm is not available", e);
+        }
+    }
 }

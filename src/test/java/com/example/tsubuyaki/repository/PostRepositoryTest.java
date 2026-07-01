@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +27,7 @@ class PostRepositoryTest {
     @DisplayName("投稿一覧_51件以上の投稿がある場合_新着50件だけを返す")
     void 投稿一覧_51件以上の投稿がある場合_新着50件だけを返す() {
         // 51件の投稿を1秒ずつ作成日時をずらして用意する。
-        Instant baseTime = Instant.parse("2026-05-23T10:00:00Z");
+        LocalDateTime baseTime = LocalDateTime.of(2026, 5, 23, 10, 0);
         List<Post> posts = new ArrayList<>();
         for (int i = 0; i < 51; i++) {
             posts.add(new Post("user" + i, "body" + i, baseTime.plusSeconds(i)));
@@ -51,5 +51,34 @@ class PostRepositoryTest {
                         "body15", "body14", "body13", "body12", "body11",
                         "body10", "body9", "body8", "body7", "body6",
                         "body5", "body4", "body3", "body2", "body1");
+    }
+
+    @Test
+    @DisplayName("投稿検索_qあり_本文に一致する投稿のみ新着順で返す")
+    void 投稿検索_qあり_本文に一致する投稿のみ新着順で返す() {
+        // 検索対象と非対象の投稿を作成日時をずらして保存する。
+        postRepository.save(new Post("alice", "keywordを含む古い本文", LocalDateTime.of(2026, 5, 23, 10, 0)));
+        postRepository.save(new Post("bob", "一致しない本文", LocalDateTime.of(2026, 5, 23, 10, 1)));
+        postRepository.save(new Post("carol", "KEYWORDを含む新しい本文", LocalDateTime.of(2026, 5, 23, 10, 2)));
+
+        // 大文字小文字を区別せず本文LIKE検索し、createdAt降順で取得する。
+        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword");
+
+        // 本文に一致する投稿だけが新着順で返ることを確認する。
+        assertThat(posts).extracting(Post::getBody)
+                .containsExactly("KEYWORDを含む新しい本文", "keywordを含む古い本文");
+    }
+
+    @Test
+    @DisplayName("投稿検索_qあり_一致しない場合は0件を返す")
+    void 投稿検索_qあり_一致しない場合は0件を返す() {
+        // 検索語を含まない投稿だけを保存する。
+        postRepository.save(new Post("alice", "通常の本文", LocalDateTime.of(2026, 5, 23, 10, 0)));
+
+        // 一致しないキーワードで検索する。
+        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("missing");
+
+        // 一致しない場合は空の一覧を返すことを確認する。
+        assertThat(posts).isEmpty();
     }
 }

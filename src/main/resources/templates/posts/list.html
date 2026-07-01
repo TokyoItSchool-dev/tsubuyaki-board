@@ -15,26 +15,30 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
-    <!-- 現在の一覧画面を GET /posts/ で再読み込みする。 -->
-    <form class="toolbar" th:action="@{/posts/}" method="get">
-        <button type="submit">更新</button>
+    <!-- 入力されたキーワードを q として GET /posts へ送り、本文検索を実行する。 -->
+    <form class="search-form" th:action="@{/posts}" method="get">
+        <label for="q">本文検索</label>
+        <input id="q" type="search" name="q" th:value="${q}" placeholder="キーワード">
+        <button type="submit">検索</button>
     </form>
 
     <!-- Controller が model に積んだ posts を表示する。 -->
     <section>
         <!-- 投稿が0件の場合だけ空メッセージを表示する。 -->
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
-        <!-- 投稿ごとに投稿者、本文、作成日時を表示する。 -->
-        <article class="post" th:each="post : ${posts}">
-            <!-- th:text でエスケープ表示し、投稿者名のXSSを防ぐ。 -->
-            <p class="post__author" th:text="${post.author}">投稿者</p>
-            <!-- th:text でエスケープ表示し、本文のXSSを防ぐ。 -->
-            <p class="post__body" th:text="${post.body}">本文</p>
-            <!-- 投稿日時を machine-readable な datetime と画面表示用テキストの両方で出す。 -->
-            <time class="post__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-        </article>
+        <!-- 投稿ごとにブロック化し、クリックすると投稿IDに対応した詳細画面へ移動する。 -->
+        <a class="post-link" th:each="post : ${posts}" th:href="@{/posts/{id}(id=${post.id})}">
+            <article class="post">
+                <!-- th:text でエスケープ表示し、投稿者名のXSSを防ぐ。 -->
+                <p class="post__author" th:text="${post.author}">投稿者</p>
+                <!-- th:text でエスケープ表示し、本文のXSSを防ぐ。 -->
+                <p class="post__body" th:text="${post.body}">本文</p>
+                <!-- 投稿日時を machine-readable な datetime と画面表示用テキストの両方で出す。 -->
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </article>
+        </a>
     </section>
 </main>
 </body>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <!-- 一覧画面へ戻るためのナビゲーション。 -->
+    <nav>
+        <a th:href="@{/posts}">一覧に戻る</a>
+    </nav>
+
+    <!-- Controller が model に積んだ post を詳細表示する。 -->
+    <article class="post post--detail">
+        <!-- th:text でエスケープ表示し、投稿者名のXSSを防ぐ。 -->
+        <p class="post__author" th:text="${post.author}">投稿者</p>
+        <!-- th:text でエスケープ表示し、本文のXSSを防ぐ。 -->
+        <p class="post__body" th:text="${post.body}">本文</p>
+        <!-- 投稿日時を machine-readable な datetime と画面表示用テキストの両方で出す。 -->
+        <time class="post__created-at"
+              th:datetime="${post.createdAt}"
+              th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+
+        <!-- 現在のいいね数を表示する。 -->
+        <p class="post__likes">いいね <span th:text="${likeCount}">0</span></p>
+
+        <!-- Likeボタン押下で POST /posts/{id}/likes を実行し、いいねを付与・解除する。 -->
+        <form class="like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+            <button type="submit">Like</button>
+        </form>
+    </article>
+</main>
+</body>
+</html>

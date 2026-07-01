@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.service.PostLikeService;
+import com.example.tsubuyaki.service.PostNotFoundException;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
@@ -9,17 +11,22 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -41,11 +48,15 @@ class PostControllerTest {
     @MockitoBean
     private PostService postService;
 
+    // いいね機能はServiceをモックにし、ControllerのHTTP処理だけを確認する。
+    @MockitoBean
+    private PostLikeService postLikeService;
+
     @Test
     @DisplayName("投稿一覧_0件の場合_空メッセージを表示しmodel.postsにListを積む")
     void 投稿一覧_0件の場合_空メッセージを表示しmodelPostsにListを積む() throws Exception {
         // Repository 由来の投稿が0件である状況を Service モックで作る。
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.search(null)).willReturn(Collections.emptyList());
 
         // GET /posts/ の結果として一覧ビュー、posts モデル、空メッセージが返ることを確認する。
         mockMvc.perform(get("/posts/"))
@@ -59,12 +70,13 @@ class PostControllerTest {
     @DisplayName("投稿一覧_更新ボタン_押すとpostsスラッシュにGETリクエストする")
     void 投稿一覧_更新ボタン_押すとpostsスラッシュにGETリクエストする() throws Exception {
         // 一覧画面を描画できるよう、投稿一覧は空として返す。
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.search(null)).willReturn(Collections.emptyList());
 
-        // 更新ボタンが GET /posts/ に向くフォームとして描画されることを確認する。
+        // 検索フォームが GET /posts に向くフォームとして描画されることを確認する。
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("<form class=\"toolbar\" action=\"/posts/\" method=\"get\"")))
+                .andExpect(content().string(containsString("<form class=\"search-form\" action=\"/posts\" method=\"get\"")))
+                .andExpect(content().string(containsString("name=\"q\"")))
                 .andExpect(content().string(containsString("<button type=\"submit\"")));
     }
 
@@ -72,8 +84,10 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿は投稿者内容投稿日の順に表示できている")
     void 投稿一覧_投稿は投稿者内容投稿日の順に表示できている() throws Exception {
         // 投稿1件を Service から返し、ビューが表示する投稿内容を固定する。
-        given(postService.latest()).willReturn(List.of(
-                new Post("alice", "長い本文でも折り返して表示する", Instant.parse("2026-05-23T10:00:00Z"))));
+        Post post = new Post("alice", "長い本文でも折り返して表示する",
+                LocalDateTime.of(2026, 5, 23, 10, 0));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.search(null)).willReturn(List.of(post));
 
         // 一覧画面のHTMLを取得し、表示順の検証に使う。
         String html = mockMvc.perform(get("/posts"))
@@ -84,7 +98,99 @@ class PostControllerTest {
                 .getContentAsString();
 
         // 投稿者、本文、日時が画面上で期待順に並ぶことを確認する。
-        assertThat(html).containsSubsequence("alice", "長い本文でも折り返して表示する", "2026-05-23 19:00");
+        assertThat(html).containsSubsequence("alice", "長い本文でも折り返して表示する", "2026-05-23 10:00");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿ブロック_詳細画面へのリンクになる")
+    void 投稿一覧_投稿ブロック_詳細画面へのリンクになる() throws Exception {
+        // 一覧に表示する投稿へIDを設定し、リンク先URLを検証できるようにする。
+        Post post = new Post("alice", "詳細へ遷移する本文", LocalDateTime.of(2026, 5, 23, 10, 0));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.search(null)).willReturn(List.of(post));
+
+        // 投稿ブロックがクリック可能なリンクになり、投稿IDに対応する /posts/{id} を指すことを確認する。
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/42\"")))
+                .andExpect(content().string(containsString("詳細へ遷移する本文")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_qあり_Serviceで検索し入力値を画面に保持する")
+    void 投稿検索_qあり_Serviceで検索し入力値を画面に保持する() throws Exception {
+        // 検索キーワードに一致した投稿だけを Service モックから返す。
+        Post post = new Post("alice", "keywordを含む本文", LocalDateTime.of(2026, 5, 23, 10, 0));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.search("keyword")).willReturn(List.of(post));
+
+        // GET /posts?q=keyword で検索結果を表示し、入力欄にも q が残ることを確認する。
+        mockMvc.perform(get("/posts").param("q", "keyword"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("q", "keyword"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(content().string(containsString("keywordを含む本文")))
+                .andExpect(content().string(containsString("value=\"keyword\"")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するID_200OKで詳細画面を表示しmodel.postを積む")
+    void 投稿詳細_存在するID_200OKで詳細画面を表示しmodelPostを積む() throws Exception {
+        // 詳細表示対象の投稿を Service モックから返す。
+        Post post = new Post("alice", "詳細画面に表示する本文", LocalDateTime.of(2026, 5, 23, 10, 0));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+        given(postLikeService.countLikes(42L)).willReturn(5L);
+
+        // GET /posts/{id} で詳細ビューが表示され、model.post と投稿内容が返ることを確認する。
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(model().attribute("likeCount", 5L))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("詳細画面に表示する本文")))
+                .andExpect(content().string(containsString("2026-05-23 10:00")))
+                .andExpect(content().string(containsString("いいね <span>5</span>")))
+                .andExpect(content().string(containsString("action=\"/posts/42/likes\"")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないID_404NotFoundを返す")
+    void 投稿詳細_存在しないID_404NotFoundを返す() throws Exception {
+        // 指定IDの投稿が存在しない状況を Service モックで作る。
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        // 存在しない投稿IDでは詳細画面を表示せず、404 Not Found を返すことを確認する。
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("いいね_POST_postsIdLikes_トグル後に詳細画面へリダイレクトする")
+    void いいね_POST_postsIdLikes_トグル後に詳細画面へリダイレクトする() throws Exception {
+        // Likeボタン押下を再現し、Serviceでトグルしたあと詳細画面へ戻ることを確認する。
+        mockMvc.perform(post("/posts/42/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.1");
+                            request.addHeader("User-Agent", "JUnit");
+                            return request;
+                        }))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts/42"));
+
+        verify(postLikeService).toggleLike(42L, "73c89905");
+    }
+
+    @Test
+    @DisplayName("いいね_POST_存在しない投稿ID_404NotFoundを返す")
+    void いいね_POST_存在しない投稿ID_404NotFoundを返す() throws Exception {
+        // Serviceが投稿なしを通知した場合、Controllerは404として返す。
+        doThrow(new PostNotFoundException(999L)).when(postLikeService).toggleLike(eq(999L), anyString());
+
+        mockMvc.perform(post("/posts/999/likes"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -95,7 +201,7 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
-                .andExpect(content().string(containsString("<form action=\"/posts\" method=\"post\"")));
+                .andExpect(content().string(containsString("<form action=\"/post\" method=\"post\"")));
     }
 
     @Test
@@ -166,7 +272,7 @@ class PostControllerTest {
     @DisplayName("投稿作成_正常入力_Postに変換して保存し一覧へリダイレクトする")
     void 投稿作成_正常入力_Postに変換して保存し一覧へリダイレクトする() throws Exception {
         // 投稿者と本文がそろっている正常入力を送信する。
-        mockMvc.perform(post("/posts")
+        mockMvc.perform(post("/post")
                         .param("author", "alice")
                         .param("body", "本文です"))
                 .andExpect(status().is3xxRedirection())
@@ -178,6 +284,20 @@ class PostControllerTest {
         assertThat(captor.getValue().getAuthor()).isEqualTo("alice");
         assertThat(captor.getValue().getBody()).isEqualTo("本文です");
         assertThat(captor.getValue().getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿作成_postsへPOST_一覧へリダイレクトする")
+    void 投稿作成_postsへPOST_一覧へリダイレクトする() throws Exception {
+        // 既存の /posts へ POST しても投稿作成として処理できることを確認する。
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "本文です"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts"));
+
+        // /posts への POST でも保存処理が呼ばれることを確認する。
+        verify(postService).create(any(Post.class));
     }
 
     @Test
