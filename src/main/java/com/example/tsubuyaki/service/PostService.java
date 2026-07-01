@@ -27,6 +27,13 @@ public class PostService {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    public List<Post> searchByBody(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return latest();
+        }
+        return repository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(keyword.trim());
+    }
+
     @Transactional
     public Post create(String author, String body) {
         return repository.save(new Post(author, body, Instant.now()));

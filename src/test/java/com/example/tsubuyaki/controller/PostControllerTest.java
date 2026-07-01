@@ -65,6 +65,20 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_q指定ありのとき_本文検索結果をビューに渡す")
+    void list_q指定ありのとき_本文検索結果をビューに渡す() throws Exception {
+        Post post = new Post("alice", "hello keyword", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.searchByBody("keyword")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", "keyword"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(model().attribute("q", "keyword"))
+                .andExpect(content().string(containsString("hello keyword")));
+    }
+
+    @Test
     @DisplayName("投稿作成フォーム_GET_/posts/new_posts/formを表示しpostFormをビューに渡す")
     void newForm_GET_postsNew_postsFormを表示しpostFormをビューに渡す() throws Exception {
         mockMvc.perform(get("/posts/new"))

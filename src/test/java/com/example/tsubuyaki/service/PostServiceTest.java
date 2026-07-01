@@ -66,4 +66,16 @@ class PostServiceTest {
         assertThat(actual).contains(post);
         verify(postRepository).findById(1L);
     }
+
+    @Test
+    @DisplayName("キーワード検索_検索語があるとき_空白を除いてRepositoryに委譲する")
+    void searchByBody_検索語があるとき_空白を除いてRepositoryに委譲する() {
+        List<Post> posts = List.of(new Post("alice", "hello keyword", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword")).willReturn(posts);
+
+        List<Post> actual = postService.searchByBody(" keyword ");
+
+        assertThat(actual).containsExactlyElementsOf(posts);
+        verify(postRepository).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword");
+    }
 }
