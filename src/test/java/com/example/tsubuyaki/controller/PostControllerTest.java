@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
@@ -9,7 +10,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
@@ -81,5 +84,27 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("本文を入力してください")));
 
         verify(postService, never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidのとき_posts/detailを表示しpostをビューに渡す")
+    void detail_存在するidのとき_postsDetailを表示しpostをビューに渡す() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("hello")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないidのとき_404を返す")
+    void detail_存在しないidのとき_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 }
