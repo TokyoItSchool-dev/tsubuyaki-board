@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,34 @@ class PostServiceTest {
         Optional<Post> result = postService.findById(1L);
 
         assertThat(result).contains(post);
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワードあり_本文検索Repositoryを呼ぶ")
+    void 投稿検索_キーワードあり_本文検索Repositoryを呼ぶ() {
+        List<Post> posts = List.of(new Post("alice", "xxx を含む投稿",
+                Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("xxx")).willReturn(posts);
+
+        List<Post> result = postService.searchByBody("xxx");
+
+        assertThat(result).isSameAs(posts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("xxx");
+        verify(postRepository, never()).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワードが空白のみ_最新50件を返す")
+    void 投稿検索_キーワードが空白のみ_最新50件を返す() {
+        List<Post> posts = List.of(new Post("alice", "最新投稿",
+                Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> result = postService.searchByBody("   ");
+
+        assertThat(result).isSameAs(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository, never()).findTop50ByBodyContainingOrderByCreatedAtDesc(org.mockito.ArgumentMatchers.any());
     }
 
     @Test

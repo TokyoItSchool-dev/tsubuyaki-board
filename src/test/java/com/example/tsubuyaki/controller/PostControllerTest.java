@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -46,9 +47,29 @@ class PostControllerTest {
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
-                .andExpect(model().attribute("posts", posts));
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("q", ""));
 
         verify(postService).findLatest50();
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索キーワードあり_検索結果とキーワードをビューに渡す")
+    void 投稿一覧_検索キーワードあり_検索結果とキーワードをビューに渡す() throws Exception {
+        List<Post> posts = List.of(
+                new Post("alice", "xxx を含む投稿", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postService.searchByBody("xxx")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", "xxx"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("q", "xxx"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"q\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"xxx\"")));
+
+        verify(postService).searchByBody("xxx");
+        verify(postService, never()).findLatest50();
     }
 
     @Test

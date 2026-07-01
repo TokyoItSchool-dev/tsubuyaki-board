@@ -12,6 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -29,8 +30,12 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.findLatest50());
+    public String list(@RequestParam(required = false) String q, Model model) {
+        String keyword = q == null ? "" : q;
+        model.addAttribute("posts", keyword.isBlank()
+                ? postService.findLatest50()
+                : postService.searchByBody(keyword));
+        model.addAttribute("q", keyword);
         return "posts/list";
     }
 
