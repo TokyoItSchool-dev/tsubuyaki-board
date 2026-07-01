@@ -1,13 +1,15 @@
 package com.example.tsubuyaki.controller;
 
-import com.example.tsubuyaki.service.PostService;
-import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.validation.Valid;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+
+import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 
 @Controller
 public class PostController {
@@ -27,6 +29,7 @@ public class PostController {
     @GetMapping("/posts/new")
     public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());
+        
         return "posts/form";
     }
 
