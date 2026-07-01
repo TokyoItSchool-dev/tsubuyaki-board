@@ -18,13 +18,27 @@
         <button type="submit">更新</button>
     </form>
 
-    <section>
-<<<<<<< Updated upstream
-        <form class="post-actions" th:action="@{/posts/}" method="get">
-            <button type="submit">更新</button>
+    <section th:with="keyword=${param.keyword != null ? param.keyword[0] : ''},
+                      searching=${!#strings.isEmpty(keyword)}">
+        <form class="post-search" th:action="@{/posts}" method="get">
+            <label class="post-search__label" for="keyword">キーワード検索</label>
+            <div class="post-search__controls">
+                <input id="keyword"
+                       type="search"
+                       name="keyword"
+                       maxlength="100"
+                       placeholder="本文または投稿者で検索"
+                       th:value="${keyword}">
+                <button type="submit">検索</button>
+                <a class="post-search__clear" th:if="${searching}" th:href="@{/posts}">クリア</a>
+            </div>
         </form>
+        <p class="search-summary"
+           th:if="${searching}"
+           th:text="|「${keyword}」の検索結果|">「キーワード」の検索結果</p>
 
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <p th:if="${#lists.isEmpty(posts) && !searching}">まだ投稿はありません</p>
+        <p th:if="${#lists.isEmpty(posts) && searching}">該当する投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
             <div class="post__content">
                 <span class="post__author" th:text="${post.author}">投稿者</span>
@@ -33,15 +47,6 @@
                       th:datetime="${post.createdAt}"
                       th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
             </div>
-=======
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
-        <article class="post" th:each="post : ${posts}">
-            <div class="post__author" th:text="${post.author}">投稿者</div>
-            <p class="post__body" th:text="${post.body}">本文</p>
-            <time class="post__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
->>>>>>> Stashed changes
         </article>
     </section>
 </main>

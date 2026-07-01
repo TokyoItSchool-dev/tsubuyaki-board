@@ -31,12 +31,13 @@ h1 {
     margin-bottom: 1rem;
 }
 
-<<<<<<< Updated upstream
-.post-actions {
+.toolbar__refresh {
     margin: 1rem 0;
 }
 
-.post-actions button {
+.toolbar__refresh button,
+.post-search button,
+.post-search__clear {
     padding: 0.4rem 0.8rem;
     border: 1px solid var(--color-border);
     border-radius: 6px;
@@ -45,12 +46,41 @@ h1 {
     cursor: pointer;
 }
 
-=======
-.toolbar__refresh {
+.post-search {
     margin: 1rem 0;
 }
 
->>>>>>> Stashed changes
+.post-search__label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.post-search__controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.post-search input[type="search"] {
+    min-width: 16rem;
+    flex: 1 1 16rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text);
+}
+
+.post-search__clear {
+    text-decoration: none;
+}
+
+.search-summary {
+    color: var(--color-muted);
+    margin: 0 0 0.75rem;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -69,14 +99,9 @@ h1 {
 }
 
 .post__body {
-<<<<<<< Updated upstream
     margin: 0.5rem 0;
-=======
-    margin-top: 0.5rem;
     max-width: 100%;
->>>>>>> Stashed changes
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
-    overflow-wrap: anywhere;
 }
