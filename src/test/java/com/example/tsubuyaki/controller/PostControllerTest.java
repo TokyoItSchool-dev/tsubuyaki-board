@@ -2,8 +2,12 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -11,13 +15,20 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -78,6 +89,81 @@ class PostControllerTest {
         mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
-                .andExpect(model().attributeExists("postForm"));
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(model().attributeHasNoErrors("postForm"));
+    }
+
+    @Test
+    @DisplayName("新規投稿フォーム_初期表示_空入力でもエラーなしで表示する")
+    void newForm_initialDisplay_rendersEmptyFormWithoutValidationErrors() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("name=\"author\"")))
+                .andExpect(content().string(containsString("name=\"body\"")))
+                .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("action=\"/posts\"")))
+                .andExpect(content().string(not(containsString("投稿者名を入力してください"))))
+                .andExpect(content().string(not(containsString("本文を入力してください"))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "", "1234567890123456789012345678901" })
+    @DisplayName("投稿作成_authorが空文字または30文字超過_バリデーションエラーでフォームを再表示する")
+    void create_invalidAuthor_rendersFormWithValidationError(String author) throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", author)
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者")));
+
+        verify(postService, never()).create(author, "本文です");
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidBodies")
+    @DisplayName("投稿作成_bodyが空文字または280文字超過_バリデーションエラーでフォームを再表示する")
+    void create_invalidBody_rendersFormWithValidationError(String body) throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "tanaka")
+                        .param("body", body))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文")));
+
+        verify(postService, never()).create("tanaka", body);
+    }
+
+    private static Stream<String> invalidBodies() {
+        return Stream.of("", "a".repeat(281));
+    }
+
+    @Test
+    @DisplayName("投稿作成_authorとbodyが空白のみ_バリデーションエラーでフォームを再表示する")
+    void create_blankOnlyValues_rendersFormWithValidationErrors() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "   ")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author", "body"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verify(postService, never()).create("   ", "   ");
+    }
+
+    @Test
+    @DisplayName("投稿作成_正常入力_投稿を登録してpostsへリダイレクトする")
+    void create_validInput_createsPostAndRedirectsToPosts() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "tanaka")
+                        .param("body", "投稿本文です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("tanaka", "投稿本文です");
     }
 }

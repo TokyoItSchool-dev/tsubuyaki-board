@@ -5,6 +5,7 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,5 +38,19 @@ class PostServiceTest {
 
         assertThat(latestPosts).isEqualTo(posts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿作成_正常入力_前後空白を除去してRepositoryに保存する")
+    void 投稿作成_正常入力_前後空白を除去してRepositoryに保存する() {
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+
+        postService.create("  tanaka  ", "  投稿本文です  ");
+
+        verify(postRepository).save(captor.capture());
+        Post savedPost = captor.getValue();
+        assertThat(savedPost.getAuthor()).isEqualTo("tanaka");
+        assertThat(savedPost.getBody()).isEqualTo("投稿本文です");
+        assertThat(savedPost.getCreatedAt()).isNotNull();
     }
 }
