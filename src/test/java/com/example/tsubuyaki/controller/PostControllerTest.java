@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -51,5 +53,15 @@ class PostControllerTest {
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("Controller_新規投稿フォーム_GET_posts_new_PostFormをmodelに渡す")
+    void 新規投稿フォーム_GET_posts_new_PostFormをmodelに渡す() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(content().string(containsString("新規投稿")));
     }
 }
