@@ -29,7 +29,10 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected Post() {
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    public Post() {
         // JPA
     }
 
@@ -47,12 +50,32 @@ public class Post {
         return author;
     }
 
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
     public String getBody() {
         return body;
     }
 
+    public void setBody(String body) {
+        this.body = body;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override

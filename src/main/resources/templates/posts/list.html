@@ -7,25 +7,67 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<main>
-    <h1>社内つぶやきボード</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧</a>
-        |
-        <a th:href="@{/posts/new}">新規投稿</a>
+<main id="top">
+    <header class="page-header">
+        <div>
+            <p class="page-header__eyebrow">Internal board</p>
+            <h1>社内つぶやきボード</h1>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <a class="nav__link" th:href="@{/posts}">一覧</a>
+        <a class="nav__link" th:href="@{/posts/new}">新規投稿</a>
+        <a class="nav__link" th:href="@{/posts/trash}">ごみ箱</a>
     </nav>
 
-    <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
-        <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
-        </article>
-    </section>
+    <form class="toolbar" th:action="@{/posts/}" method="get">
+        <button type="submit">更新</button>
+    </form>
+
+    <div class="board-layout">
+        <aside class="notice-panel" aria-label="お知らせ">
+            <h2>お知らせ</h2>
+            <p th:if="${editedPostId != null}" th:text="|ID${editedPostId}が編集されました。|">ID10が編集されました。</p>
+            <p th:if="${deletedPostId != null}" th:text="|ID${deletedPostId}が削除されました。|">ID11が削除されました。</p>
+            <p th:if="${editedPostId == null and deletedPostId == null}">お知らせはありません。</p>
+        </aside>
+
+        <section class="posts">
+            <p class="empty-message" th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+            <article class="post" th:each="post : ${posts}">
+                <a class="post__id" th:href="@{/posts/{id}(id=${post.id})}" th:text="|ID ${post.id}|">ID 1</a>
+                <div class="post__author" th:text="${post.author}">投稿者</div>
+                <p class="post__body"
+                   th:classappend="${#strings.length(post.body) > 100 ? 'post__body--truncated' : ''}"
+                   th:attr="data-tooltip=${#strings.length(post.body) > 100 ? post.body : null},
+                            title=${#strings.length(post.body) > 100 ? post.body : null},
+                            tabindex=${#strings.length(post.body) > 100 ? '0' : null}"
+                   th:text="${#strings.length(post.body) > 100
+                       ? #strings.substring(post.body, 0, 100) + '....'
+                       : post.body}">本文</p>
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </article>
+        </section>
+    </div>
+
+    <nav class="pagination" th:if="${totalPages > 1}" aria-label="ページ遷移">
+        <a class="pagination__link"
+           th:if="${hasPrevious}"
+           th:href="@{/posts/(page=${currentPage - 1})}">前へ</a>
+        <a class="pagination__link"
+           th:each="pageNumber : ${pageNumbers}"
+           th:classappend="${pageNumber == currentPage ? 'pagination__link--current' : ''}"
+           th:href="@{/posts/(page=${pageNumber})}"
+           th:text="${pageNumber + 1}">1</a>
+        <a class="pagination__link"
+           th:if="${hasNext}"
+           th:href="@{/posts/(page=${currentPage + 1})}">次へ</a>
+    </nav>
+
+    <a class="back-to-top" href="#top" aria-label="TOPへ戻る">TOP</a>
 </main>
 </body>
 </html>
