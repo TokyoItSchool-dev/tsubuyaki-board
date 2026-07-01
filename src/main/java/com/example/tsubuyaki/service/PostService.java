@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,11 +20,7 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        List<Post> posts = repository.findTop50ByOrderByCreatedAtDesc();
-        if (posts == null) {
-            return Collections.emptyList();
-        }
-        return posts;
+        return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
     @Transactional
