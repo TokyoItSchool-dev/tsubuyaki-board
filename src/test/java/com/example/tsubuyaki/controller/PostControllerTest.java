@@ -98,4 +98,13 @@ class PostControllerTest {
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
                 .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"post\"[^>]*>.*")));
     }
+
+    @Test
+    @DisplayName("投稿作成フォーム_GET_posts_form_posts_formを表示しpostFormをビューに渡す")
+    void 投稿作成フォーム_GET_posts_form_posts_formを表示しpostFormをビューに渡す() throws Exception {
+        mockMvc.perform(get("/posts/form"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+    }
 }
