@@ -9,7 +9,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -31,7 +31,7 @@ class PostRepositoryTest {
     @Test
     @DisplayName("投稿一覧_51件以上あるとき_新着50件だけを新着順で返す")
     void 投稿一覧_51件以上あるとき_新着50件だけを新着順で返す() {
-        Instant baseTime = Instant.parse("2026-05-23T09:00:00Z");
+        LocalDateTime baseTime = LocalDateTime.parse("2026-05-23T09:00:00");
         List<Post> posts = IntStream.rangeClosed(1, 51)
                 .mapToObj(index -> new Post("user" + index, "投稿" + index, baseTime.plusSeconds(index)))
                 .toList();

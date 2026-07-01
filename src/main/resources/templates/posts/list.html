@@ -27,7 +27,7 @@
     <section class="post-list" aria-label="投稿一覧">
         <p class="empty-message" th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
 
-        <article class="post" th:each="post : ${posts}">
+        <article class="post" style="display: none;" th:each="post : ${posts}" th:style="''">
             <div class="post__author">
                 <span class="post__label">投稿者</span>
                 <span th:text="${post.author}">投稿者</span>
@@ -35,7 +35,8 @@
             <p class="post__body" th:text="${post.body}">本文</p>
             <div class="post__created-at">
                 <span class="post__label">投稿日</span>
-                <time th:datetime="${post.createdAt}" th:text="${post.createdAt}">2026-05-23T09:00:00Z</time>
+                <time th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
             </div>
         </article>
     </section>

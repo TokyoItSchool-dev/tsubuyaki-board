@@ -5,6 +5,7 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,5 +20,10 @@ public class PostService {
 
     public List<Post> findLatestPosts() {
         return postRepository.findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Transactional
+    public void createPost(String author, String body) {
+        postRepository.save(new Post(author, body, LocalDateTime.now()));
     }
 }

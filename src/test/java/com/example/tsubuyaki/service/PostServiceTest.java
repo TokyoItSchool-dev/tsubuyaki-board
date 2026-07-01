@@ -5,11 +5,12 @@ import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,13 +30,26 @@ class PostServiceTest {
     @DisplayName("投稿一覧_最新投稿取得_Repositoryの最新50件を返す")
     void 投稿一覧_最新投稿取得_Repositoryの最新50件を返す() {
         List<Post> latestPosts = List.of(
-                new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z")),
-                new Post("bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z")));
+                new Post("alice", "新しい投稿", LocalDateTime.parse("2026-05-23T10:00:00")),
+                new Post("bob", "古い投稿", LocalDateTime.parse("2026-05-23T09:00:00")));
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(latestPosts);
 
         List<Post> actual = postService.findLatestPosts();
 
         assertThat(actual).isEqualTo(latestPosts);
         then(postRepository).should().findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿登録_正常入力_投稿をRepositoryへ保存する")
+    void 投稿登録_正常入力_投稿をRepositoryへ保存する() {
+        postService.createPost("alice", "今日の学びを共有します");
+
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        then(postRepository).should().save(postCaptor.capture());
+        Post savedPost = postCaptor.getValue();
+        assertThat(savedPost.getAuthor()).isEqualTo("alice");
+        assertThat(savedPost.getBody()).isEqualTo("今日の学びを共有します");
+        assertThat(savedPost.getCreatedAt()).isNotNull();
     }
 }
