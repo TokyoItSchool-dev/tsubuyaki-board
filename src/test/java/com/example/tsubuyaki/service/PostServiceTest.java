@@ -38,7 +38,7 @@ class PostServiceTest {
         given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
         Instant before = Instant.now();
 
-        postService.createPost("alice", "本文です");
+        postService.createPost("alice", "本文です", "purple");
 
         Instant after = Instant.now();
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
@@ -46,6 +46,7 @@ class PostServiceTest {
         Post savedPost = captor.getValue();
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("本文です");
+        assertThat(savedPost.getAvatarColor()).isEqualTo("purple");
         assertThat(savedPost.getCreatedAt()).isBetween(before, after);
     }
 

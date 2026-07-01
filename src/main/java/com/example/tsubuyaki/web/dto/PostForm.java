@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 
 public class PostForm {
 
+    private String avatarColor = "blue";
+
     @NotBlank(message = "投稿者名を入力してください")
     @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
     private String author;
@@ -14,6 +16,14 @@ public class PostForm {
     private String body;
 
     public PostForm() {
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
     }
 
     public String getAuthor() {

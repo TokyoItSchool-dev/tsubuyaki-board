@@ -55,4 +55,19 @@ class PostRepositoryTest {
         assertThat(posts).extracting(Post::getBody)
                 .containsExactly("別の検索キーワードを含む投稿", "検索キーワードを含む投稿");
     }
+
+    @Test
+    @DisplayName("投稿登録_アバター色を選択した場合_選択した色を保存する")
+    void 投稿登録_アバター色を選択した場合_選択した色を保存する() {
+        Post savedPost = postRepository.saveAndFlush(new Post(
+                "alice",
+                "本文です",
+                "purple",
+                Instant.parse("2026-05-23T10:00:00Z")
+        ));
+
+        Post foundPost = postRepository.findById(savedPost.getId()).orElseThrow();
+
+        assertThat(foundPost.getAvatarColor()).isEqualTo("purple");
+    }
 }

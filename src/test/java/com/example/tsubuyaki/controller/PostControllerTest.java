@@ -190,6 +190,26 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿作成フォーム_GET_posts_new_アバター色の選択項目を表示する")
+    void 投稿作成フォーム_GET_posts_new_アバター色の選択項目を表示する() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeExists("avatarColors"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("select")
+                .contains("name=\"avatarColor\"")
+                .contains("赤")
+                .contains("青")
+                .contains("緑")
+                .contains("黄")
+                .contains("紫");
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在するidの場合_詳細ビューを表示しmodelにpostを積む")
     void 投稿詳細_存在するidの場合_詳細ビューを表示しmodelにpostを積む() throws Exception {
         Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
@@ -271,11 +291,25 @@ class PostControllerTest {
     void 投稿登録_正常な入力の場合_投稿を登録しpostsへリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "本文です"))
+                        .param("body", "本文です")
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        then(postService).should().createPost("alice", "本文です");
+        then(postService).should().createPost("alice", "本文です", "blue");
+    }
+
+    @Test
+    @DisplayName("投稿登録_アバター色を選択した場合_選択した色で投稿を登録する")
+    void 投稿登録_アバター色を選択した場合_選択した色で投稿を登録する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "本文です")
+                        .param("avatarColor", "purple"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        then(postService).should().createPost("alice", "本文です", "purple");
     }
 
     @Test
@@ -331,7 +365,7 @@ class PostControllerTest {
                 .contains("value=\"" + invalidAuthor + "\"")
                 .contains(">保持する本文</textarea>");
         then(postService).should(never()).createPost(org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.anyString());
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
     }
 
     private void assertInvalidPost(String author, String body, String expectedMessage) throws Exception {
@@ -349,7 +383,7 @@ class PostControllerTest {
                 .contains("name=\"author\"")
                 .contains("name=\"body\"");
         then(postService).should(never()).createPost(org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.anyString());
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
     }
 
     private String clientHash(String remoteAddress, String userAgent) {
