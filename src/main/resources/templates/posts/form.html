@@ -20,7 +20,7 @@
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
         <div>
-            <label for="body">本文</label>
+            <label for="body">本文 (280 文字まで)</label>
             <textarea id="body" th:field="*{body}" rows="4"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
