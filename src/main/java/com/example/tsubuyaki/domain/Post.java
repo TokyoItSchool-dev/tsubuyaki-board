@@ -63,6 +63,9 @@ public class Post {
         if (!(o instanceof Post other)) {
             return false;
         }
+        if (id == null || other.id == null) {
+            return false;
+        }
         return Objects.equals(id, other.id);
     }
 
