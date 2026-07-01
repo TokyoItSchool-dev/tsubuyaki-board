@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -83,5 +85,30 @@ class PostControllerTest {
                 .getContentAsString();
 
         assertThat(html).containsSubsequence("alice", "順序確認の本文", "2026-05-23 19:30");
+    }
+
+    @Test
+    @DisplayName("投稿作成画面_GET_posts_new_posts_formビューとpostFormを返す")
+    void newForm_rendersFormViewWithPostForm() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+    }
+
+    @Test
+    @DisplayName("投稿作成画面_GET_posts_new_投稿フォーム項目を表示する")
+    void newForm_displaysPostFormFields() throws Exception {
+        String html = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains(
+                "action=\"/posts\"",
+                "method=\"post\"",
+                "name=\"author\"",
+                "name=\"body\"");
     }
 }
