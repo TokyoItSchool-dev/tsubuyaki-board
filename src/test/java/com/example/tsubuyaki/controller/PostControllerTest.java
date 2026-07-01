@@ -89,15 +89,26 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿作成フォーム_GET_/posts/new_アバター色選択を表示する")
+    void newForm_GET_postsNew_アバター色選択を表示する() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("name=\"avatarColor\"")))
+                .andExpect(content().string(containsString("value=\"blue\"")))
+                .andExpect(content().string(containsString("value=\"green\"")));
+    }
+
+    @Test
     @DisplayName("投稿登録_入力が妥当なとき_投稿を保存して一覧へリダイレクトする")
     void create_入力が妥当なとき_投稿を保存して一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "hello"))
+                        .param("body", "hello")
+                        .param("avatarColor", "green"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "hello");
+        verify(postService).create("alice", "hello", "green");
     }
 
     @Test
@@ -112,7 +123,7 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("投稿者名を入力してください")))
                 .andExpect(content().string(containsString("本文を入力してください")));
 
-        verify(postService, never()).create(anyString(), anyString());
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test

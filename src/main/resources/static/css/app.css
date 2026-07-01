@@ -39,6 +39,19 @@ h1 {
     background: white;
 }
 
+.post__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+
 .post__author {
     font-weight: 600;
     margin-right: 0.5rem;

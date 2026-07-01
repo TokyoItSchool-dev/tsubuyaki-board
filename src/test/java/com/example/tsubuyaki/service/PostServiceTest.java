@@ -52,7 +52,19 @@ class PostServiceTest {
         Post saved = captor.getValue();
         assertThat(saved.getAuthor()).isEqualTo("alice");
         assertThat(saved.getBody()).isEqualTo("hello");
+        assertThat(saved.getAvatarColor()).isEqualTo(Post.DEFAULT_AVATAR_COLOR);
         assertThat(saved.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿登録_アバター色が指定されたとき_Postに保存する")
+    void create_アバター色が指定されたとき_Postに保存する() {
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+
+        postService.create("alice", "hello", "green");
+
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getAvatarColor()).isEqualTo("green");
     }
 
     @Test

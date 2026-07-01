@@ -10,10 +10,15 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "posts")
 public class Post {
+    public static final String DEFAULT_AVATAR_COLOR = "blue";
+    public static final String AVATAR_COLOR_PATTERN = "blue|green|pink|gray";
+
+    private static final Set<String> AVATAR_COLORS = Set.of("blue", "green", "pink", "gray");
 
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
@@ -26,6 +31,9 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
+    @Column(name = "avatar_color", length = 20, nullable = false)
+    private String avatarColor;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -34,9 +42,24 @@ public class Post {
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, body, DEFAULT_AVATAR_COLOR, createdAt);
+    }
+
+    public Post(String author, String body, String avatarColor, Instant createdAt) {
         this.author = author;
         this.body = body;
+        this.avatarColor = normalizeAvatarColor(avatarColor);
         this.createdAt = createdAt;
+    }
+
+    public static String normalizeAvatarColor(String avatarColor) {
+        if (avatarColor == null || avatarColor.isBlank()) {
+            return DEFAULT_AVATAR_COLOR;
+        }
+        if (!AVATAR_COLORS.contains(avatarColor)) {
+            return DEFAULT_AVATAR_COLOR;
+        }
+        return avatarColor;
     }
 
     public Long getId() {
@@ -49,6 +72,10 @@ public class Post {
 
     public String getBody() {
         return body;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
     }
 
     public Instant getCreatedAt() {
