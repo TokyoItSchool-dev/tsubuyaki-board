@@ -31,7 +31,7 @@ public class PostService {
     }
 
     @Transactional
-    public Post create(String author, String body) {
-        return repository.save(new Post(author, body, LocalDateTime.now(clock)));
+    public Post create(String author, String title, String body) {
+        return repository.save(new Post(author, title, body, LocalDateTime.now(clock)));
     }
 }

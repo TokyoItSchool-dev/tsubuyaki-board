@@ -38,8 +38,8 @@ class PostServiceTest {
     @DisplayName("投稿一覧_取得時_Repositoryの最新50件を返す")
     void 投稿一覧_取得時_Repositoryの最新50件を返す() {
         List<Post> posts = List.of(
-                new Post("suzuki", "new", LocalDateTime.of(2026, 6, 26, 10, 0)),
-                new Post("tanaka", "old", LocalDateTime.of(2026, 6, 26, 9, 0)));
+                new Post("suzuki", "new title", "new", LocalDateTime.of(2026, 6, 26, 10, 0)),
+                new Post("tanaka", "old title", "old", LocalDateTime.of(2026, 6, 26, 9, 0)));
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> actual = postService.latest();
@@ -51,12 +51,13 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿登録_保存時_現在時刻を設定してRepositoryへ保存する")
     void 投稿登録_保存時_現在時刻を設定してRepositoryへ保存する() {
-        postService.create("suzuki", "本文");
+        postService.create("suzuki", "タイトル", "本文");
 
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
         verify(postRepository).save(captor.capture());
         Post saved = captor.getValue();
         assertThat(saved.getAuthor()).isEqualTo("suzuki");
+        assertThat(saved.getTitle()).isEqualTo("タイトル");
         assertThat(saved.getBody()).isEqualTo("本文");
         assertThat(saved.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 6, 26, 10, 23, 45));
     }

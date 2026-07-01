@@ -20,6 +20,11 @@
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
         <div>
+            <label for="title">タイトル (100 文字まで)</label>
+            <input type="text" id="title" th:field="*{title}">
+            <p class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">エラー</p>
+        </div>
+        <div>
             <label for="body">本文 (280 文字まで)</label>
             <textarea id="body" th:field="*{body}" rows="4"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>

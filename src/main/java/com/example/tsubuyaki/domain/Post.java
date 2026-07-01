@@ -23,6 +23,9 @@ public class Post {
     @Column(name = "author", length = 30, nullable = false)
     private String author;
 
+    @Column(name = "title", length = 100, nullable = false)
+    private String title;
+
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
@@ -33,8 +36,9 @@ public class Post {
         // JPA
     }
 
-    public Post(String author, String body, LocalDateTime createdAt) {
+    public Post(String author, String title, String body, LocalDateTime createdAt) {
         this.author = author;
+        this.title = title;
         this.body = body;
         this.createdAt = createdAt;
     }
@@ -45,6 +49,10 @@ public class Post {
 
     public String getAuthor() {
         return author;
+    }
+
+    public String getTitle() {
+        return title;
     }
 
     public String getBody() {

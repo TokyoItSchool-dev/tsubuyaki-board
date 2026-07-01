@@ -30,7 +30,7 @@ class SamplePostRepositoryTest {
     @Test
     @DisplayName("Repository_保存と取得_往復で同じ値が返る")
     void save_and_findAll_roundTrip() {
-        postRepository.save(new Post("alice", "hello", LocalDateTime.of(2026, 5, 23, 10, 0)));
+        postRepository.save(new Post("alice", "hello title", "hello", LocalDateTime.of(2026, 5, 23, 10, 0)));
 
         List<Post> all = postRepository.findAll();
 

@@ -15,6 +15,7 @@
 
     <article class="post">
         <div class="post__author" th:text="${post.author}">投稿者</div>
+        <h2 class="post__title" th:text="${post.title}">タイトル</h2>
         <p class="post__body" th:text="${post.body}">本文</p>
         <time class="post__created-at"
               th:datetime="${post.createdAt}"

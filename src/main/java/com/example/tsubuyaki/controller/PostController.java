@@ -51,7 +51,7 @@ public class PostController {
             return "posts/form";
         }
 
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getTitle(), postForm.getBody());
         return "redirect:/posts";
     }
 

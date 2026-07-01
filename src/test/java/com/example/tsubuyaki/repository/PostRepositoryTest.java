@@ -28,7 +28,7 @@ class PostRepositoryTest {
         LocalDateTime base = LocalDateTime.of(2026, 6, 26, 9, 0);
         List<Post> posts = new ArrayList<>();
         for (int i = 0; i < 51; i++) {
-            posts.add(new Post("user" + i, "body" + i, base.plusSeconds(i)));
+            posts.add(new Post("user" + i, "title" + i, "body" + i, base.plusSeconds(i)));
         }
         postRepository.saveAll(posts);
         postRepository.flush();
