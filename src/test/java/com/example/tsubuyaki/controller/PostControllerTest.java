@@ -15,12 +15,17 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -89,5 +94,116 @@ class PostControllerTest {
 
         assertThat(postForm.getAuthor()).isEmpty();
         assertThat(postForm.getBody()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿登録_入力が最小文字数のとき_投稿を作成し一覧へリダイレクトする")
+    void 投稿登録_入力が最小文字数のとき_投稿を作成し一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", " a ")
+                        .param("body", " b "))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("a", "b");
+    }
+
+    @Test
+    @DisplayName("投稿登録_入力が最大文字数のとき_投稿を作成し一覧へリダイレクトする")
+    void 投稿登録_入力が最大文字数のとき_投稿を作成し一覧へリダイレクトする() throws Exception {
+        String author = "a".repeat(30);
+        String body = "b".repeat(280);
+
+        mockMvc.perform(post("/posts")
+                        .param("author", author)
+                        .param("body", body))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create(author, body);
+    }
+
+    @Test
+    @DisplayName("投稿登録_投稿者が空白のみのとき_フォームを再表示しエラーを表示する")
+    void 投稿登録_投稿者が空白のみのとき_フォームを再表示しエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "   ")
+                        .param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")));
+
+        verify(postService, never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_投稿者が空文字のとき_フォームを再表示しエラーを表示する")
+    void 投稿登録_投稿者が空文字のとき_フォームを再表示しエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "")
+                        .param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")));
+
+        verify(postService, never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_投稿者が31文字のとき_フォームを再表示しエラーを表示する")
+    void 投稿登録_投稿者が31文字のとき_フォームを再表示しエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "a".repeat(31))
+                        .param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")));
+
+        verify(postService, never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_本文が空白のみのとき_フォームを再表示しエラーを表示する")
+    void 投稿登録_本文が空白のみのとき_フォームを再表示しエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "suzuki")
+                        .param("body", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verify(postService, never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_本文が空文字のとき_フォームを再表示しエラーを表示する")
+    void 投稿登録_本文が空文字のとき_フォームを再表示しエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "suzuki")
+                        .param("body", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文を入力してください")));
+
+        verify(postService, never()).create(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("投稿登録_本文が281文字のとき_フォームを再表示しエラーを表示する")
+    void 投稿登録_本文が281文字のとき_フォームを再表示しエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "suzuki")
+                        .param("body", "b".repeat(281)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
+                .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
+
+        verify(postService, never()).create(anyString(), anyString());
     }
 }
