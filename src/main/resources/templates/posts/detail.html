@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <nav>
+        <a th:href="@{/posts}">一覧に戻る</a>
+    </nav>
+
+    <article class="post">
+        <p class="post__author" th:text="${post.author}">投稿者</p>
+        <span class="post__avatar avatar-shape--person"
+              role="img"
+              aria-label="人型アバター"
+              th:classappend="| avatar-color--${post.avatarColor}|">
+            <span class="post__avatar-head"></span>
+            <span class="post__avatar-body"></span>
+        </span>
+        <span class="post__avatar-color" th:text="${post.avatarColor}">gray</span>
+        <p class="post__body" th:text="${post.body}">本文</p>
+        <time class="post__created-at"
+              th:datetime="${post.createdAt}"
+              th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).of('Asia/Tokyo')), 'yyyy-MM-dd HH:mm')}">
+            2026-07-01 14:00
+        </time>
+        <p class="post__likes" th:text="|いいね数: ${likeCount}|">いいね数: 0</p>
+        <form th:action="@{/posts/{id}/likes(id=${postId})}" method="post">
+            <button type="submit">Like</button>
+        </form>
+    </article>
+</main>
+</body>
+</html>
