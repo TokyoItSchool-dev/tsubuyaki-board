@@ -28,6 +28,9 @@
             <time class="post__created-at"
                   th:datetime="${post.createdAt}"
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <form th:action="@{/posts/{id}(id=${post.id})}" method="get">
+                <button type="submit">詳細</button>
+            </form>
         </article>
     </section>
 </main>

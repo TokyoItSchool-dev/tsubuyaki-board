@@ -10,11 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.instanceOf;
@@ -92,6 +94,31 @@ class PostControllerTest {
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(matchesPattern("(?s).*alice.*本文です.*2026-05-23 19:00.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_詳細ボタンから遷移し存在しないidは404を返す")
+    void 投稿詳細_詳細ボタンから遷移し存在しないidは404を返す() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<form[^>]*action=\"/posts/42\"[^>]*method=\"get\"[^>]*>.*"
+                                + "<button[^>]*>\\s*詳細\\s*</button>.*")));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(matchesPattern("(?s).*alice.*本文です.*2026-05-23 19:00.*")));
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
