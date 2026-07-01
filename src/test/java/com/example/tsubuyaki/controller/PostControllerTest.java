@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
@@ -58,6 +59,31 @@ class PostControllerTest {
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
 
         verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidのとき_投稿をビューに渡す")
+    void 投稿詳細_存在するidのとき_投稿をビューに渡す() throws Exception {
+        Post post = new Post("alice", "詳細表示する投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/{id}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post));
+
+        verify(postService).findById(1L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないidのとき_404を返す")
+    void 投稿詳細_存在しないidのとき_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/{id}", 999L))
+                .andExpect(status().isNotFound());
+
+        verify(postService).findById(999L);
     }
 
     @Test
