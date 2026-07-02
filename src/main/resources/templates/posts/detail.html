@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <nav>
+        <!-- 一覧画面へ戻るため、Thymeleafで/postsへのリンクURLを生成する。 -->
+        <a th:href="@{/posts}">一覧に戻る</a>
+    </nav>
+
+    <article class="post">
+        <header>
+            <!-- ControllerがModelへ格納したpostから投稿者名をHTMLエスケープして表示する。 -->
+            <span class="post__author" th:text="${post.author}">投稿者</span>
+        </header>
+        <!-- 投稿本文は改行と長い文字列の折り返しをCSSで扱い、th:textで安全に表示する。 -->
+        <p class="post__body" th:text="${post.body}">本文</p>
+        <footer class="post__footer">
+            <!-- 投稿日をdatetime属性には元値、画面表示には読みやすい形式で出力する。 -->
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        </footer>
+    </article>
+
+    <section class="likes">
+        <!-- ControllerがModelへ格納したlikeCountをHTMLエスケープして現在のいいね数として表示する。 -->
+        <p>いいね <span th:text="${likeCount}">0</span> 件</p>
+        <!-- 現在の投稿idへいいねトグルPOSTを送り、成功後は同じ詳細画面へ戻る。 -->
+        <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+            <!-- Spring SecurityのCSRFトークンをPOSTフォームへ明示的に含める。 -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit">Like</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

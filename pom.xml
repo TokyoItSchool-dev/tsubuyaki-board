@@ -67,6 +67,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Security。画面は全許可にし、CSRF トークンだけをフォーム保護に利用する。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Actuator (health endpoint) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -99,6 +105,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -199,6 +210,14 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <!-- 中断された前回実行のjacoco.execへ追記せず、毎回新しい実行データとして作り直す。 -->
+                            <append>false</append>
+                            <includes>
+                                <!-- アプリ本体だけを計測し、Surefire等の依存ライブラリ計測による終了時の詰まりを避ける。 -->
+                                <include>com.example.tsubuyaki.*</include>
+                            </includes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>jacoco-report</id>

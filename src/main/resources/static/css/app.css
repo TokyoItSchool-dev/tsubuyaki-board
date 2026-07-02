@@ -31,6 +31,10 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.toolbar {
+    margin: 1rem 0;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -41,7 +45,6 @@ h1 {
 
 .post__author {
     font-weight: 600;
-    margin-right: 0.5rem;
 }
 
 .post__created-at {
@@ -51,6 +54,7 @@ h1 {
 
 .post__body {
     margin-top: 0.5rem;
+    overflow-wrap: anywhere;
     white-space: pre-wrap;
     word-break: break-word;
 }

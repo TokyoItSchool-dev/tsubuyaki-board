@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.sample;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
@@ -9,7 +10,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
 /**
  * Service テストの雛形。TDD の見本として残す (削除禁止)。
@@ -26,10 +31,11 @@ class SamplePostServiceTest {
     private PostService postService;
 
     @Test
-    @DisplayName("Service_latest_未実装のとき_空リストを返す")
-    void latest_returnsEmpty_byDefault() {
-        // 現在の PostService.latest() は TODO 状態で空リストを返す。
-        // 受講生が実装したら、このテストは別シナリオに置き換える。
-        assertThat(postService.latest()).isEmpty();
+    @DisplayName("Service_latest_Repositoryから最新投稿を取得する")
+    void latest_returnsPostsFromRepository() {
+        Post post = new Post("alice", "hello", LocalDateTime.parse("2026-05-23T10:00:00"));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+
+        assertThat(postService.latest()).containsExactly(post);
     }
 }
