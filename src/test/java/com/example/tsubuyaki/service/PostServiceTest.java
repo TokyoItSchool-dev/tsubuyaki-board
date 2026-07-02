@@ -18,6 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -129,6 +130,42 @@ class PostServiceTest {
 
         assertThat(actual).isEmpty();
         verify(postRepository).findById(404L);
+    }
+
+    @Test
+    @DisplayName("投稿登録_create_指定したアバター色で保存する")
+    void 投稿登録_create_指定したアバター色で保存する() {
+        var postCaptor = forClass(Post.class);
+
+        postService.create("alice", "hello", "blue");
+
+        verify(postRepository).save(postCaptor.capture());
+        assertThat(postCaptor.getValue().getAuthor()).isEqualTo("alice");
+        assertThat(postCaptor.getValue().getBody()).isEqualTo("hello");
+        assertThat(postCaptor.getValue().getAvatarColor()).isEqualTo("blue");
+        assertThat(postCaptor.getValue().getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿登録_create_アバター色null_既定色grayで保存する")
+    void 投稿登録_create_アバター色null_既定色grayで保存する() {
+        var postCaptor = forClass(Post.class);
+
+        postService.create("alice", "hello", null);
+
+        verify(postRepository).save(postCaptor.capture());
+        assertThat(postCaptor.getValue().getAvatarColor()).isEqualTo("gray");
+    }
+
+    @Test
+    @DisplayName("投稿登録_create_アバター色空白_既定色grayで保存する")
+    void 投稿登録_create_アバター色空白_既定色grayで保存する() {
+        var postCaptor = forClass(Post.class);
+
+        postService.create("alice", "hello", "   ");
+
+        verify(postRepository).save(postCaptor.capture());
+        assertThat(postCaptor.getValue().getAvatarColor()).isEqualTo("gray");
     }
 
     @Test

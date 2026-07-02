@@ -61,6 +61,18 @@ class PostRepositoryTest {
         assertThat(posts).isEmpty();
     }
 
+    @Test
+    @DisplayName("投稿保存_アバター色あり_保存後に同じ色を取得できる")
+    void 投稿保存_アバター色あり_保存後に同じ色を取得できる() {
+        postRepository.deleteAll();
+        Post saved = postRepository.save(new Post("alice", "色付き投稿です", "orange",
+                Instant.parse("2026-05-23T10:00:00Z")));
+
+        Post post = postRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(post.getAvatarColor()).isEqualTo("orange");
+    }
+
     private List<Post> postsWithSequentialCreatedAt(int count) {
         Instant base = Instant.parse("2026-05-23T00:00:00Z");
         List<Post> posts = new ArrayList<>();

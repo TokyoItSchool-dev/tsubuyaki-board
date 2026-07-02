@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Controller
 public class PostController {
 
@@ -27,6 +29,11 @@ public class PostController {
     public PostController(PostService postService, ClientHashService clientHashService) {
         this.postService = postService;
         this.clientHashService = clientHashService;
+    }
+
+    @ModelAttribute("avatarColors")
+    public List<String> avatarColors() {
+        return PostForm.AVATAR_COLORS;
     }
 
     @GetMapping({ "/", "/posts" })
@@ -47,7 +54,7 @@ public class PostController {
         if (bindingResult.hasErrors()) {
             return "posts/form";
         }
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor());
         return "redirect:/posts";
     }
 

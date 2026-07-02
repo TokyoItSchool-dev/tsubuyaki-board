@@ -69,7 +69,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿あり_投稿者投稿日本文を表示する")
     void 投稿一覧_投稿あり_投稿者投稿日本文を表示する() throws Exception {
-        Post post = new Post("alice", "今日の共有です", Instant.parse("2026-05-23T10:15:00Z"));
+        Post post = new Post("alice", "今日の共有です", "blue", Instant.parse("2026-05-23T10:15:00Z"));
         given(postService.search(null)).willReturn(List.of(post));
 
         String html = mockMvc.perform(get("/posts"))
@@ -79,7 +79,7 @@ class PostControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertThat(html).contains("alice", "今日の共有です", "2026-05-23 19:15");
+        assertThat(html).contains("alice", "今日の共有です", "2026-05-23 19:15", "avatar--blue");
     }
 
     @Test
@@ -105,10 +105,16 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿作成フォーム_GET_posts_new_PostFormをビューに渡す")
     void 投稿作成フォーム_GET_posts_new_PostFormをビューに渡す() throws Exception {
-        mockMvc.perform(get("/posts/new"))
+        String html = mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
-                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(model().attribute("avatarColors", List.of("gray", "blue", "green", "orange", "pink")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("name=\"avatarColor\"", "value=\"gray\"", "value=\"blue\"");
     }
 
     @Test
@@ -116,11 +122,40 @@ class PostControllerTest {
     void 投稿登録_入力が妥当なとき_投稿一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
+                        .param("body", "今日の共有です")
+                        .param("avatarColor", "blue"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "今日の共有です", "blue");
+    }
+
+    @Test
+    @DisplayName("投稿登録_アバター色未指定_投稿一覧へリダイレクトする")
+    void 投稿登録_アバター色未指定_投稿一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
                         .param("body", "今日の共有です"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "今日の共有です");
+        verify(postService).create("alice", "今日の共有です", "gray");
+    }
+
+    @Test
+    @DisplayName("投稿登録_不正なアバター色_フォームを再表示してエラーを表示する")
+    void 投稿登録_不正なアバター色_フォームを再表示してエラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "今日の共有です")
+                        .param("avatarColor", "red"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("avatarColors", List.of("gray", "blue", "green", "orange", "pink")))
+                .andExpect(model().attributeHasFieldErrors("postForm", "avatarColor"))
+                .andExpect(content().string(containsString("アバター色を選択してください")));
+
+        verify(postService, never()).create("alice", "今日の共有です", "red");
     }
 
     @Test
@@ -135,13 +170,13 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("投稿者名を入力してください")))
                 .andExpect(content().string(containsString("本文を入力してください")));
 
-        verify(postService, never()).create("   ", "   ");
+        verify(postService, never()).create("   ", "   ", null);
     }
 
     @Test
     @DisplayName("投稿詳細_存在するid_詳細ビューに投稿を渡す")
     void 投稿詳細_存在するid_詳細ビューに投稿を渡す() throws Exception {
-        Post post = new Post("alice", "詳細で読む投稿です", Instant.parse("2026-05-23T10:15:00Z"));
+        Post post = new Post("alice", "詳細で読む投稿です", "green", Instant.parse("2026-05-23T10:15:00Z"));
         given(postService.findById(10L)).willReturn(Optional.of(post));
         given(clientHashService.generate("127.0.0.1", "JUnit")).willReturn("abcdef12");
         given(postService.countLikes(10L)).willReturn(2L);
@@ -158,7 +193,8 @@ class PostControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertThat(html).contains("alice", "詳細で読む投稿です", "2026-05-23 19:15", "2", "いいね済み");
+        assertThat(html).contains("alice", "詳細で読む投稿です", "2026-05-23 19:15", "2", "いいね済み",
+                "avatar--green");
     }
 
     @Test

@@ -50,7 +50,12 @@ public class PostService {
 
     @Transactional
     public void create(String author, String body) {
-        repository.save(new Post(author, body, Instant.now()));
+        create(author, body, null);
+    }
+
+    @Transactional
+    public void create(String author, String body, String avatarColor) {
+        repository.save(new Post(author, body, normalizeAvatarColor(avatarColor), Instant.now()));
     }
 
     @Transactional
@@ -63,5 +68,12 @@ public class PostService {
             return;
         }
         postLikeRepository.save(new PostLike(postId, clientHash));
+    }
+
+    private String normalizeAvatarColor(String avatarColor) {
+        if (avatarColor == null || avatarColor.isBlank()) {
+            return "gray";
+        }
+        return avatarColor;
     }
 }
