@@ -12,6 +12,49 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PostListLayoutTest {
 
     @Test
+    @DisplayName("サイト装飾_草原イメージ_CSSだけで背景と文字色を装飾する")
+    void サイト装飾_草原イメージ_CSSだけで背景と文字色を装飾する() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains("--color-sky:");
+        assertThat(css).contains("--color-grass:");
+        assertThat(css).contains("linear-gradient");
+        assertThat(css).contains("var(--color-sky)");
+        assertThat(css).contains("var(--color-grass)");
+        assertThat(css).contains("box-shadow:");
+        assertThat(css).contains("text-shadow:");
+        assertThat(css).doesNotContain("url(");
+    }
+
+    @Test
+    @DisplayName("サイト装飾_文字サイズ_既存のfont-size宣言を変更しない")
+    void サイト装飾_文字サイズ_既存のfont_size宣言を変更しない() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains("font-size: 1.5rem");
+        assertThat(css).contains("font-size: 0.85rem");
+        assertThat(css).contains("font-size: 0.9rem");
+        assertThat(css.split("font-size:", -1).length - 1).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("サイト装飾_レイアウト_幅と折り返しのCSSを維持する")
+    void サイト装飾_レイアウト_幅と折り返しのCSSを維持する() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains("main");
+        assertThat(css).contains("max-width: 720px");
+        assertThat(css).contains("padding: 0 1rem");
+        assertThat(css).contains(".post");
+        assertThat(css).contains("overflow-wrap: anywhere");
+        assertThat(css).contains("word-break: break-word");
+        assertThat(css).contains("flex-wrap: wrap");
+    }
+
+    @Test
     @DisplayName("投稿検索_検索フォーム_狭い画面でも折り返して表示できるCSSを持つ")
     void 投稿検索_検索フォーム_狭い画面でも折り返して表示できるCSSを持つ() throws IOException {
         String css = new ClassPathResource("static/css/app.css")
