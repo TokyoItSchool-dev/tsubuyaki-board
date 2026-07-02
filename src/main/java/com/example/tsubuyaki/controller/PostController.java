@@ -3,15 +3,13 @@ package com.example.tsubuyaki.controller;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,8 +25,12 @@ import java.util.List;
 
 @Controller
 public class PostController {
-    private static final String THEME_COOKIE_NAME = "themeColor";
-    private static final List<String> THEME_COLORS = List.of("blue", "green", "pink", "gray");
+    private static final String THEME_COLOR_ATTRIBUTE = "themeColor";
+    private static final List<ThemeColorOption> THEME_COLORS = List.of(
+            new ThemeColorOption("blue", "青", "#eef5ff"),
+            new ThemeColorOption("green", "緑", "#effaf3"),
+            new ThemeColorOption("pink", "ピンク", "#fff1f5"),
+            new ThemeColorOption("gray", "グレー", "#f3f4f6"));
 
     private final PostService postService;
 
@@ -38,22 +40,21 @@ public class PostController {
 
     @ModelAttribute
     public void addThemeColor(
-            @RequestParam(name = THEME_COOKIE_NAME, required = false) String requestedThemeColor,
-            @CookieValue(name = THEME_COOKIE_NAME, required = false) String cookieThemeColor,
-            HttpServletResponse response,
+            @RequestParam(name = THEME_COLOR_ATTRIBUTE, required = false) String requestedThemeColor,
+            HttpSession session,
             Model model) {
-        String themeColor = normalizeThemeColor(
-                requestedThemeColor == null ? cookieThemeColor : requestedThemeColor);
+        String themeColor = normalizeThemeColor((String) session.getAttribute(THEME_COLOR_ATTRIBUTE));
         if (requestedThemeColor != null) {
-            Cookie cookie = new Cookie(THEME_COOKIE_NAME, themeColor);
-            cookie.setPath("/");
+            themeColor = normalizeThemeColor(requestedThemeColor);
             if (themeColor.isBlank()) {
-                cookie.setMaxAge(0);
+                session.removeAttribute(THEME_COLOR_ATTRIBUTE);
+            } else {
+                session.setAttribute(THEME_COLOR_ATTRIBUTE, themeColor);
             }
-            response.addCookie(cookie);
         }
-        model.addAttribute(THEME_COOKIE_NAME, themeColor);
+        model.addAttribute(THEME_COLOR_ATTRIBUTE, themeColor);
         model.addAttribute("themeColorOptions", THEME_COLORS);
+        model.addAttribute("themeBackgroundColor", themeBackgroundColor(themeColor));
     }
 
     @GetMapping({ "/", "/posts" })
@@ -119,9 +120,21 @@ public class PostController {
         if (themeColor == null || themeColor.isBlank()) {
             return "";
         }
-        if (!THEME_COLORS.contains(themeColor)) {
-            return "";
-        }
-        return themeColor;
+        return THEME_COLORS.stream()
+                .map(ThemeColorOption::value)
+                .filter(themeColor::equals)
+                .findFirst()
+                .orElse("");
+    }
+
+    private String themeBackgroundColor(String themeColor) {
+        return THEME_COLORS.stream()
+                .filter(option -> option.value().equals(themeColor))
+                .map(ThemeColorOption::backgroundColor)
+                .findFirst()
+                .orElse("");
+    }
+
+    public record ThemeColorOption(String value, String label, String backgroundColor) {
     }
 }

@@ -7,9 +7,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -28,6 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -107,18 +110,28 @@ class PostControllerTest {
                 .andExpect(content().string(not(containsString("page--theme-orange"))))
                 .andExpect(content().string(containsString("name=\"themeColor\"")))
                 .andExpect(content().string(containsString("value=\"\" selected=\"selected\"")))
-                .andExpect(content().string(containsString("value=\"blue\"")))
-                .andExpect(content().string(containsString("value=\"green\"")))
-                .andExpect(content().string(containsString("value=\"pink\"")))
-                .andExpect(content().string(containsString("value=\"gray\"")));
+                .andExpect(content().string(containsString(">青</option>")))
+                .andExpect(content().string(containsString(">緑</option>")))
+                .andExpect(content().string(containsString(">ピンク</option>")))
+                .andExpect(content().string(containsString(">グレー</option>")));
 
-        mockMvc.perform(get("/posts/new").cookie(new jakarta.servlet.http.Cookie("themeColor", "green")))
+        MvcResult result = mockMvc.perform(get("/posts").param("themeColor", "green"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("class=\"page page--theme-green\"")));
+                .andExpect(request().sessionAttribute("themeColor", "green"))
+                .andExpect(content().string(containsString("class=\"page page--theme-green\"")))
+                .andExpect(content().string(containsString("background-color: #effaf3")))
+                .andReturn();
+        MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
 
-        mockMvc.perform(get("/posts/1").cookie(new jakarta.servlet.http.Cookie("themeColor", "green")))
+        mockMvc.perform(get("/posts/new").session(session))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("class=\"page page--theme-green\"")));
+                .andExpect(content().string(containsString("class=\"page page--theme-green\"")))
+                .andExpect(content().string(containsString("background-color: #effaf3")));
+
+        mockMvc.perform(get("/posts/1").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"page page--theme-green\"")))
+                .andExpect(content().string(containsString("background-color: #effaf3")));
     }
 
     @Test

@@ -6,7 +6,9 @@
     <title>投稿詳細 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body class="page" th:classappend="${themeColor.isBlank()} ? '' : |page--theme-${themeColor}|">
+<body class="page"
+      th:classappend="${themeColor.isBlank()} ? '' : |page--theme-${themeColor}|"
+      th:style="${themeBackgroundColor.isBlank()} ? '' : |background-color: ${themeBackgroundColor}|">
 <main>
     <h1>投稿詳細</h1>
     <nav>
