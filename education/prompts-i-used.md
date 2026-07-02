@@ -414,11 +414,13 @@ newForm_whenRequested_returnsFormViewWithPostForm と list_whenPostsExist_render
 **結果**: 部分的に効いた
 
 - 途中でフリーズしたと思って切断してしまった。（と思ったら、フリーズしていなかった。）
+- テストの観点が足らなかった。
 
 **振り返り**:
 
 - 内容によっては30分以上かかるので表示が変わらなくても待つ必要がある。
 - codexの表示が変わらないだけで裏で進行・終了していることがあるので、Ubuntuで`podman logs コンテナ名`で状況を確認することが必要。
+- 実装するテストを細かく指定する必要がある。（コード記述前にコードテストケースを考えないといけない）
 
 ---
 
@@ -458,6 +460,7 @@ newForm_whenRequested_returnsFormViewWithPostForm と list_whenPostsExist_render
 
 • Controller テストの Spring 起動ログまで進んでいます。前回と同じ位置なのでフリーズではなく実行中です。引き続き待ちます。
 ```
+- 途中で止めたことが災いしたか、操作で例外発生する。（codexの問題ではないと思うので「効いた」としている）
 
 **振り返り**:
 
@@ -468,129 +471,556 @@ newForm_whenRequested_returnsFormViewWithPostForm と list_whenPostsExist_render
 
 ## プロンプト 9
 
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
+**フェーズ**: M3 投稿の操作をしたときに例外発生
 
 **プロンプト本文**:
 
 ```
+投稿の操作をしたら以下の例外になりました。
+  2026-07-01 16:10:00.286 ERROR [http-nio-8080-exec-1] o.h.e.jdbc.spi.SqlExceptionHelper - ORA-00001: 一意制約(TSUBUYAKI.POSTS_PK)に反しています
 
+  https://docs.oracle.com/error-help/db/ora-00001/
+  2026-07-01 16:10:00.423 ERROR [http-nio-8080-exec-1] o.a.c.c.C.[.[.[.[dispatcherServlet] - Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed:
+  org.springframework.dao.DataIntegrityViolationException: could not execute statement [ORA-00001: 一意制約(TSUBUYAKI.POSTS_PK)に反しています
+
+  https://docs.oracle.com/error-help/db/ora-00001/] [insert into posts (author,body,created_at,id) values (?,?,?,?)]; SQL [insert into posts (author,body,created_at,id) values (?,?,?,?)]; constraint [TSUBUYAKI.POSTS_PK]] with root cause
+  oracle.jdbc.OracleDatabaseException: ORA-00001: 一意制約(TSUBUYAKI.POSTS_PK)に反しています
+
+          at oracle.jdbc.driver.T4CTTIoer11.processError(T4CTTIoer11.java:717)
+          at oracle.jdbc.driver.T4CTTIoer11.processError(T4CTTIoer11.java:609)
+          at oracle.jdbc.driver.T4C8Oall.processError(T4C8Oall.java:1347)
+          at oracle.jdbc.driver.T4CTTIfun.receive(T4CTTIfun.java:1100)
+          at oracle.jdbc.driver.T4CTTIfun.doRPC(T4CTTIfun.java:408)
+          at oracle.jdbc.driver.T4C8Oall.doOALL(T4C8Oall.java:499)
+          at oracle.jdbc.driver.T4CPreparedStatement.doOall8(T4CPreparedStatement.java:274)
+          at oracle.jdbc.driver.T4CPreparedStatement.executeForRows(T4CPreparedStatement.java:1484)
+          at oracle.jdbc.driver.OracleStatement.executeSQLStatement(OracleStatement.java:2008)
+          at oracle.jdbc.driver.OracleStatement.doExecuteWithTimeout(OracleStatement.java:1621)
+          at oracle.jdbc.driver.OraclePreparedStatement.executeInternal(OraclePreparedStatement.java:3955)
+          at oracle.jdbc.driver.OraclePreparedStatement.doExecuteLargeUpdate(OraclePreparedStatement.java:4314)
+          at oracle.jdbc.driver.OraclePreparedStatement.executeLargeUpdate(OraclePreparedStatement.java:4291)
+          at oracle.jdbc.driver.OraclePreparedStatement.executeUpdate(OraclePreparedStatement.java:4273)
+          at oracle.jdbc.driver.OraclePreparedStatementWrapper.executeUpdate(OraclePreparedStatementWrapper.java:997)
+          at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeUpdate(ProxyPreparedStatement.java:61)
+          at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeUpdate(HikariProxyPreparedStatement.java)
+          at org.hibernate.engine.jdbc.internal.ResultSetReturnImpl.executeUpdate(ResultSetReturnImpl.java:194)
+          at org.hibernate.engine.jdbc.mutation.internal.AbstractMutationExecutor.performNonBatchedMutation(AbstractMutationExecutor.java:134)
+          at org.hibernate.engine.jdbc.mutation.internal.MutationExecutorSingleNonBatched.performNonBatchedOperations(MutationExecutorSingleNonBatched.java:55)
+          at org.hibernate.engine.jdbc.mutation.internal.AbstractMutationExecutor.execute(AbstractMutationExecutor.java:55)
+          at org.hibernate.persister.entity.mutation.InsertCoordinatorStandard.doStaticInserts(InsertCoordinatorStandard.java:194)
+          at org.hibernate.persister.entity.mutation.InsertCoordinatorStandard.coordinateInsert(InsertCoordinatorStandard.java:132)
+          at org.hibernate.persister.entity.mutation.InsertCoordinatorStandard.insert(InsertCoordinatorStandard.java:104)
+          at org.hibernate.action.internal.EntityInsertAction.execute(EntityInsertAction.java:110)
+          at org.hibernate.engine.spi.ActionQueue.executeActions(ActionQueue.java:644)
+          at org.hibernate.engine.spi.ActionQueue.executeActions(ActionQueue.java:511)
+          at org.hibernate.event.internal.AbstractFlushingEventListener.performExecutions(AbstractFlushingEventListener.java:414)
+          at org.hibernate.event.internal.DefaultFlushEventListener.onFlush(DefaultFlushEventListener.java:41)
+          at org.hibernate.event.service.internal.EventListenerGroupImpl.fireEventOnEachListener(EventListenerGroupImpl.java:127)
+          at org.hibernate.internal.SessionImpl.doFlush(SessionImpl.java:1429)
+          at org.hibernate.internal.SessionImpl.managedFlush(SessionImpl.java:491)
+          at org.hibernate.internal.SessionImpl.flushBeforeTransactionCompletion(SessionImpl.java:2354)
+          at org.hibernate.internal.SessionImpl.beforeTransactionCompletion(SessionImpl.java:1978)
+          at org.hibernate.engine.jdbc.internal.JdbcCoordinatorImpl.beforeTransactionCompletion(JdbcCoordinatorImpl.java:439)
+          at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl.beforeCompletionCallback(JdbcResourceLocalTransactionCoordinatorImpl.java:169)
+          at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commit(JdbcResourceLocalTransactionCoordinatorImpl.java:267)
+          at org.hibernate.engine.transaction.internal.TransactionImpl.commit(TransactionImpl.java:101)
+          at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:562)
+          at org.springframework.transaction.support.AbstractPlatformTransactionManager.processCommit(AbstractPlatformTransactionManager.java:795)
+          at org.springframework.transaction.support.AbstractPlatformTransactionManager.commit(AbstractPlatformTransactionManager.java:758)
+          at org.springframework.transaction.interceptor.TransactionAspectSupport.commitTransactionAfterReturning(TransactionAspectSupport.java:698)
+          at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:416)
+          at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)
+          at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+          at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:727)
+          at com.example.tsubuyaki.service.PostService$$SpringCGLIB$$0.create(<generated>)
+          at com.example.tsubuyaki.controller.PostController.create(PostController.java:38)
+          at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+          at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+          at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:257)
+          at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:190)
+          at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+          at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+          at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+          at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+          at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1088)
+          at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:978)
+          at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+          at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+          at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+          at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+          at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:114)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+          at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+          at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+          at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+          at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+          at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+          at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+          at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+          at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+          at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+          at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+          at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+          at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+          at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+          at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+          at java.base/java.lang.Thread.run(Thread.java:1583)
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+
+- 例外は解消した。
 
 **振り返り**:
+
+- M1の動作確認をするために手動でDBにデータを投入してしまったことが原因。(シーケンスをnullで登録できなかったのでシーケンス設定されていないと思って手動でIDを採番してしまった。Oracleはpostgresとは挙動が違うのかも。)codexでデータ投入を依頼した方がよかった。
+- DB設計書を確認すればよかった。(あるのかどうかは不明) codexにIDの採番方法を確認したらよかった。
+
+---
+
+## プロンプト 10
+
+**フェーズ**: M3 テストケース不足
+
+**プロンプト本文**:
+
+```
+以下のテストがたらないので追加してください。
+- validation test 空欄の場合入力エラーになること
+- validation test 最大文字数を超える場合入力エラーになること
+- 登録のテストで最大値が登録できることを確認してください。
+```
+
+**結果**: 効いた
+
+- 期待するケースが追加された。
+
+**振り返り**:
+
+- 指示内容の日本語が多少おかしくても実施してくれる。
+
+---
+
+## プロンプト 11
+
+**フェーズ**: M4
+
+**プロンプト本文**:
+
+```
+投稿詳細 GET /posts/{id} を実装する。
+- 一覧画面にて、article押下時に投稿詳細画面に遷移する。
+- posts/detail.html を表示
+- 投稿詳細画面には投稿内容の詳細を表示する。
+- 存在しない id は 404
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- 存在するIDの場合、投稿詳細画面が表示できること。
+- 存在しないIDの場合、404エラーになること。
+- 一覧画面でarticle押下時、投稿詳細画面に遷移すること。
+- 投稿詳細画面に対象のIDの投稿内容が表示されること。
+```
+
+**結果**: 部分的に効いた
+
+- プロンプトの実行中、JUnitのタイミングでエラーになっていた。
+```
+[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:0.8.12:report (jacoco-report) on project tsubuyaki-board: An error has occurred in JaCoCo report generation. Error while creating report: Unknown block type 4b. -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+```
+
+**振り返り**:
+
+- codexとしては正常に動作しているが、環境による不具合が起きることがある。
+時間短縮のために作業終了前に実行をかけて終了したが、途中で止まってしまうこともあるので随時確認できるならした方が良い。
+
+---
+
+## プロンプト 12
+
+**フェーズ**: M4 Jacocoの不具合解消
+
+**プロンプト本文**:
+
+```
+Jacocoがおかしくなっているのか、テストを実行すると以下のエラーになります。 `mvn clean` をして再度テスト実行してみてください。
+
+[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:0.8.12:report (jacoco-report) on project tsubuyaki-board: An error has occurred in JaCoCo report generation. Error while creating report: Unknown block type 4b. -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+```
+
+**結果**: 効いた
+
+- mvn clean を実行してくれた。
+- JUnitが通るようになり、画面も表示できるようになった。
+
+**振り返り**:
+
+- コマンドを指定したら実施してくれる。
+
+---
+
+## プロンプト 13
+
+**フェーズ**: M5
+
+**プロンプト本文**:
+
+```
+/actuator/health の動作確認を実施します。
+- UPが返却されることを確認
+- status codeが200であることを確認
+```
+
+**結果**: 効いた
+
+- 変更差分はなく、動作確認だけが実施された。
+
+**振り返り**:
+
+- 変更の要否を正しく判断できていた。
+
+---
+
+## プロンプト 14
+
+**フェーズ**: S1
+
+**プロンプト本文**:
+
+* 他の人のプロンプトを参考に改良した。([]タイトルを追加) [grill-meスキルの内容](https://github.com/ryonakae/dotfiles/blob/master/config/.agents/skills/dig/SKILL.md?plain=1)を追加した。
+```
+POST /posts/{id}/likes で いいねトグルを実装する。
+TDDにて実装してください。
+
+[受け入れ条件]
+- 同一 clientHash (= ハッシュ化された IP + UA、SHA-256 の先頭 8 文字) が再度押したら解除
+- 詳細画面でいいね数と Like ボタン表示
+
+[実装詳細]
+-  一覧画面(list.html)にいいね数の表示を追加する。
+  - 一覧画面表示時にいいね数の取得を追加する。
+- 詳細画面(detail.html)にLike ボタン、いいね数を追加する。
+- Likeボタンを押下時、POST /posts/{id}/likesを呼び出す。
+  -  clientHashにてすでにいいねをしているかどうかを判定
+  - いいねしていない場合はいいね数を増やす(clientHashを登録)
+  - いいねしている場合はいいね数を減らす(clientHashの登録を解除)
+  - いいねトグル処理が終わったら、status code: 200とし、詳細画面を表示する（画面移動しない）。
+-  /posts/{id}/likesのidが存在しない場合はstatus code: 404にする。
+
+[前提]
+以下の観点のテストを用意してから本機能の実装を行う。
+- 一覧画面にいいね数の表示があること。
+- 一覧画面表示データ取得処理でいいね数が正しく取得できること。(0件、複数件)
+- POST /posts/{id}/likesでidが存在しない場合にstatus code: 404になること。
+- POST /posts/{id}/likesでidが存在する場合にstatus code: 200になること。詳細画面が表示されること。
+- 詳細画面(detail.html)にLike ボタン、いいね数の表示があること。
+- clientHashがある場合、いいね数が減ること
+- clientHashがない場合、いいね数が増えること
+
+[その他]
+- プラン・設計・意思決定のあらゆる側面について、共通の理解に達するまでユーザーに徹底的に質問する。甘い回答や曖昧な返答には突っ込む。設計ツリーの各分岐をたどり、判断の依存関係を一つずつ解決する。「幅」より「深さ」を優先する。新たな洞察が得られなくなるまで1つのテーマを掘り下げてから、次へ進む。
+- 質問は必ず一度に一つずつ行うこと。質問には、推奨回答も提示する。
+各質問の前に、コードベースの関連箇所を調べる。調べればわかることは聞かない。
+質問フォーマット:
+---
+### Q[番号]: [質問文]
+
+[なぜこの質問が重要か]
+
+- **A** — [選択肢]
+- **B** — [選択肢]
+- ...
+
+**推奨: [A/B/...]** — [理由]
+---
+- 論点を掘り尽くしたら終了を提案する。続行を求められれば続ける。
+終了時のまとめフォーマット:
+---
+## まとめ
+
+### 決まったこと
+- ...
+---
+```
+
+**結果**: 部分的に効いた
+
+- grill-meによって詳細を詰めることができた。
+  - A
+    ```
+      ### Q1: いいね状態は post_likes の別テーブルで管理してよいですか？
+
+      既存 DB は posts テーブルのみで、Post Entity にもいいね数や clientHash の保持先がありません。受け入れ条件の「clientHash を登録/解除」「同一 clientHash が再度押したら解除」を正しく満たすには、永続化設計を先に決める必要があります。
+
+      - A — post_likes テーブルを追加する
+        post_id, client_hash, created_at を持たせ、(post_id, client_hash) に一意制約を張る。いいね数は COUNT(*) で取得する。
+
+      - B — posts テーブルに like_count だけ追加する
+        数は持てるが、clientHash ごとの押下済み判定を別途保持できないため、受け入れ条件を満たすには結局別の保存先が必要になる。
+
+      - C — メモリ上の Map で保持する
+        実装は軽いが、アプリ再起動で消える。Repository テストや DB 整合性の観点でも弱い。
+
+      推奨: A — clientHash 単位のトグルを DB 制約で守れるため、同時押下や重複登録に対して一番堅いです。
+    ```
+  - A
+    ```
+      ### Q2: clientHash の元になる IP は request.getRemoteAddr() を使う方針でよいですか？
+
+      既存コードに X-Forwarded-For や Forwarded Header の処理、Security/CSRF 設定は見当たりませんでした。今回の仕様は「ハッシュ化された IP + UA、SHA-256 の先頭 8 文字」ですが、どの IP を採用するかで同一ユーザー判定が変わります。
+
+      - A — HttpServletRequest#getRemoteAddr() + User-Agent を使う
+        ローカル研修環境では単純で再現しやすい。MockMvc テストでも with(request -> request.setRemoteAddr(...)) と User-Agent ヘッダーで制御できる。
+
+      - B — X-Forwarded-For があれば先頭 IP を優先し、なければ getRemoteAddr() を使う
+        プロキシ配下の本番想定に近いが、ヘッダー偽装を許すため信頼できるプロキシ設定がない現状では設計が重くなる。
+
+      - C — IP は使わず User-Agent のみで hash する
+        仕様の「IP + UA」から外れる。
+
+      推奨: A — このリポの現状に合い、テストも明確です。プロキシ対応が必要になった時点で B に拡張できます。    
+    ```
+  - A
+    ```
+      ### Q3: 一覧/詳細で使う表示モデルは PostView のような DTO を新設してよいですか？
+
+      既存は PostService#latest() と findById() が Post Entity をそのまま返し、テンプレートも ${post.author} のように Entity を直接参照しています。一方、今回の要件では Post の内容に加えて likeCount が必要です。Post Entity に画面用の値を混ぜるか、表示用 DTO を作るかを
+      決める必要があります。
+
+      - A — web.dto.PostView を新設する
+        Post post と long likeCount を持つ表示モデルにする。テンプレートは ${post.post.author} か、getter 委譲で ${post.author} と ${post.likeCount} にする。
+
+      - B — Post Entity に likeCount フィールドを追加する
+        表示は楽だが、DB の posts テーブル列ではない集計値を Entity に混ぜることになり、JPA Entity の責務が曖昧になる。
+
+      - C — Controller で Map<Long, Long> を別 attribute として渡す
+        Entity はそのままだが、Thymeleaf 側が ${likeCounts[post.id]} のようになり、詳細/一覧で扱いが散らばる。
+
+      推奨: A — Service が「画面に必要な投稿 + いいね数」を組み立て、Controller/テンプレートは単純に表示できます。Entity に集計値を混ぜないので保守しやすいです。
+    ```
+  - A
+    ```
+      ### Q4: post_likes の主キーは (post_id, client_hash) の複合主キーでよいですか？
+
+      既存の posts は手動採番 ID + sequence ですが、いいねは「1 投稿につき同一 clientHash は 1 件だけ」が本質です。ここを DB 制約で表すか、別 ID を持たせて unique 制約を追加するかで Entity/Repository の形が変わります。
+
+      - A — (post_id, client_hash) を複合主キーにする
+        PostLikeId を @Embeddable で作り、PostLike が @EmbeddedId を持つ。重複禁止が主キーで表現でき、exists/delete/count が自然。
+
+      - B — id surrogate key を追加し、(post_id, client_hash) に unique 制約を張る
+        Entity は単純になるが、いいねに独自 ID の意味は薄い。制約は結局 unique で別途必要。
+
+      - C — post_id と client_hash を通常列にして制約なし
+        アプリ側だけで重複を防ぐため、同時押下やバグで重複いいねが入り得る。
+
+      推奨: A — 要件そのものを DB の主キーで表現でき、トグル処理の Repository メソッドも明確になります。
+    ```
+  - A でお願いします。期待値としては詳細画面を表示状態になり、いいね数が増減した結果が表示されていることを期待しています。
+    ```
+      ### Q5: POST /posts/{id}/likes 成功時はリダイレクトせず、posts/detail を直接再描画する仕様で確定してよいですか？
+
+      既存の投稿作成 POST は redirect:/posts ですが、今回の受け入れ条件には「status code: 200」「詳細画面を表示する」「画面移動しない」とあります。HTTP 的には POST 後リダイレクトも一般的ですが、その場合 status は 302 になり条件と矛盾します。
+
+      - A — 成功時は 200 OK で posts/detail を直接返す
+        URL は /posts/{id}/likes のまま、レスポンス本文として詳細画面 HTML を返す。受け入れ条件の status 200 と「画面移動しない」に最も忠実。
+
+      - B — 成功時は redirect:/posts/{id} にする
+        ブラウザ表示 URL は詳細ページに戻るが、status は 302 になるため受け入れ条件から外れる。
+
+      - C — 成功時は JSON {likeCount: ...} を返す
+        非同期 UI 向けだが、「詳細画面を表示する」と合わない。既存画面も通常フォーム中心。
+
+      推奨: A — 受け入れ条件とテスト観点にそのまま一致します。
+    ```
+  - 最終まとめ
+    ```
+      ## まとめ
+
+      ### 決まったこと
+
+      - いいね状態は post_likes 別テーブルで永続化する。
+      - clientHash は HttpServletRequest#getRemoteAddr() と User-Agent を連結し、SHA-256 の先頭 8 文字で生成する。
+      - 一覧/詳細の表示モデルは PostView を新設して、投稿内容 + likeCount を渡す。
+      - post_likes の主キーは (post_id, client_hash) の複合主キーにする。
+      - POST /posts/{id}/likes 成功時はリダイレクトせず、200 OK で posts/detail を直接再描画する。
+      - POST 成功後の詳細画面には、更新後のいいね数を表示する。
+      - Spring Security / CSRF は今回追加せず、既存構成のまま通常 POST フォームで実装する。
+
+      ### これ以上の質問
+
+      現時点で実装判断に必要な論点は十分に解決しました。続行する場合は、この内容で TDD 実装に入れます。
+    ```
+- 途中で以下のエラーがでて止まってしまった。
+```
+■ Quota exceeded. Check your plan and billing details.
+```
+- JUnitでまたJacocoのエラーが出るようになってしまった。(mvn clean 再度実行依頼)
+```
+[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:0.8.12:report (jacoco-report) on project tsubuyaki-board: An error has occurred in JaCoCo report generation. Error while creating report: Unknown block type 49. -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+```
+- `補足: coverage は 0.20 < 0.60 の warning が出ていますが、現在の POM 設定では warning 扱いのためビルド自体は成功しています。`と言われてしまった。
+- Likeを押したことがあるかどうかがわかりにくい。ボタンの文言を切り替えられないだろうか？
+- likeボタン押下後、リロードするとトグルされてしまう。（URLが変わってしまうため）
+
+**振り返り**:
+
+- （本来はskill定義に配置するものだと思うが）grill-meスキルを活用することで、指示が曖昧な部分を解消しながら勧められた。
+- Jacocoのエラーになった場合は `mvn clean` を実施して欲しいむねをあらかじめ記載しておいた方が良いかもしれない。途中で中断になってしまうとjacocoがエラーになりがちだと思われる。
+- 途中からカバレッジ率の確認を忘れてしまっていた。人間はプロンプトに記載するのを忘れてしまうのでルールに明示したい。(結果としてカバレッジ率を目視確認したが通して欲しい部分は通っていた。)
+
+---
+
+## プロンプト 15
+
+**フェーズ**: S1 Likeボタン押下後にリロードするといいねがトグルされてしまう
+
+**プロンプト本文**:
+
+```
+Likeボタン押下後、ブラウザでリロードするといいねがトグルされてしまいます。
+URLが /posts/{id}/likes になっていることが原因と思われます。
+/post/{id}にできないでしょうか？（他に良い方法があれば提案して欲しいです）
+```
+
+**結果**: 効いた
+
+- redirect:/posts/{id} するように修正された。
+
+**振り返り**:
+
+- 最初の指示で余計なことを言ってしまったため、挙動がおかしくなってしまっていた。(いいねトグル処理が終わったら、status code: 200とし、詳細画面を表示する（画面移動しない）)
+あまり理解していない部分については逆に指定しない方が良いかもしれない。
 
 ---
 
 ## プロンプト 3
 
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
+**フェーズ**: S1 Likeを押したことがあるかどうかがわかりにくい
 
 **プロンプト本文**:
 
 ```
+[依頼事項]
+Likeを押したことがあるかどうかがわかりにくいので、いいねしたことがあったら次の押下が解除になるようなことがわかる見た目にして欲しい。
 
-```
-
-**結果**: 効いた / 部分的に効いた / 効かなかった
-
-**振り返り**:
-
+[その他]
+- プラン・設計・意思決定のあらゆる側面について、共通の理解に達するまでユーザーに徹底的に質問する。甘い回答や曖昧な返答には突っ込む。設計ツリーの各分岐をたどり、判断の依存関係を一つずつ解決する。「幅」より「深さ」を優先する。新たな洞察が得られなくなるまで1つのテーマを掘り下げてから、次へ進む。
+- 質問は必ず一度に一つずつ行うこと。質問には、推奨回答も提示する。
+各質問の前に、コードベースの関連箇所を調べる。調べればわかることは聞かない。
+質問フォーマット:
 ---
+### Q[番号]: [質問文]
 
-## プロンプト 3
+[なぜこの質問が重要か]
 
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
+- **A** — [選択肢]
+- **B** — [選択肢]
+- ...
 
-**プロンプト本文**:
-
-```
-
-```
-
-**結果**: 効いた / 部分的に効いた / 効かなかった
-
-**振り返り**:
-
+**推奨: [A/B/...]** — [理由]
 ---
-
-## プロンプト 3
-
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
-
-**プロンプト本文**:
-
-```
-
-```
-
-**結果**: 効いた / 部分的に効いた / 効かなかった
-
-**振り返り**:
-
+- 論点を掘り尽くしたら終了を提案する。続行を求められれば続ける。
+終了時のまとめフォーマット:
 ---
+## まとめ
 
-## プロンプト 3
-
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
-
-**プロンプト本文**:
-
+### 決まったこと
+- ...
 ```
 
-```
+**結果**: 効いた
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+```
+  ### Q1: いいね済み状態は、詳細画面の GET 時に clientHash を計算して判定する方針でよいですか？
+
+  現状の PostView は likeCount だけを持っており、「この閲覧者が既にいいね済みか」は保持していません。見た目を変えるには、詳細画面表示時に remoteAddr + User-Agent から clientHash を作り、post_likes に存在するかを見て likedByCurrentClient のような値をテンプレートへ
+  渡す必要があります。
+
+  - A — 詳細画面 GET /posts/{id} で clientHash を計算し、PostView に likedByCurrentClient を追加する
+    Like 済みならボタン文言や色を変えられる。POST 後のリダイレクト先でも正しい状態を表示できる。
+
+  - B — GET では判定せず、POST 後だけ一時メッセージで「解除できます」と出す
+    初回表示や再訪時に状態が分からないため、依頼の「押したことがあるかどうかがわかりにくい」を根本解決しにくい。
+
+  - C — ブラウザの localStorage だけで Like 済み表示を切り替える
+    DB の clientHash 状態とズレる可能性があり、別ブラウザ/UA 変更時の整合性も弱い。
+
+  推奨: A — 現在のトグル判定と同じ clientHash を使うため、表示と実際の次アクションが一致します。
+```
+```
+  ### Q2: いいね済みの見た目は、ボタン文言を「Like」から「Liked（解除）」へ変え、強調色を付ける形でよいですか？
+
+  現状の詳細画面は常に Like ボタンだけで、CSS も .post__likes の件数表示のみです。状態を明確にするには、文字だけでなくボタン色/属性も変える方が読み取りやすく、テストもしやすいです。
+
+  - A — 未いいね: Like、いいね済み: Liked（解除） にして、いいね済みボタンを強調色にする
+    次に押すと解除されることが文言で分かり、視覚的にも状態が分かる。
+
+  - B — 未いいね: Like、いいね済み: Unlike にする
+    次の操作は分かるが、「現在いいね済み」という状態表示としては少し弱い。
+
+  - C — 文言は常に Like のまま、色だけ変える
+    色覚差や見落としがあり、依頼の「わかりにくい」を解消しきれない。
+
+  推奨: A — 現在状態と次アクションの両方が伝わり、既存の簡素な UI に小さく足せます。
+```
+```
+  ## まとめ
+
+  ### 決まったこと
+
+  - 詳細画面 GET /posts/{id} で、現在の閲覧者の clientHash を計算して「いいね済みか」を判定する。
+  - PostView に likedByCurrentClient 相当の状態を追加する。
+  - 未いいね状態はボタン文言を Like にする。
+  - いいね済み状態はボタン文言を Liked（解除） にし、強調色で表示する。
+  - 次に押すと解除されることが文言で分かる UI にする。
+
+  ### これ以上の質問
+
+  現時点で実装判断に必要な論点は解決しました。続行する場合は、この内容で TDD 実装に入れます。
+```
+- 相変わらずJacocoが途中でおかしくなる。。
 
 **振り返り**:
 
----
-
-## プロンプト 3
-
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
-
-**プロンプト本文**:
-
-```
-
-```
-
-**結果**: 効いた / 部分的に効いた / 効かなかった
-
-**振り返り**:
-
----
-
-## プロンプト 3
-
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
-
-**プロンプト本文**:
-
-```
-
-```
-
-**結果**: 効いた / 部分的に効いた / 効かなかった
-
-**振り返り**:
-
----
-
-## プロンプト 3
-
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
-
-**プロンプト本文**:
-
-```
-
-```
-
-**結果**: 効いた / 部分的に効いた / 効かなかった
-
-**振り返り**:
+- 見た目の問題はあるように思うが、最低限の機能は実装できた。
 
 ---
 

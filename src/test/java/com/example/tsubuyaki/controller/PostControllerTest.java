@@ -3,6 +3,7 @@ package com.example.tsubuyaki.controller;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import com.example.tsubuyaki.web.dto.PostView;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +12,16 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.BDDMockito.given;
@@ -69,7 +74,7 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿者内容投稿日の順に表示する")
     void list_whenPostsExist_rendersAuthorBodyCreatedAtInOrder() throws Exception {
         given(postService.latest()).willReturn(List.of(
-                new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))));
+                new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 0)));
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -80,6 +85,17 @@ class PostControllerTest {
         assertThat(html).contains("alice", "hello", "2026-05-23 19:00");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("hello"));
         assertThat(html.indexOf("hello")).isLessThan(html.indexOf("2026-05-23 19:00"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_いいね数を表示する")
+    void list_whenPostsExist_showsLikeCount() throws Exception {
+        given(postService.latest()).willReturn(List.of(
+                new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 3)));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("いいね 3")));
     }
 
     @Test
@@ -150,8 +166,8 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在するID_posts_detailを表示する")
     void detail_whenPostExists_returnsDetailView() throws Exception {
-        Post post = new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postService.findById(1L)).willReturn(Optional.of(post));
+        PostView post = new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 0);
+        given(postService.findById(eq(1L), anyString())).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
@@ -162,7 +178,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在しないID_404を返す")
     void detail_whenPostDoesNotExist_returnsNotFound() throws Exception {
-        given(postService.findById(999L)).willReturn(Optional.empty());
+        given(postService.findById(eq(999L), anyString())).willReturn(Optional.empty());
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
@@ -172,9 +188,9 @@ class PostControllerTest {
     @DisplayName("投稿一覧_article押下時_投稿詳細へ遷移できる")
     void list_whenArticleClicked_requestsPostDetail() throws Exception {
         given(postService.latest()).willReturn(List.of(
-                new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))));
-        given(postService.findById(1L)).willReturn(Optional.of(
-                new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))));
+                new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 0)));
+        given(postService.findById(eq(1L), anyString())).willReturn(Optional.of(
+                new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 0)));
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -191,13 +207,88 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_対象IDの投稿_投稿内容を表示する")
     void detail_whenPostExists_showsTargetPostContent() throws Exception {
-        given(postService.findById(2L)).willReturn(Optional.of(
-                new Post(2L, "bob", "対象IDの本文", Instant.parse("2026-05-24T10:00:00Z"))));
+        given(postService.findById(eq(2L), anyString())).willReturn(Optional.of(
+                new PostView(new Post(2L, "bob", "対象IDの本文", Instant.parse("2026-05-24T10:00:00Z")), 0)));
 
         mockMvc.perform(get("/posts/2"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("bob")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("対象IDの本文")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("2026-05-24 19:00")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_投稿があるとき_Likeボタンといいね数を表示する")
+    void detail_whenPostExists_showsLikeButtonAndLikeCount() throws Exception {
+        given(postService.findById(eq(1L), anyString())).willReturn(Optional.of(
+                new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 2)));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("いいね 2")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1/likes\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"post\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Like")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいね済みの場合_Liked解除ボタンを強調表示する")
+    void detail_whenAlreadyLiked_showsLikedCancelButton() throws Exception {
+        given(postService.findById(eq(1L), anyString())).willReturn(Optional.of(
+                new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 2, true)));
+
+        mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Liked（解除）")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("like-button--liked")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("aria-pressed=\"true\"")));
+
+        verify(postService).findById(eq(1L), eq(sha256Prefix8("192.0.2.1|JUnit UA")));
+    }
+
+    @Test
+    @DisplayName("いいね_POST_存在しないID_404を返す")
+    void like_whenPostDoesNotExist_returnsNotFound() throws Exception {
+        given(postService.toggleLike(eq(999L), anyString())).willReturn(Optional.empty());
+
+        mockMvc.perform(post("/posts/999/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("いいね_POST_存在するID_詳細画面へリダイレクトする")
+    void like_whenPostExists_redirectsToDetailView() throws Exception {
+        PostView post = new PostView(new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z")), 1);
+        given(postService.toggleLike(eq(1L), anyString())).willReturn(Optional.of(post));
+
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.1");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/posts/1"));
+
+        verify(postService).toggleLike(eq(1L), eq(sha256Prefix8("192.0.2.1|JUnit UA")));
+    }
+
+    private static String sha256Prefix8(String value) throws NoSuchAlgorithmException {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+        StringBuilder builder = new StringBuilder();
+        for (byte oneByte : digest) {
+            builder.append(String.format("%02x", oneByte));
+        }
+        return builder.substring(0, 8);
     }
 }
