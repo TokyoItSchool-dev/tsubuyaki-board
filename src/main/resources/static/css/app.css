@@ -1,16 +1,43 @@
-/* 最小スタイル — 受講生が必要に応じて拡張する */
+/* 画面全体で使う色を CSS 変数として定義する。 */
 :root {
-    --color-bg: #fafafa;
+    --color-bg: #f6f7fb;
     --color-text: #222;
     --color-accent: #1d4ed8;
-    --color-border: #e5e7eb;
+    --color-border: #d8dee8;
     --color-muted: #6b7280;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ffffff;
+    --color-control-bg: #ffffff;
+    --color-link: #1d4ed8;
+    --color-link-hover: #1e40af;
+    --color-danger: #dc2626;
+    --color-danger-hover: #b91c1c;
+    --color-danger-shadow: rgba(220, 38, 38, 0.26);
 }
 
+/* ダークモード時は同じCSS変数を暗色系に差し替える。 */
+.theme-dark {
+    --color-bg: #0f172a;
+    --color-text: #f9fafb;
+    --color-accent: #60a5fa;
+    --color-border: #4b5563;
+    --color-muted: #9ca3af;
+    --color-surface: #1f2937;
+    --color-surface-raised: #243244;
+    --color-control-bg: #111827;
+    --color-link: #93c5fd;
+    --color-link-hover: #bfdbfe;
+    --color-danger: #f87171;
+    --color-danger-hover: #fca5a5;
+    --color-danger-shadow: rgba(248, 113, 113, 0.3);
+}
+
+/* padding と border を要素幅に含め、レイアウト計算を安定させる。 */
 * {
     box-sizing: border-box;
 }
 
+/* アプリ全体の余白、フォント、背景色、文字色を設定する。 */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
@@ -18,39 +45,311 @@ body {
     background: var(--color-bg);
     color: var(--color-text);
     line-height: 1.6;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+/* メイン領域を読みやすい幅に制限し、中央寄せにする。 */
 main {
     max-width: 720px;
     margin: 2rem auto;
     padding: 0 1rem;
 }
 
+/* 画面見出しをコンパクトに表示する。 */
 h1 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
 }
 
+/* ナビゲーションリンクを背景色に埋もれない色で表示する。 */
+a {
+    color: var(--color-link);
+}
+
+/* リンクにカーソルを合わせたとき、少し明るい色へ変える。 */
+a:hover {
+    color: var(--color-link-hover);
+}
+
+.back-nav {
+    margin: 0 0 1rem;
+}
+
+.back-button {
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-control-bg);
+    color: var(--color-text);
+    display: inline-flex;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    text-decoration: none;
+}
+
+.back-button:hover,
+.back-button:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-link-hover);
+}
+
+/* ライト/ダークモードを切り替えるボタンを右寄せで表示する。 */
+.theme-toggle {
+    cursor: pointer;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-control-bg);
+    color: var(--color-text);
+    display: inline-flex;
+    margin: 0 0 1rem;
+    padding: 0.4rem 0.8rem;
+}
+
+/* 一覧画面の検索フォームを投稿一覧から少し離して配置する。 */
+.search-form {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+/* 検索キーワード入力欄を横幅いっぱいに広げる。 */
+.search-form input {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-control-bg);
+    color: var(--color-text);
+    flex: 1;
+    min-width: 0;
+    padding: 0.4rem 0.6rem;
+}
+
+/* 検索ボタンの見た目をシンプルな操作ボタンとして整える。 */
+.search-form button {
+    cursor: pointer;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-control-bg);
+    color: var(--color-text);
+    padding: 0.4rem 0.8rem;
+}
+
+/* 投稿フォームの入力欄を画面幅に合わせて扱いやすくする。 */
+form input,
+form select,
+form textarea {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-control-bg);
+    color: var(--color-text);
+    display: block;
+    margin: 0.25rem 0 0.75rem;
+    max-width: 100%;
+    padding: 0.4rem 0.6rem;
+    width: 100%;
+}
+
+/* 投稿ブロック全体を詳細画面へのリンクとして扱い、通常リンクの装飾を消す。 */
+.post-link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+
+/* マウス操作時にリンクであることが分かるよう、枠色を少し強調する。 */
+.post-link:hover .post {
+    border-color: var(--color-accent);
+    transform: scale(1.02);
+}
+
+/* 1件の投稿を白背景の枠付きブロックとして表示する。 */
 .post {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
     padding: 1rem;
     border: 1px solid var(--color-border);
     border-radius: 8px;
     margin-bottom: 0.75rem;
-    background: white;
+    background: var(--color-surface-raised);
 }
 
+.post__meta {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin: 0 0 0.5rem;
+}
+
+/* 投稿者名を本文より強く見せる。 */
 .post__author {
+    align-items: center;
+    display: flex;
+    gap: 0.45rem;
     font-weight: 600;
-    margin-right: 0.5rem;
+    margin: 0;
+    min-width: 0;
 }
 
+/* 投稿者が選んだ色を、小さな丸いアイコンとして表示する。 */
+.post__author-color {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 50%;
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 0.8rem;
+    width: 0.8rem;
+}
+
+/* 投稿日時を補助情報として控えめに表示する。 */
 .post__created-at {
     color: var(--color-muted);
+    flex: 0 0 auto;
     font-size: 0.85rem;
 }
 
+/* 長い本文や改行を崩さず、枠内で折り返して表示する。 */
 .post__body {
-    margin-top: 0.5rem;
+    margin: 0 0 0.5rem;
+    max-width: 100%;
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.65rem 0 0;
+}
+
+.tag-chip {
+    border: 1px solid color-mix(in srgb, var(--color-accent) 34%, var(--color-border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent) 11%, var(--color-surface));
+    color: var(--color-link);
+    display: inline-flex;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 0.18rem 0.5rem;
+}
+
+/* 投稿詳細画面で現在のいいね数を表示する。 */
+.post__likes {
+    font-weight: 600;
+    margin: 1rem 0 0.75rem;
+}
+
+/* Likeボタンのフォーム余白を整える。 */
+.post-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: space-between;
+    margin: 0.75rem 0 0;
+}
+
+.like-form,
+.delete-form {
+    margin: 0;
+}
+
+.like-form {
+    flex: 1 1 auto;
+}
+
+/* Likeボタンを投稿詳細内の主要操作として見やすくする。 */
+.like-form button,
+.like-button {
+    box-shadow: 0 4px 10px rgba(29, 78, 216, 0.18);
+    cursor: pointer;
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    background: var(--color-accent);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    position: relative;
+    transform: translateY(0) scale(1);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.delete-form {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.delete-button {
+    box-shadow: 0 4px 10px var(--color-danger-shadow);
+    cursor: pointer;
+    border: 1px solid var(--color-danger);
+    border-radius: 6px;
+    background: var(--color-danger);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.delete-button:hover,
+.delete-button:focus-visible {
+    background: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
+    box-shadow: 0 8px 18px var(--color-danger-shadow);
+}
+
+.delete-button:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+/* キーボード操作時に、フォーカス中であることを見た目で示す。 */
+.like-form button:focus-visible {
+    background: #1e40af;
+    box-shadow: 0 8px 18px rgba(29, 78, 216, 0.28);
+}
+
+/* Likeを押した瞬間に、軽く押し込まれる動きを付ける。 */
+.like-form button:active {
+    animation: like-button-press 1s ease-out;
+    background: #dc2626;
+    border-color: #dc2626;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.34);
+    transform: translateY(1px) scale(0.94);
+}
+
+/* 押下時にハートを押すような赤い弾みを定義する。 */
+@keyframes like-button-press {
+    0% {
+        background: #1e40af;
+        transform: translateY(-1px) scale(1.04);
+    }
+
+    45% {
+        background: #ef4444;
+        transform: translateY(1px) scale(0.94);
+    }
+
+    72% {
+        background: #dc2626;
+        transform: translateY(-1px) scale(1.08);
+    }
+
+    100% {
+        background: #1d4ed8;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* 動きを減らす設定の利用者には、アニメーションを抑えて状態変化だけにする。 */
+@media (prefers-reduced-motion: reduce) {
+    .like-form button {
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .like-form button:focus-visible,
+    .like-form button:active {
+        animation: none;
+        transform: none;
+    }
 }

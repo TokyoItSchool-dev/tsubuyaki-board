@@ -5,25 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>新規投稿 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/theme.js}" defer></script>
 </head>
 <body>
 <main>
     <h1>新規投稿</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
-    </nav>
+    <!-- ブラウザの localStorage に保存したテーマを切り替える。 -->
+    <button th:replace="~{fragments/common :: themeToggle}"></button>
+    <!-- 一覧画面へ戻るためのナビゲーション。 -->
+    <nav th:replace="~{fragments/common :: backToListNav}"></nav>
 
-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
+    <!-- postForm に投稿者と本文をバインドし、投稿ボタン押下時に POST /post へ送信する。 -->
+    <form action="/post" th:action="@{/post}" th:object="${postForm}" method="post">
         <div>
+            <!-- 投稿者入力欄。PostForm.author にバインドする。 -->
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
+            <!-- 投稿者が未入力または空白だけの場合、バリデーションエラーを表示する。 -->
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
         <div>
+            <!-- 投稿者名の左に表示する色を、扱いやすいプリセットから選択する。 -->
+            <label for="authorColor">投稿者カラー</label>
+            <select id="authorColor" th:field="*{authorColor}">
+                <option value="#6b7280">灰色</option>
+                <option value="#ef4444">赤</option>
+                <option value="#f97316">オレンジ</option>
+                <option value="#22c55e">緑</option>
+                <option value="#3b82f6">青</option>
+                <option value="#a855f7">紫</option>
+            </select>
+            <!-- 想定外のカラーコードが送信された場合、バリデーションエラーを表示する。 -->
+            <p class="error" th:if="${#fields.hasErrors('authorColor')}" th:errors="*{authorColor}">エラー</p>
+        </div>
+        <div>
+            <!-- 本文入力欄。PostForm.body にバインドする。 -->
             <label for="body">本文 (280 文字まで)</label>
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
+            <!-- 本文が未入力または空白だけの場合、バリデーションエラーを表示する。 -->
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
+        <!-- フォーム内容をサーバへ送信し、投稿作成処理を実行する。 -->
         <button type="submit">投稿</button>
     </form>
 </main>

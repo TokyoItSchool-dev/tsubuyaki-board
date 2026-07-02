@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/theme.js}" defer></script>
+    <script th:src="@{/js/tags.js}" defer></script>
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <button th:replace="~{fragments/common :: themeToggle}"></button>
+    <nav th:replace="~{fragments/common :: backToListNav}"></nav>
+
+    <article class="post post--detail">
+        <div class="post__meta">
+            <p class="post__author">
+                <span class="post__author-color"
+                      th:style="'background-color: ' + ${post.authorColor}"
+                      aria-hidden="true"></span>
+                <span th:text="${post.author}">投稿者</span>
+            </p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        </div>
+
+        <p class="post__body" th:text="${post.body}">本文</p>
+        <div class="post__tags" data-tag-container aria-label="tags"></div>
+
+        <p class="post__likes">いいね <span th:text="${likeCount}">0</span></p>
+
+        <div class="post-actions">
+            <form class="like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                <button class="like-button" type="submit"><span aria-hidden="true">&hearts;</span> Like</button>
+            </form>
+            <form class="delete-form"
+                  th:action="@{/posts/{id}/delete(id=${post.id})}"
+                  method="post"
+                  onsubmit="return confirm('この投稿を削除しますか？');">
+                <button class="delete-button" type="submit">投稿削除</button>
+            </form>
+        </div>
+    </article>
+</main>
+</body>
+</html>

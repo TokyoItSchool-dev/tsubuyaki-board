@@ -1,0 +1,3 @@
+ALTER TABLE posts ADD (
+    author_color VARCHAR2(7 CHAR) DEFAULT '#6b7280' NOT NULL
+);
