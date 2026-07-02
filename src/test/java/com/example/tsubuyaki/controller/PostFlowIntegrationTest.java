@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,9 +32,13 @@ class PostFlowIntegrationTest {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private TagRepository tagRepository;
+
     @AfterEach
     void tearDown() {
         postRepository.deleteAll();
+        tagRepository.deleteAll();
     }
 
     @Test
@@ -72,5 +78,30 @@ class PostFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("no-color-user")))
                 .andExpect(content().string(containsString("post__avatar post__avatar--gray")));
+    }
+
+    @Test
+    @DisplayName("投稿作成_ハッシュタグあり_タグを重複せず保存しタグ別一覧へ遷移できる")
+    void 投稿作成_ハッシュタグあり_タグを重複せず保存しタグ別一覧へ遷移できる() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "tag-user")
+                        .param("body", "#Java #java #spring_3 を試す")
+                        .param("avatarColor", "blue"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        assertThat(tagRepository.findAll())
+                .extracting(tag -> tag.getName())
+                .containsExactlyInAnyOrder("java", "spring_3");
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/tags/java\"")))
+                .andExpect(content().string(containsString("href=\"/tags/spring_3\"")));
+
+        mockMvc.perform(get("/tags/java"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("tag-user")))
+                .andExpect(content().string(containsString("#Java #java #spring_3 を試す")));
     }
 }

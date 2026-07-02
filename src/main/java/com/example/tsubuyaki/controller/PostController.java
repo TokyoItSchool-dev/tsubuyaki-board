@@ -19,6 +19,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -69,6 +70,14 @@ public class PostController {
                     return "posts/detail";
                 })
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND));
+    }
+
+    @GetMapping("/tags/{name}")
+    public String tagPosts(@PathVariable String name, Model model) {
+        String normalized = name.toLowerCase(Locale.ROOT);
+        model.addAttribute("tagName", normalized);
+        model.addAttribute("posts", postService.findByTag(normalized));
+        return "tags/show";
     }
 
     @PostMapping("/posts/{id}/likes")

@@ -1,8 +1,10 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,6 +30,9 @@ class PostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private TagRepository tagRepository;
 
     @InjectMocks
     private PostService postService;
@@ -108,6 +114,53 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿作成_本文にハッシュタグあり_小文字化して投稿へ紐づける")
+    void 投稿作成_本文にハッシュタグあり_小文字化して投稿へ紐づける() {
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        given(tagRepository.findByName("java")).willReturn(Optional.empty());
+        given(tagRepository.findByName("spring_3")).willReturn(Optional.empty());
+        given(tagRepository.save(new Tag("java"))).willReturn(new Tag("java"));
+        given(tagRepository.save(new Tag("spring_3"))).willReturn(new Tag("spring_3"));
+
+        postService.create("tanaka", "#Java と #spring_3 を学ぶ", "blue");
+
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getTags())
+                .extracting(Tag::getName)
+                .containsExactly("java", "spring_3");
+    }
+
+    @Test
+    @DisplayName("投稿作成_同一タグが複数回出る_タグを重複登録しない")
+    void 投稿作成_同一タグが複数回出る_タグを重複登録しない() {
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        given(tagRepository.findByName("java")).willReturn(Optional.of(new Tag("java")));
+
+        postService.create("tanaka", "#Java #java #JAVA", "blue");
+
+        verify(tagRepository, atMostOnce()).findByName("java");
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getTags())
+                .extracting(Tag::getName)
+                .containsExactly("java");
+    }
+
+    @Test
+    @DisplayName("投稿作成_不正タグあり_英数字アンダースコア以外はタグにしない")
+    void 投稿作成_不正タグあり_英数字アンダースコア以外はタグにしない() {
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        given(tagRepository.findByName("ok_1")).willReturn(Optional.empty());
+        given(tagRepository.save(new Tag("ok_1"))).willReturn(new Tag("ok_1"));
+
+        postService.create("tanaka", "# #! #ok_1 #日本語", "blue");
+
+        verify(postRepository).save(captor.capture());
+        assertThat(captor.getValue().getTags())
+                .extracting(Tag::getName)
+                .containsExactly("ok_1");
+    }
+
+    @Test
     @DisplayName("投稿詳細_取得するとき_RepositoryからIDで検索する")
     void 投稿詳細_取得するとき_RepositoryからIDで検索する() {
         Post post = new Post("tanaka", "本文", LocalDateTime.parse("2026-05-23T09:00:00"));
@@ -117,5 +170,17 @@ class PostServiceTest {
 
         assertThat(foundPost).contains(post);
         verify(postRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("タグ別投稿一覧_タグ名指定_小文字化してRepositoryから取得する")
+    void タグ別投稿一覧_タグ名指定_小文字化してRepositoryから取得する() {
+        List<Post> posts = List.of(new Post("alice", "#java", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByTagsNameOrderByCreatedAtDesc("java")).willReturn(posts);
+
+        List<Post> foundPosts = postService.findByTag(" Java ");
+
+        assertThat(foundPosts).isEqualTo(posts);
+        verify(postRepository).findTop50ByTagsNameOrderByCreatedAtDesc("java");
     }
 }

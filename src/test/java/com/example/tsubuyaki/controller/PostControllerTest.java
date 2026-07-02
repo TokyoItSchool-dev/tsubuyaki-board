@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
@@ -107,6 +108,22 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("詳細")))
                 .andExpect(content().string(not(containsString("/posts/null"))))
                 .andExpect(content().string(not(containsString("/posts/undefined"))));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_タグあり_タグリンクを表示する")
+    void list_postWithTags_rendersTagLinks() throws Exception {
+        Post post = new Post(
+                "tanaka",
+                "#java の本文です",
+                LocalDateTime.parse("2026-05-23T09:00:00"));
+        post.addTag(new Tag("java"));
+        given(postService.search(null)).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/tags/java\"")))
+                .andExpect(content().string(containsString("#java")));
     }
 
     @Test
@@ -250,6 +267,7 @@ class PostControllerTest {
                 "詳細画面に表示する本文です",
                 LocalDateTime.parse("2026-05-23T09:00:00"),
                 "red");
+        post.addTag(new Tag("java"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postService.countLikes(1L)).willReturn(3L);
 
@@ -265,7 +283,43 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("2026-05-23 09:00")))
                 .andExpect(content().string(containsString("いいね 3")))
                 .andExpect(content().string(containsString("action=\"/posts/1/likes\"")))
+                .andExpect(content().string(containsString("href=\"/tags/java\"")))
+                .andExpect(content().string(containsString("#java")))
                 .andExpect(content().string(containsString("method=\"post\"")));
+    }
+
+    @Test
+    @DisplayName("タグ別投稿一覧_存在するタグ_該当投稿を表示する")
+    void tagPosts_existingTag_rendersTaggedPosts() throws Exception {
+        Post post = new Post(
+                "tanaka",
+                "#java の投稿です",
+                LocalDateTime.parse("2026-05-23T09:00:00"));
+        post.addTag(new Tag("java"));
+        given(postService.findByTag("java")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/tags/java"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("tags/show"))
+                .andExpect(model().attribute("tagName", "java"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(content().string(containsString("#java の投稿です")))
+                .andExpect(content().string(containsString("href=\"/tags/java\"")));
+
+        verify(postService).findByTag("java");
+    }
+
+    @Test
+    @DisplayName("タグ別投稿一覧_存在しないタグ_空一覧を表示する")
+    void tagPosts_missingTag_rendersEmptyList() throws Exception {
+        given(postService.findByTag("missing")).willReturn(List.of());
+
+        mockMvc.perform(get("/tags/missing"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("tags/show"))
+                .andExpect(model().attribute("tagName", "missing"))
+                .andExpect(model().attribute("posts", List.of()))
+                .andExpect(content().string(containsString("#missing の投稿はありません")));
     }
 
     @Test

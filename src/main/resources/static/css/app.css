@@ -141,3 +141,20 @@ h1 {
     overflow-wrap: anywhere;
     word-break: break-word;
 }
+
+.post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.post__tag {
+    color: var(--color-accent);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.post__tag:hover {
+    text-decoration: underline;
+}

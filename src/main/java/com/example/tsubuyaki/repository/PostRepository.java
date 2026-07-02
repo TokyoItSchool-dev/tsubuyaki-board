@@ -10,4 +10,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findTop50ByOrderByCreatedAtDesc();
 
     List<Post> findTop50ByBodyContainingOrderByCreatedAtDesc(String q);
+
+    List<Post> findTop50ByTagsNameOrderByCreatedAtDesc(String name);
 }

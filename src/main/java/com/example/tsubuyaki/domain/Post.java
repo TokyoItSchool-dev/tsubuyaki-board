@@ -5,13 +5,19 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.type.descriptor.jdbc.TimestampJdbcType;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "posts")
@@ -34,6 +40,13 @@ public class Post {
     @JdbcType(TimestampJdbcType.class)
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
     private LocalDateTime createdAt;
+
+    @ManyToMany
+    @JoinTable(
+            name = "post_tags",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags = new LinkedHashSet<>();
 
     protected Post() {
         // JPA
@@ -68,6 +81,15 @@ public class Post {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public Set<Tag> getTags() {
+        return Collections.unmodifiableSet(tags);
+    }
+
+    public void addTag(Tag tag) {
+        tags.add(tag);
+        tag.getPosts().add(this);
     }
 
     @Override
