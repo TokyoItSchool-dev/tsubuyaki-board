@@ -25,6 +25,9 @@ public class Post {
     @Column(name = "author", length = 30, nullable = false)
     private String author;
 
+    @Column(name = "avatar_color", length = 20)
+    private String avatarColor;
+
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
@@ -36,7 +39,12 @@ public class Post {
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, null, body, createdAt);
+    }
+
+    public Post(String author, String avatarColor, String body, Instant createdAt) {
         this.author = author;
+        this.avatarColor = avatarColor;
         this.body = body;
         this.createdAt = LocalDateTime.ofInstant(createdAt, ZoneId.systemDefault());
     }
@@ -47,6 +55,10 @@ public class Post {
 
     public String getAuthor() {
         return author;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
     }
 
     public String getBody() {

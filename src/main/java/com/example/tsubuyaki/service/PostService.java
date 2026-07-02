@@ -53,7 +53,19 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body) {
-        return repository.save(new Post(author, body, Instant.now()));
+        return create(author, null, body);
+    }
+
+    @Transactional
+    public Post create(String author, String avatarColor, String body) {
+        return repository.save(new Post(author, normalizeAvatarColor(avatarColor), body, Instant.now()));
+    }
+
+    private String normalizeAvatarColor(String avatarColor) {
+        if (!StringUtils.hasText(avatarColor)) {
+            return null;
+        }
+        return avatarColor;
     }
 
     @Transactional

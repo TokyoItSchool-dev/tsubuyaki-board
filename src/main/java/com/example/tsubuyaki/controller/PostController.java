@@ -64,7 +64,7 @@ public class PostController {
             model.addAttribute("q", keyword);
             return "posts/form";
         }
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getAvatarColor(), postForm.getBody());
         if (StringUtils.hasText(keyword)) {
             return "redirect:/posts?q=" + UriUtils.encodeQueryParam(keyword, StandardCharsets.UTF_8);
         }

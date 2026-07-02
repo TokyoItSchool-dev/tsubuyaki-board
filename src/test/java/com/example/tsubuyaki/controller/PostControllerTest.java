@@ -152,6 +152,26 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿者名拡張_フォームで任意のアバター色を選択して投稿できる")
+    void 投稿者名拡張_フォームで任意のアバター色を選択して投稿できる() throws Exception {
+        mockMvc.perform(get("/posts/form"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<select[^>]*name=\"avatarColor\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<option[^>]*value=\"blue\"[^>]*>\\s*Blue\\s*</option>.*")));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("avatarColor", "blue")
+                        .param("body", "アバター色つき投稿です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postRepository).save(argThat(post -> "alice".equals(post.getAuthor())
+                && "blue".equals(post.getAvatarColor())
+                && "アバター色つき投稿です".equals(post.getBody())));
+    }
+
+    @Test
     @DisplayName("投稿作成_検索中に新規投稿した場合_検索条件を維持して一覧へ戻る")
     void 投稿作成_検索中に新規投稿した場合_検索条件を維持して一覧へ戻る() throws Exception {
         mockMvc.perform(get("/posts").param("q", "共有"))

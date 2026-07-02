@@ -11,6 +11,9 @@ public class PostForm {
     @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
     private String author;
 
+    @Pattern(regexp = "|blue|green|pink|gray", message = "アバター色を選び直してください")
+    private String avatarColor;
+
     @NotNull(message = "本文を入力してください")
     @Pattern(regexp = "(?U).*\\S.*", message = "本文を入力してください")
     @Size(max = 280, message = "本文は 280 文字以内で入力してください")
@@ -25,6 +28,14 @@ public class PostForm {
 
     public void setAuthor(String author) {
         this.author = author;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
     }
 
     public String getBody() {
