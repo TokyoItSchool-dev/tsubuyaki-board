@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -59,9 +60,8 @@ class PostControllerListTest {
     @Test
     @DisplayName("投稿一覧_投稿は投稿者内容投稿日の順に表示する")
     void list_rendersAuthorBodyCreatedAtInOrder() throws Exception {
-        given(postService.search(null)).willReturn(List.of(
-                new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "red")
-        ));
+        Post post = postWithId(1L, "alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "red");
+        given(postService.search(null)).willReturn(List.of(post));
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -73,6 +73,22 @@ class PostControllerListTest {
         assertThat(html).contains("avatar--red");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("朝の共有です"));
         assertThat(html.indexOf("朝の共有です")).isLessThan(html.indexOf("2026-05-23 19:00"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿カード_クリックすると詳細画面へ遷移できるリンクを持つ")
+    void list_postCard_linksToDetailWhileKeepingLayout() throws Exception {
+        Post post = postWithId(1L, "alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "red");
+        given(postService.search(null)).willReturn(List.of(post));
+
+        String html = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("class=\"post\"", "class=\"post__link\"", "href=\"/posts/1\"");
+        assertThat(html).contains("post__content", "post__author-row", "avatar--red", "post__body", "post__created-at");
     }
 
     @Test
@@ -107,5 +123,11 @@ class PostControllerListTest {
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", Collections.emptyList()))
                 .andExpect(content().string(containsString("該当する投稿はありません")));
+    }
+
+    private static Post postWithId(Long id, String author, String body, Instant createdAt, String avatarColor) {
+        Post post = new Post(author, body, createdAt, avatarColor);
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
     }
 }

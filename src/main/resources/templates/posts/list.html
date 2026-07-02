@@ -29,16 +29,18 @@
         <p class="empty-message" th:if="${#lists.isEmpty(posts) and !searched}">まだ投稿はありません</p>
         <p class="empty-message" th:if="${#lists.isEmpty(posts) and searched}">該当する投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <div class="post__content">
-                <div class="post__author-row">
-                    <span th:class="'avatar avatar--' + ${post.avatarColor}" aria-hidden="true"></span>
-                    <span class="post__author" th:text="${post.author}">投稿者</span>
+            <a class="post__link" th:href="@{/posts/{id}(id=${post.id})}">
+                <div class="post__content">
+                    <div class="post__author-row">
+                        <span th:class="'avatar avatar--' + ${post.avatarColor}" aria-hidden="true"></span>
+                        <span class="post__author" th:text="${post.author}">投稿者</span>
+                    </div>
+                    <p class="post__body" th:text="${post.body}">本文</p>
+                    <time class="post__created-at"
+                          th:datetime="${post.createdAt}"
+                          th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
                 </div>
-                <p class="post__body" th:text="${post.body}">本文</p>
-                <time class="post__created-at"
-                      th:datetime="${post.createdAt}"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-            </div>
+            </a>
         </article>
     </section>
 </main>

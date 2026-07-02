@@ -54,11 +54,26 @@ h1 {
 }
 
 .post {
-    padding: 1rem;
     border: 1px solid var(--color-border);
     border-radius: 8px;
     margin-bottom: 0.75rem;
     background: white;
+    cursor: pointer;
+}
+
+.post:hover {
+    border-color: var(--color-accent);
+}
+
+.post__link,
+.post__link:visited,
+.post__link:hover,
+.post__link:active {
+    display: block;
+    padding: 1rem;
+    color: var(--color-text);
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .post__content {
