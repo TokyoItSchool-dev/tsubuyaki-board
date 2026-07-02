@@ -15,10 +15,17 @@
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
 
+    <form class="search-form" th:action="@{/posts}" method="get">
+        <label for="q">キーワード検索</label>
+        <input type="search" id="q" name="q" th:value="${q}" maxlength="280">
+        <button type="submit">検索</button>
+    </form>
+
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
         <article class="post" th:each="post : ${posts}">
             <header>
+                <span class="avatar" th:classappend="${'avatar--' + post.avatarColor}" aria-hidden="true"></span>
                 <span class="post__author" th:text="${post.author}">投稿者</span>
                 <span class="post__created-at"
                       th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>

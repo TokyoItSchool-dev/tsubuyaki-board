@@ -19,6 +19,15 @@
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
+        <fieldset class="avatar-field">
+            <legend>アバター色</legend>
+            <label class="avatar-option" th:each="color : ${avatarColors}">
+                <input type="radio" th:field="*{avatarColor}" th:value="${color}">
+                <span class="avatar" th:classappend="${'avatar--' + color}" aria-hidden="true"></span>
+                <span th:text="${color}">gray</span>
+            </label>
+            <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
+        </fieldset>
         <div>
             <label for="body">本文 (280 文字まで)</label>
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>

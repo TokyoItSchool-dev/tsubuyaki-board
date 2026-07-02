@@ -26,16 +26,27 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
+    @Column(name = "avatar_color", length = 20, nullable = false)
+    private String avatarColor;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     protected Post() {
         // JPA
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, body, "gray", createdAt);
+    }
+
+    public Post(String author, String body, String avatarColor, Instant createdAt) {
         this.author = author;
         this.body = body;
+        this.avatarColor = avatarColor;
         this.createdAt = createdAt;
     }
 
@@ -51,8 +62,20 @@ public class Post {
         return body;
     }
 
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void delete(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override
