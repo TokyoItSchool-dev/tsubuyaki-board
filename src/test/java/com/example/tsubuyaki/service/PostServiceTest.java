@@ -13,6 +13,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentCaptor.forClass;
@@ -44,6 +45,18 @@ class PostServiceTest {
 
         assertThat(actual).isSameAs(posts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿詳細_findById_Repositoryの検索結果を返す")
+    void findById_returnsRepositoryResult() {
+        Post post = new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+
+        Optional<Post> actual = postService.findById(1L);
+
+        assertThat(actual).containsSame(post);
+        verify(postRepository).findById(1L);
     }
 
     @Test
