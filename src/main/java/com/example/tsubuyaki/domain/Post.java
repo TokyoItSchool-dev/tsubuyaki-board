@@ -34,6 +34,9 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     protected Post() {
         // JPA
     }
@@ -69,6 +72,10 @@ public class Post {
         return createdAt;
     }
 
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
     public void update(String author, String body) {
         update(author, body, DEFAULT_AVATAR_COLOR);
     }
@@ -77,6 +84,10 @@ public class Post {
         this.author = author;
         this.body = body;
         this.avatarColor = avatarColor;
+    }
+
+    public void delete(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override

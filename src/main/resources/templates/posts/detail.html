@@ -38,6 +38,15 @@
                 <button type="submit" th:text="${likedByClient} ? 'いいね解除' : 'いいね'">いいね</button>
             </form>
         </div>
+        <form class="post__delete-form"
+              method="post"
+              th:action="@{/posts/{id}/delete(id=${postId})}">
+            <input type="hidden"
+                   th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+            <button type="submit">削除</button>
+        </form>
     </article>
 </main>
 </body>

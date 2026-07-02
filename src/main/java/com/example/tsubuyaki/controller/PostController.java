@@ -61,6 +61,14 @@ public class PostController {
         return "redirect:/posts/" + id;
     }
 
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        if (!postService.delete(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "投稿が見つかりません");
+        }
+        return "redirect:/posts";
+    }
+
     @GetMapping("/posts/new")
     public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());

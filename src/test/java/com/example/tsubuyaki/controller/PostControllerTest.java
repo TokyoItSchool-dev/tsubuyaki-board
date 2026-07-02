@@ -403,6 +403,19 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_削除ボタン_posts_id_deleteへPOST送信する")
+    void detail_hasDeleteButtonPostingToDelete() throws Exception {
+        Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("action=\"/posts/42/delete\"")))
+                .andExpect(content().string(containsString("削除")));
+    }
+
+    @Test
     @DisplayName("いいね_POST_posts_id_likes_いいねを切り替えて詳細へリダイレクトする")
     void like_whenPostExists_togglesLikeAndRedirectsToDetail() throws Exception {
         given(postService.toggleLike(42L, "0a409f63")).willReturn(Optional.of(true));
@@ -430,6 +443,27 @@ class PostControllerTest {
                             return request;
                         })
                         .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_posts_id_delete_削除して一覧へリダイレクトする")
+    void delete_whenPostExists_deletesAndRedirectsToList() throws Exception {
+        given(postService.delete(42L)).willReturn(true);
+
+        mockMvc.perform(post("/posts/42/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(42L);
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_posts_id_delete_存在しないidは404を返す")
+    void delete_whenPostDoesNotExist_returns404() throws Exception {
+        given(postService.delete(999L)).willReturn(false);
+
+        mockMvc.perform(post("/posts/999/delete"))
                 .andExpect(status().isNotFound());
     }
 

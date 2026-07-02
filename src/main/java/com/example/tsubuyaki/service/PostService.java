@@ -25,7 +25,7 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return postRepository.findTop50ByOrderByCreatedAtDesc();
+        return postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     public List<Post> search(String query) {
@@ -33,11 +33,11 @@ public class PostService {
             return latest();
         }
 
-        return postRepository.findByBodyContainingOrderByCreatedAtDesc(query);
+        return postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(query);
     }
 
     public Optional<Post> findById(Long id) {
-        return postRepository.findById(id);
+        return postRepository.findByIdAndDeletedAtIsNull(id);
     }
 
     @Transactional
@@ -57,7 +57,7 @@ public class PostService {
 
     @Transactional
     public Optional<Post> update(Long id, String author, String body, String avatarColor) {
-        return postRepository.findById(id)
+        return postRepository.findByIdAndDeletedAtIsNull(id)
                 .map(post -> {
                     post.update(author, body, avatarColor);
                     postRepository.save(post);
@@ -67,8 +67,19 @@ public class PostService {
 
     @Transactional
     public Optional<Boolean> toggleLike(Long postId, String clientHash) {
-        return postRepository.findById(postId)
+        return postRepository.findByIdAndDeletedAtIsNull(postId)
                 .map(post -> toggleLike(postId, post, clientHash));
+    }
+
+    @Transactional
+    public boolean delete(Long id) {
+        return postRepository.findByIdAndDeletedAtIsNull(id)
+                .map(post -> {
+                    post.delete(Instant.now());
+                    postRepository.save(post);
+                    return true;
+                })
+                .orElse(false);
     }
 
     public long countLikes(Long postId) {

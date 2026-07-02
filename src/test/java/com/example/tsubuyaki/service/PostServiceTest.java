@@ -40,12 +40,12 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))
         );
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> actual = postService.latest();
 
         assertThat(actual).isSameAs(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
@@ -54,13 +54,13 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "abcを含む投稿", Instant.parse("2026-05-23T10:00:00Z"))
         );
-        given(postRepository.findByBodyContainingOrderByCreatedAtDesc("abc")).willReturn(posts);
+        given(postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("abc")).willReturn(posts);
 
         List<Post> actual = postService.search("abc");
 
         assertThat(actual).isSameAs(posts);
-        verify(postRepository).findByBodyContainingOrderByCreatedAtDesc("abc");
-        verify(postRepository, never()).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("abc");
+        verify(postRepository, never()).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
@@ -69,13 +69,13 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))
         );
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> actual = postService.search("");
 
         assertThat(actual).isSameAs(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
-        verify(postRepository, never()).findByBodyContainingOrderByCreatedAtDesc(anyString());
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        verify(postRepository, never()).findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(anyString());
     }
 
     @Test
@@ -96,19 +96,19 @@ class PostServiceTest {
     @DisplayName("投稿詳細_id指定_RepositoryのfindById結果を返す")
     void findById_returnsRepositoryResult() {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
 
         Optional<Post> actual = postService.findById(42L);
 
         assertThat(actual).containsSame(post);
-        verify(postRepository).findById(42L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(42L);
     }
 
     @Test
     @DisplayName("投稿編集_存在するid_アバター色を含む投稿を更新してRepositoryへ保存する")
     void update_whenPostExists_updatesAndSavesPostWithAvatarColor() {
         Post post = new Post("alice", "更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
 
         Optional<Post> actual = postService.update(42L, "bob", "更新後本文です", "green");
 
@@ -116,19 +116,19 @@ class PostServiceTest {
         assertThat(post.getAuthor()).isEqualTo("bob");
         assertThat(post.getBody()).isEqualTo("更新後本文です");
         assertThat(post.getAvatarColor()).isEqualTo("green");
-        verify(postRepository).findById(42L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(42L);
         verify(postRepository).save(post);
     }
 
     @Test
     @DisplayName("投稿編集_存在しないid_保存せず空を返す")
     void update_whenPostDoesNotExist_returnsEmpty() {
-        given(postRepository.findById(999L)).willReturn(Optional.empty());
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
 
         Optional<Post> actual = postService.update(999L, "bob", "更新後本文です");
 
         assertThat(actual).isEmpty();
-        verify(postRepository).findById(999L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(999L);
         verify(postRepository, never()).save(org.mockito.ArgumentMatchers.any(Post.class));
     }
 
@@ -136,7 +136,7 @@ class PostServiceTest {
     @DisplayName("いいね_未いいねの場合_いいねを保存してtrueを返す")
     void toggleLike_whenNotLiked_savesLikeAndReturnsTrue() {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234")).willReturn(Optional.empty());
 
         Optional<Boolean> actual = postService.toggleLike(42L, "abcd1234");
@@ -154,7 +154,7 @@ class PostServiceTest {
     void toggleLike_whenAlreadyLiked_deletesLikeAndReturnsFalse() {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
         PostLike like = new PostLike(post, "abcd1234", Instant.parse("2026-05-23T02:00:00Z"));
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234")).willReturn(Optional.of(like));
 
         Optional<Boolean> actual = postService.toggleLike(42L, "abcd1234");
@@ -167,7 +167,7 @@ class PostServiceTest {
     @Test
     @DisplayName("いいね_存在しない投稿の場合_保存削除せず空を返す")
     void toggleLike_whenPostDoesNotExist_returnsEmpty() {
-        given(postRepository.findById(999L)).willReturn(Optional.empty());
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
 
         Optional<Boolean> actual = postService.toggleLike(999L, "abcd1234");
 
@@ -195,5 +195,31 @@ class PostServiceTest {
 
         assertThat(actual).isTrue();
         verify(postLikeRepository).existsByPostIdAndClientHash(42L, "abcd1234");
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在するid_deletedAtをセットして保存しtrueを返す")
+    void delete_whenPostExists_setsDeletedAtAndReturnsTrue() {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
+
+        boolean actual = postService.delete(42L);
+
+        assertThat(actual).isTrue();
+        assertThat(post.getDeletedAt()).isNotNull();
+        verify(postRepository).findByIdAndDeletedAtIsNull(42L);
+        verify(postRepository).save(post);
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在しないid_保存せずfalseを返す")
+    void delete_whenPostDoesNotExist_returnsFalse() {
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
+
+        boolean actual = postService.delete(999L);
+
+        assertThat(actual).isFalse();
+        verify(postRepository).findByIdAndDeletedAtIsNull(999L);
+        verify(postRepository, never()).save(org.mockito.ArgumentMatchers.any(Post.class));
     }
 }

@@ -63,4 +63,15 @@ class PostTest {
         assertThat(post.getAvatarColor()).isEqualTo("green");
         assertThat(post.getCreatedAt()).isEqualTo(createdAt);
     }
+
+    @Test
+    @DisplayName("Post_削除時_deletedAtに削除日時を保持する")
+    void delete_setsDeletedAt() {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        Instant deletedAt = Instant.parse("2026-05-24T10:00:00Z");
+
+        post.delete(deletedAt);
+
+        assertThat(post.getDeletedAt()).isEqualTo(deletedAt);
+    }
 }
