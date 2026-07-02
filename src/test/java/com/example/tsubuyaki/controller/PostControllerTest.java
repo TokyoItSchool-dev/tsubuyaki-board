@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -88,6 +89,24 @@ class PostControllerTest {
 
         assertThat(html.indexOf("tanaka")).isLessThan(html.indexOf("表示順を確認する本文です"));
         assertThat(html.indexOf("表示順を確認する本文です")).isLessThan(html.indexOf("2026-05-23 09:00"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿IDあり_詳細画面へのリンクを表示する")
+    void list_postWithId_rendersDetailLink() throws Exception {
+        Post post = new Post(
+                "tanaka",
+                "詳細へ遷移する本文です",
+                LocalDateTime.parse("2026-05-23T09:00:00"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.search(null)).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/42\"")))
+                .andExpect(content().string(containsString("詳細")))
+                .andExpect(content().string(not(containsString("/posts/null"))))
+                .andExpect(content().string(not(containsString("/posts/undefined"))));
     }
 
     @Test
