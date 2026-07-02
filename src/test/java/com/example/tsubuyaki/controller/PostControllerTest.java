@@ -74,6 +74,22 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿検索_GET_posts_q指定_本文LIKE検索結果を一覧画面に表示する")
+    void 投稿検索_GET_posts_q指定_本文Like検索結果を一覧画面に表示する() throws Exception {
+        Post matched = new Post("alice", "今日の共有です", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("共有")).willReturn(List.of(matched));
+
+        mockMvc.perform(get("/posts").param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(matched)))
+                .andExpect(model().attribute("q", "共有"))
+                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<input[^>]*name=\"q\"[^>]*value=\"共有\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*今日の共有です.*")));
+    }
+
+    @Test
     @DisplayName("投稿一覧_更新ボタン_押すとpostsスラッシュへGETリクエストする")
     void 投稿一覧_更新ボタン_押すとpostsスラッシュへGetリクエストする() throws Exception {
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
