@@ -65,9 +65,14 @@ public class PostController {
     }
 
     @GetMapping("/tags/{name}")
-    public String listByTag(@PathVariable String name, Model model) {
-        model.addAttribute("posts", postService.listByTag(name));
+    public String listByTag(
+            @PathVariable String name,
+            @RequestParam(required = false) String sort,
+            Model model) {
+        String resolvedSort = resolveTagSort(sort);
+        model.addAttribute("posts", postService.listByTag(name, resolvedSort));
         model.addAttribute("tagName", name);
+        model.addAttribute("sort", resolvedSort);
         return "posts/list";
     }
 
@@ -98,5 +103,12 @@ public class PostController {
     }
 
     public record TagResponse(String name) {
+    }
+
+    private String resolveTagSort(String sort) {
+        if ("popular".equals(sort)) {
+            return "popular";
+        }
+        return "latest";
     }
 }

@@ -9,6 +9,7 @@ import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.PostTagRepository;
 import com.example.tsubuyaki.repository.TagRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -84,7 +85,17 @@ public class PostService {
     }
 
     public List<Post> listByTag(String tagName) {
-        return postTagRepository.findTop50ByTagNameOrderByPostCreatedAtDesc(tagName)
+        return listByTag(tagName, "latest");
+    }
+
+    public List<Post> listByTag(String tagName, String sort) {
+        if ("popular".equals(sort)) {
+            return postTagRepository.findByTagNameOrderByLikeCountDescCreatedAtDesc(tagName, PageRequest.of(0, 50))
+                    .stream()
+                    .map(PostTag::getPost)
+                    .toList();
+        }
+        return postTagRepository.findTop50ByTagNameOrderByPostCreatedAtDesc(tagName, PageRequest.of(0, 50))
                 .stream()
                 .map(PostTag::getPost)
                 .toList();
