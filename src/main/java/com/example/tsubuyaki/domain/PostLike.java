@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "post_likes")
@@ -26,13 +26,13 @@ public class PostLike {
     private String clientHash;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     protected PostLike() {
         // JPA
     }
 
-    public PostLike(Long postId, String clientHash, Instant createdAt) {
+    public PostLike(Long postId, String clientHash, LocalDateTime createdAt) {
         this.postId = postId;
         this.clientHash = clientHash;
         this.createdAt = createdAt;
@@ -50,7 +50,7 @@ public class PostLike {
         return clientHash;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 }

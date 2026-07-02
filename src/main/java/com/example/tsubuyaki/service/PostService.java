@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -69,6 +68,6 @@ public class PostService {
     public void toggleLike(Long postId, String clientHash) {
         likeRepository.findByPostIdAndClientHash(postId, clientHash)
                 .ifPresentOrElse(likeRepository::delete,
-                        () -> likeRepository.save(new PostLike(postId, clientHash, Instant.now())));
+                        () -> likeRepository.save(new PostLike(postId, clientHash, LocalDateTime.now())));
     }
 }

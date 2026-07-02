@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -120,5 +121,19 @@ class PostServiceTest {
 
         assertThat(deleted).isFalse();
         verify(postRepository).findByIdAndDeletedAtIsNull(999L);
+    }
+
+    @Test
+    @DisplayName("いいね_新規いいねのとき_DBのTIMESTAMP型に合わせた日時で保存する")
+    void いいね_新規いいねのとき_DBのTIMESTAMP型に合わせた日時で保存する() {
+        given(postLikeRepository.findByPostIdAndClientHash(1L, "abcd1234")).willReturn(Optional.empty());
+        ArgumentCaptor<PostLike> postLikeCaptor = ArgumentCaptor.forClass(PostLike.class);
+
+        postService.toggleLike(1L, "abcd1234");
+
+        verify(postLikeRepository).save(postLikeCaptor.capture());
+        PostLike savedLike = postLikeCaptor.getValue();
+        assertThat(savedLike.getCreatedAt()).isInstanceOf(LocalDateTime.class);
+        assertThat(savedLike.getCreatedAt()).isNotNull();
     }
 }
