@@ -25,22 +25,22 @@ class PostListLayoutTest {
     }
 
     @Test
-    @DisplayName("グットボタン_詳細画面_レイアウトが崩れない固定寸法と横並びCSSを持つ")
-    void グットボタン_詳細画面_レイアウトが崩れない固定寸法と横並びCSSを持つ() throws IOException {
+    @DisplayName("いいねボタン_詳細画面_レイアウトが崩れない固定寸法と横並びCSSを持つ")
+    void いいねボタン_詳細画面_レイアウトが崩れない固定寸法と横並びCSSを持つ() throws IOException {
         String css = new ClassPathResource("static/css/app.css")
                 .getContentAsString(StandardCharsets.UTF_8);
 
         assertThat(css).contains(".post__good-button");
         assertThat(css).contains("display: inline-flex");
         assertThat(css).contains("align-items: center");
-        assertThat(css).contains("min-width: 7rem");
+        assertThat(css).contains("min-width: 2.5rem");
         assertThat(css).contains("min-height: 2.25rem");
         assertThat(css).contains("white-space: nowrap");
     }
 
     @Test
-    @DisplayName("投稿詳細アクション_グットボタン追加後も_狭い画面で折り返して表示できる")
-    void 投稿詳細アクション_グットボタン追加後も_狭い画面で折り返して表示できる() throws IOException {
+    @DisplayName("投稿詳細アクション_いいねボタン追加後も_狭い画面で折り返して表示できる")
+    void 投稿詳細アクション_いいねボタン追加後も_狭い画面で折り返して表示できる() throws IOException {
         String css = new ClassPathResource("static/css/app.css")
                 .getContentAsString(StandardCharsets.UTF_8);
 
@@ -52,8 +52,8 @@ class PostListLayoutTest {
     }
 
     @Test
-    @DisplayName("グットボタン_グット済みのとき_黄色で表示するCSSを持つ")
-    void グットボタン_グット済みのとき_黄色で表示するCSSを持つ() throws IOException {
+    @DisplayName("いいねボタン_いいね済みのとき_黄色で表示するCSSを持つ")
+    void いいねボタン_いいね済みのとき_黄色で表示するCSSを持つ() throws IOException {
         String css = new ClassPathResource("static/css/app.css")
                 .getContentAsString(StandardCharsets.UTF_8);
 

@@ -25,15 +25,15 @@
               th:datetime="${post.createdAt}"
               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
         <div class="post__actions">
-            <span class="post__likes" th:text="|グット ${likeCount}|">グット 0</span>
+            <span class="post__likes" th:text="|いいね ${likeCount}|">いいね 0</span>
             <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
                 <input th:if="${_csrf != null}" type="hidden"
                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button class="post__good-button"
                         th:classappend="${liked} ? 'post__good-button--active' : ''"
                         type="submit"
-                        th:attr="aria-pressed=${liked}"
-                        th:text="${liked} ? '👍 グット取り消し' : '👍 グット'">👍 グット</button>
+                        th:attr="aria-pressed=${liked},aria-label=${liked} ? 'いいねを取り消す' : 'いいね'"
+                        th:text="'👍'">👍</button>
             </form>
             <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
                 <input th:if="${_csrf != null}" type="hidden"

@@ -182,14 +182,14 @@ class PostControllerTest {
                 .andExpect(model().attribute("liked", true))
                 .andExpect(content().string(containsString("alice")))
                 .andExpect(content().string(containsString("詳細を表示する投稿")))
-                .andExpect(content().string(containsString("グット 2")))
-                .andExpect(content().string(containsString("グット取り消し")));
+                .andExpect(content().string(containsString("いいね 2")))
+                .andExpect(content().string(containsString(">👍</button>")));
     }
 
     @Test
-    @DisplayName("投稿詳細_未グットのとき_無色のグットボタンを表示する")
-    void 投稿詳細_未グットのとき_無色のグットボタンを表示する() throws Exception {
-        Post post = new Post("alice", "未グットの投稿", Instant.parse("2026-05-23T10:00:00Z"));
+    @DisplayName("投稿詳細_未いいねのとき_無色のいいねボタンを表示する")
+    void 投稿詳細_未いいねのとき_無色のいいねボタンを表示する() throws Exception {
+        Post post = new Post("alice", "未いいねの投稿", Instant.parse("2026-05-23T10:00:00Z"));
         given(postService.findDetailPost(1L)).willReturn(Optional.of(post));
         given(postService.hasLiked(1L, clientHash("192.0.2.10", "MockBrowser/1.0"))).willReturn(false);
 
@@ -202,14 +202,14 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("class=\"post__good-button\"")))
                 .andExpect(content().string(containsString("aria-pressed=\"false\"")))
-                .andExpect(content().string(containsString("👍 グット")))
+                .andExpect(content().string(containsString(">👍</button>")))
                 .andExpect(content().string(not(containsString("post__good-button--active"))));
     }
 
     @Test
-    @DisplayName("投稿詳細_グット済みのとき_黄色のグットボタンを表示する")
-    void 投稿詳細_グット済みのとき_黄色のグットボタンを表示する() throws Exception {
-        Post post = new Post("alice", "グット済みの投稿", Instant.parse("2026-05-23T10:00:00Z"));
+    @DisplayName("投稿詳細_いいね済みのとき_黄色のいいねボタンを表示する")
+    void 投稿詳細_いいね済みのとき_黄色のいいねボタンを表示する() throws Exception {
+        Post post = new Post("alice", "いいね済みの投稿", Instant.parse("2026-05-23T10:00:00Z"));
         given(postService.findDetailPost(1L)).willReturn(Optional.of(post));
         given(postService.hasLiked(1L, clientHash("192.0.2.10", "MockBrowser/1.0"))).willReturn(true);
 
@@ -223,7 +223,28 @@ class PostControllerTest {
                 .andExpect(content().string(containsString(
                         "class=\"post__good-button post__good-button--active\"")))
                 .andExpect(content().string(containsString("aria-pressed=\"true\"")))
-                .andExpect(content().string(containsString("👍 グット取り消し")));
+                .andExpect(content().string(containsString(">👍</button>")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいね表示_グットとグッドの表記を表示しない")
+    void 投稿詳細_いいね表示_グットとグッドの表記を表示しない() throws Exception {
+        Post post = new Post("alice", "表記確認の投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findDetailPost(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.hasLiked(1L, clientHash("192.0.2.10", "MockBrowser/1.0"))).willReturn(false);
+
+        mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "MockBrowser/1.0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("いいね 3")))
+                .andExpect(content().string(containsString(">👍</button>")))
+                .andExpect(content().string(not(containsString("グット"))))
+                .andExpect(content().string(not(containsString("グッド"))));
     }
 
     @Test
