@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <nav>
+        <a th:href="${searchPerformed} ? @{/posts(q=${q})} : @{/posts}">一覧に戻る</a>
+    </nav>
+
+    <article class="post post--detail">
+        <dl class="post-detail">
+            <div class="post-detail__row">
+                <dt>ID</dt>
+                <dd th:text="${post.id}">1</dd>
+            </div>
+            <div class="post-detail__row">
+                <dt>投稿者</dt>
+                <dd th:text="${post.author}">投稿者</dd>
+            </div>
+            <div class="post-detail__row">
+                <dt>本文</dt>
+                <dd class="post__body" th:text="${post.body}">本文</dd>
+            </div>
+            <div class="post-detail__row">
+                <dt>投稿日時</dt>
+                <dd>
+                    <time th:datetime="${post.createdAt}"
+                          th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                </dd>
+            </div>
+        </dl>
+    </article>
+</main>
+</body>
+</html>

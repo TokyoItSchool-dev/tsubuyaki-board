@@ -31,6 +31,31 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.search-form,
+.reload-form {
+    margin-bottom: 1rem;
+}
+
+.search-form {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.search-form__label {
+    font-weight: 600;
+}
+
+.search-form input[type="search"] {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    flex: 1;
+    font: inherit;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -44,6 +69,17 @@ h1 {
     margin-right: 0.5rem;
 }
 
+.post__link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+
+.post__link:focus,
+.post__link:hover {
+    color: var(--color-accent);
+}
+
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;
@@ -53,4 +89,28 @@ h1 {
     margin-top: 0.5rem;
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.error {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.post-detail {
+    margin: 0;
+}
+
+.post-detail__row {
+    margin-bottom: 1rem;
+}
+
+.post-detail__row dt {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.post-detail__row dd {
+    margin: 0.25rem 0 0;
 }

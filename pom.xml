@@ -25,6 +25,7 @@
 
         <!-- 静的解析・カバレッジ -->
         <jacoco-plugin.version>0.8.12</jacoco-plugin.version>
+        <jacoco.exec.file>${java.io.tmpdir}/${project.artifactId}-jacoco.exec</jacoco.exec.file>
         <spotbugs-plugin.version>4.8.6.6</spotbugs-plugin.version>
         <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
         <checkstyle.version>10.18.2</checkstyle.version>
@@ -199,6 +200,10 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <destFile>${jacoco.exec.file}</destFile>
+                            <append>false</append>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>jacoco-report</id>
@@ -206,6 +211,9 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${jacoco.exec.file}</dataFile>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>jacoco-check</id>
@@ -214,6 +222,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <dataFile>${jacoco.exec.file}</dataFile>
                             <haltOnFailure>${jacoco.halt-on-failure}</haltOnFailure>
                             <rules>
                                 <rule>
