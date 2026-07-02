@@ -17,14 +17,35 @@
     <form class="refresh-form" th:action="@{/posts/}" method="get">
         <button type="submit">更新</button>
     </form>
+    <form class="search-form" th:action="@{/posts}" method="get">
+        <label for="q">検索:</label>
+        <input id="q" type="search" name="q" th:value="${query}">
+        <button type="submit">検索</button>
+    </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <h2 class="post-list__heading"
+            th:if="${tagName != null}"
+            th:text="|#${tagName} の投稿|">#Java の投稿</h2>
+        <p th:if="${#lists.isEmpty(posts) && tagName == null}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <p th:if="${#lists.isEmpty(posts) && tagName != null}"
+           th:text="|#${tagName} の投稿はまだありません。|">#Java の投稿はまだありません。</p>
         <article class="post" th:each="post : ${posts}">
             <div class="post__author-row">
+                <span class="post__avatar-color"
+                      th:classappend="${post.avatarColorCssClass()}"
+                      aria-hidden="true"></span>
                 <span class="post__author" th:text="${post.author}">投稿者</span>
             </div>
-            <p class="post__body" th:text="${post.body}">本文</p>
+            <a class="post__body post-link"
+               th:href="@{/posts/{id}(id=${post.id})}"
+               th:text="${post.displayBody}">本文</a>
+            <p class="post__tags" th:if="${!#lists.isEmpty(post.tagNames)}">
+                <a th:each="tag : ${post.tagNames}"
+                   class="post__tag post__tag--plain"
+                   th:href="@{/tags/{name}(name=${tag})}"
+                   th:text="|#${tag}|">#Java</a>
+            </p>
             <time class="post__created-at"
                   th:datetime="${post.createdAt}"
                   th:text="${post.createdAt}">2026-05-23T09:00:00Z</time>

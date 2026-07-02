@@ -1,6 +1,6 @@
 package com.example.tsubuyaki.sample;
 
-import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.repository.PostEntity;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,9 +30,9 @@ class SamplePostRepositoryTest {
     @Test
     @DisplayName("Repository_保存と取得_往復で同じ値が返る")
     void save_and_findAll_roundTrip() {
-        postRepository.save(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        postRepository.save(new PostEntity("alice", "BLUE", "hello", Instant.parse("2026-05-23T10:00:00Z")));
 
-        List<Post> all = postRepository.findAll();
+        List<PostEntity> all = postRepository.findAll();
 
         assertThat(all).hasSize(1);
         assertThat(all.get(0).getAuthor()).isEqualTo("alice");

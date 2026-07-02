@@ -15,9 +15,25 @@
 
     <article class="post">
         <div class="post__author-row">
+            <span class="post__avatar-color"
+                  th:classappend="${post.avatarColorCssClass()}"
+                  aria-hidden="true"></span>
             <span class="post__author" th:text="${post.author}">投稿者</span>
         </div>
-        <p class="post__body" th:text="${post.body}">本文</p>
+        <p class="post__body" th:text="${post.displayBody}">本文</p>
+        <p class="post__tags" th:if="${!#lists.isEmpty(post.tagNames)}">
+            <a th:each="tag : ${post.tagNames}"
+               class="post__tag post__tag--plain"
+               th:href="@{/tags/{name}(name=${tag})}"
+               th:text="|#${tag}|">#Java</a>
+        </p>
+        <div class="post__likes">
+            <span th:text="|♥ ${likeCount}|">♥ 0</span>
+            <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit">Like</button>
+            </form>
+        </div>
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
               th:text="${post.createdAt}">2026-05-23T09:00:00Z</time>

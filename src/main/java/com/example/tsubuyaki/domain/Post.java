@@ -1,42 +1,49 @@
 package com.example.tsubuyaki.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
-@Entity
-@Table(name = "posts")
-public class Post {
+public final class Post {
 
-    @Id
-    @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "posts_seq_gen")
-    private Long id;
+    private static final int AUTHOR_MAX_LENGTH = 30;
+    private static final int BODY_MAX_LENGTH = 280;
 
-    @Column(name = "author", length = 30, nullable = false)
-    private String author;
+    private final Long id;
 
-    @Column(name = "body", length = 280, nullable = false)
-    private String body;
+    private final String author;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private final String avatarColor;
 
-    protected Post() {
-        // JPA
-    }
+    private final String body;
+
+    private final Instant createdAt;
+
+    private final List<String> tagNames;
 
     public Post(String author, String body, Instant createdAt) {
-        this.author = author;
-        this.body = body;
-        this.createdAt = createdAt;
+        this(null, author, AvatarColor.DEFAULT.name(), body, createdAt);
+    }
+
+    public Post(String author, String avatarColor, String body, Instant createdAt) {
+        this(null, author, avatarColor, body, createdAt);
+    }
+
+    public Post(Long id, String author, String body, Instant createdAt) {
+        this(id, author, AvatarColor.DEFAULT.name(), body, createdAt);
+    }
+
+    public Post(Long id, String author, String avatarColor, String body, Instant createdAt) {
+        this(id, author, avatarColor, body, createdAt, List.of());
+    }
+
+    public Post(Long id, String author, String avatarColor, String body, Instant createdAt, List<String> tagNames) {
+        this.id = id;
+        this.author = normalizeRequired(author, "author", AUTHOR_MAX_LENGTH);
+        this.avatarColor = AvatarColor.from(avatarColor).name();
+        this.body = normalizeRequired(body, "body", BODY_MAX_LENGTH);
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
+        this.tagNames = List.copyOf(tagNames);
     }
 
     public Long getId() {
@@ -47,12 +54,24 @@ public class Post {
         return author;
     }
 
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
     public String getBody() {
         return body;
     }
 
+    public String getDisplayBody() {
+        return HashtagText.removeTags(body);
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public List<String> getTagNames() {
+        return tagNames;
     }
 
     @Override
@@ -63,11 +82,22 @@ public class Post {
         if (!(o instanceof Post other)) {
             return false;
         }
-        return Objects.equals(id, other.id);
+        return id != null && id.equals(other.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return getClass().hashCode();
+    }
+
+    private static String normalizeRequired(String value, String fieldName, int maxLength) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        String normalized = value.strip();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or less");
+        }
+        return normalized;
     }
 }
