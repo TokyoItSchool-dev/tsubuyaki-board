@@ -5,7 +5,9 @@ import com.example.tsubuyaki.domain.PostLike;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -39,7 +41,7 @@ public class PostService {
                         postLikeRepository.findByPostIdAndClientHash(id, clientHash).isPresent()));
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Optional<LikeToggleResult> toggleLike(Long id, String clientHash) {
         return repository.findById(id)
                 .map(post -> postLikeRepository.findByPostIdAndClientHash(id, clientHash)
@@ -48,9 +50,17 @@ public class PostService {
                             return new LikeToggleResult(false);
                         })
                         .orElseGet(() -> {
-                            postLikeRepository.save(new PostLike(post, clientHash, LocalDateTime.now()));
-                            return new LikeToggleResult(true);
+                            return saveLike(post, clientHash);
                         }));
+    }
+
+    private LikeToggleResult saveLike(Post post, String clientHash) {
+        try {
+            postLikeRepository.saveAndFlush(new PostLike(post, clientHash, LocalDateTime.now()));
+        } catch (DataIntegrityViolationException e) {
+            return new LikeToggleResult(true);
+        }
+        return new LikeToggleResult(true);
     }
 
     @Transactional

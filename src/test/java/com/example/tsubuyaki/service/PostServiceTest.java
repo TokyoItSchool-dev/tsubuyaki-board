@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,7 +20,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 
@@ -115,10 +118,24 @@ class PostServiceTest {
 
         assertThat(actual).contains(new LikeToggleResult(true));
         ArgumentCaptor<PostLike> captor = ArgumentCaptor.forClass(PostLike.class);
-        verify(postLikeRepository).save(captor.capture());
+        verify(postLikeRepository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getPost()).isSameAs(post);
         assertThat(captor.getValue().getClientHash()).isEqualTo("a1b2c3d4");
         assertThat(captor.getValue().getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("いいねトグル_同時登録で一意制約違反の場合_liked_trueへ収束する")
+    void toggleLike_whenConcurrentInsertCausesDuplicate_returnsLikedTrue() {
+        Post post = new Post("alice", "本文", LocalDateTime.parse("2026-05-23T10:00:00"));
+        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postLikeRepository.findByPostIdAndClientHash(1L, "a1b2c3d4")).willReturn(Optional.empty());
+        willThrow(new DataIntegrityViolationException("duplicate"))
+                .given(postLikeRepository).saveAndFlush(any(PostLike.class));
+
+        Optional<LikeToggleResult> actual = postService.toggleLike(1L, "a1b2c3d4");
+
+        assertThat(actual).contains(new LikeToggleResult(true));
     }
 
     @Test
