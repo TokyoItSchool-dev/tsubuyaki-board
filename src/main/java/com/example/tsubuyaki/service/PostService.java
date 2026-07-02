@@ -105,6 +105,9 @@ public class PostService {
 
     @Transactional
     public void createComment(Long postId, String body) {
+        if (body == null || body.isBlank()) {
+            return;
+        }
         repository.findByIdAndDeletedAtIsNull(postId)
                 .ifPresent(post -> commentRepository.save(new Comment(post, body, Instant.now())));
     }

@@ -55,4 +55,22 @@ class PostDetailCommentIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("確認しました")));
     }
+
+    @Test
+    @DisplayName("投稿詳細_空白コメントを投稿したとき_保存せず同じ詳細へ戻る")
+    void detail_空白コメントを投稿したとき_保存せず同じ詳細へ戻る() throws Exception {
+        Post post = postRepository.saveAndFlush(new Post(
+                "alice",
+                "空白コメント対象の投稿です",
+                Instant.parse("2026-06-30T00:00:00Z")));
+
+        mockMvc.perform(post("/posts/{id}/comments", post.getId())
+                        .param("body", " "))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/" + post.getId()));
+
+        mockMvc.perform(get("/posts/{id}", post.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("まだコメントはありません")));
+    }
 }
