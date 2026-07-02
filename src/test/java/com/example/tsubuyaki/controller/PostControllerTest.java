@@ -44,7 +44,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿0件_空メッセージを表示する")
     void 投稿一覧_投稿0件_空メッセージを表示する() throws Exception {
-        given(postService.latest()).willReturn(List.of());
+        given(postService.search(null)).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -54,10 +54,23 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_ROOT_一覧ビューを返す")
+    void 投稿一覧_ROOT_一覧ビューを返す() throws Exception {
+        given(postService.search(null)).willReturn(List.of());
+
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of()));
+
+        verify(postService).search(null);
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿あり_投稿者投稿日本文を表示する")
     void 投稿一覧_投稿あり_投稿者投稿日本文を表示する() throws Exception {
         Post post = new Post("alice", "今日の共有です", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.latest()).willReturn(List.of(post));
+        given(postService.search(null)).willReturn(List.of(post));
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -67,6 +80,26 @@ class PostControllerTest {
                 .getContentAsString();
 
         assertThat(html).contains("alice", "今日の共有です", "2026-05-23 19:15");
+    }
+
+    @Test
+    @DisplayName("投稿検索_qあり_検索結果と検索語を一覧ビューに渡す")
+    void 投稿検索_qあり_検索結果と検索語を一覧ビューに渡す() throws Exception {
+        Post post = new Post("alice", "今日の共有です", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.search("共有")).willReturn(List.of(post));
+
+        String html = mockMvc.perform(get("/posts")
+                        .param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(model().attribute("q", "共有"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("name=\"q\"", "value=\"共有\"", "今日の共有です");
+        verify(postService).search("共有");
     }
 
     @Test

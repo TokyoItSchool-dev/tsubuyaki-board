@@ -36,6 +36,31 @@ class PostRepositoryTest {
                 .doesNotContain("body0");
     }
 
+    @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿_新着順で返す")
+    void 投稿検索_本文にキーワードを含む投稿_新着順で返す() {
+        postRepository.deleteAll();
+        postRepository.save(new Post("alice", "朝会の共有です", Instant.parse("2026-05-23T10:00:00Z")));
+        postRepository.save(new Post("bob", "ランチの話です", Instant.parse("2026-05-23T11:00:00Z")));
+        postRepository.save(new Post("carol", "夕会の共有です", Instant.parse("2026-05-23T12:00:00Z")));
+
+        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
+
+        assertThat(posts).extracting(Post::getBody)
+                .containsExactly("夕会の共有です", "朝会の共有です");
+    }
+
+    @Test
+    @DisplayName("投稿検索_本文に含まない投稿_返さない")
+    void 投稿検索_本文に含まない投稿_返さない() {
+        postRepository.deleteAll();
+        postRepository.save(new Post("alice", "朝会の共有です", Instant.parse("2026-05-23T10:00:00Z")));
+
+        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("障害対応");
+
+        assertThat(posts).isEmpty();
+    }
+
     private List<Post> postsWithSequentialCreatedAt(int count) {
         Instant base = Instant.parse("2026-05-23T00:00:00Z");
         List<Post> posts = new ArrayList<>();

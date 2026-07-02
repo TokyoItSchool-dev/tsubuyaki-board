@@ -17,6 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -42,6 +43,69 @@ class PostServiceTest {
 
         assertThat(latestPosts).isSameAs(posts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワードあり_Repositoryの本文検索を返す")
+    void 投稿検索_キーワードあり_Repositoryの本文検索を返す() {
+        List<Post> posts = List.of(new Post("alice", "共有です", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有")).willReturn(posts);
+
+        List<Post> searchResults = postService.search("共有");
+
+        assertThat(searchResults).isSameAs(posts);
+        verify(postRepository).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
+    }
+
+    @Test
+    @DisplayName("投稿検索_前後空白あり_trimして検索する")
+    void 投稿検索_前後空白あり_trimして検索する() {
+        List<Post> posts = List.of(new Post("alice", "共有です", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有")).willReturn(posts);
+
+        List<Post> searchResults = postService.search("  共有  ");
+
+        assertThat(searchResults).isSameAs(posts);
+        verify(postRepository).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
+    }
+
+    @Test
+    @DisplayName("投稿検索_空白のみ_latestを返す")
+    void 投稿検索_空白のみ_latestを返す() {
+        List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> searchResults = postService.search("   ");
+
+        assertThat(searchResults).isSameAs(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository, never()).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
+    }
+
+    @Test
+    @DisplayName("投稿検索_null_latestを返す")
+    void 投稿検索_null_latestを返す() {
+        List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> searchResults = postService.search(null);
+
+        assertThat(searchResults).isSameAs(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository, never()).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
+    }
+
+    @Test
+    @DisplayName("投稿検索_空文字_latestを返す")
+    void 投稿検索_空文字_latestを返す() {
+        List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> searchResults = postService.search("");
+
+        assertThat(searchResults).isSameAs(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository, never()).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
     }
 
     @Test
