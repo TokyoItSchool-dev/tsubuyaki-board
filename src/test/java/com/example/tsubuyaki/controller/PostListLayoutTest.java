@@ -105,6 +105,51 @@ class PostListLayoutTest {
     }
 
     @Test
+    @DisplayName("サイト装飾_落ち葉演出_葉は大きさをランダム化し緑系3色から選ぶ")
+    void サイト装飾_落ち葉演出_葉は大きさをランダム化し緑系3色から選ぶ() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+        String javascript = new ClassPathResource("static/js/falling-leaves.js")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(javascript).contains("LEAF_COLORS = [");
+        assertThat(javascript).contains("#86c85a");
+        assertThat(javascript).contains("#4f9d45");
+        assertThat(javascript).contains("#2f7d46");
+        assertThat(javascript).contains("--leaf-size");
+        assertThat(javascript).contains("randomBetween(1.15, 2.1)");
+        assertThat(css).contains("width: calc(var(--leaf-size) * 1.45)");
+        assertThat(css).contains("height: var(--leaf-size)");
+        assertThat(css).contains("background: linear-gradient(135deg, var(--leaf-color)");
+    }
+
+    @Test
+    @DisplayName("サイト装飾_落ち葉演出_右上を基準に画面上端から落ち始める")
+    void サイト装飾_落ち葉演出_右上を基準に画面上端から落ち始める() throws IOException {
+        String javascript = new ClassPathResource("static/js/falling-leaves.js")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(javascript).contains("randomBetween(58, 98)");
+        assertThat(javascript).contains("randomBetween(-18, -4)");
+        assertThat(javascript).doesNotContain("randomBetween(96, 116)");
+        assertThat(javascript).doesNotContain("randomBetween(-14, 12)");
+    }
+
+    @Test
+    @DisplayName("サイト装飾_落ち葉演出_稀に落ちる花は大きく一定サイズで表示する")
+    void サイト装飾_落ち葉演出_稀に落ちる花は大きく一定サイズで表示する() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+        String javascript = new ClassPathResource("static/js/falling-leaves.js")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains("width: 0.72rem");
+        assertThat(css).contains("height: 0.72rem");
+        assertThat(css).contains("0.46rem 0 #f7b7c8");
+        assertThat(javascript).doesNotContain("--flower-size");
+    }
+
+    @Test
     @DisplayName("サイト装飾_素材_画像を使わずCSSとDOMだけで表現する")
     void サイト装飾_素材_画像を使わずCSSとDOMだけで表現する() throws IOException {
         String css = new ClassPathResource("static/css/app.css")

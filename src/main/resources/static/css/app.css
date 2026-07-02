@@ -56,10 +56,10 @@ main {
 }
 
 .falling-decoration__leaf {
-    width: 0.72rem;
-    height: 0.38rem;
+    width: calc(var(--leaf-size) * 1.45);
+    height: var(--leaf-size);
     border-radius: 80% 0 80% 0;
-    background: linear-gradient(135deg, #7fbf49 0%, #3f8f37 100%);
+    background: linear-gradient(135deg, var(--leaf-color) 0%, #2f6f3e 100%);
     box-shadow: 0 0 0 1px rgba(47, 111, 62, 0.16);
 }
 
@@ -75,15 +75,15 @@ main {
 }
 
 .falling-decoration__flower {
-    width: 0.38rem;
-    height: 0.38rem;
+    width: 0.72rem;
+    height: 0.72rem;
     border-radius: 50%;
     background: #ffe8a8;
     box-shadow:
-        0.28rem 0 #f7b7c8,
-        -0.28rem 0 #f7b7c8,
-        0 0.28rem #f5a7bd,
-        0 -0.28rem #ffd4df;
+        0.46rem 0 #f7b7c8,
+        -0.46rem 0 #f7b7c8,
+        0 0.46rem #f5a7bd,
+        0 -0.46rem #ffd4df;
 }
 
 @keyframes falling-decoration-drift {
