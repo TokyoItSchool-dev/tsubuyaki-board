@@ -119,6 +119,16 @@ textarea:focus {
     box-shadow: var(--shadow-card);
 }
 
+.post-list__search input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.post-list__search button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
 .post {
     margin-bottom: 1rem;
     padding: 1.2rem;
@@ -231,6 +241,7 @@ textarea:focus {
 }
 
 .post-form__choice {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
@@ -239,6 +250,7 @@ textarea:focus {
     border-radius: 999px;
     color: var(--color-muted);
     background: #fbfdff;
+    white-space: nowrap;
 }
 
 .post-form__add-tag {
