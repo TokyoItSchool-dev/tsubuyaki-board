@@ -35,6 +35,12 @@ public class PostService {
         return toDomainList(repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc());
     }
 
+    public List<PostDetail> latestDetails() {
+        return latest().stream()
+                .map(post -> new PostDetail(post, likeRepository.countByPostId(post.getId())))
+                .toList();
+    }
+
     public List<Post> findPosts(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return latest();

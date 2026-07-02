@@ -104,6 +104,29 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿API_latestDetails_新着投稿にいいね数を付けて返す")
+    void 投稿API_latestDetails_新着投稿にいいね数を付けて返す() {
+        PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc()).willReturn(List.of(
+                new PostEntity(1L, "alice", "BLUE", "API の共有です", Instant.parse("2026-06-26T09:00:00Z")),
+                new PostEntity(2L, "bob", "GREEN", "2件目です", Instant.parse("2026-06-26T08:00:00Z"))));
+        given(likeRepository.countByPostId(1L)).willReturn(3L);
+        given(likeRepository.countByPostId(2L)).willReturn(0L);
+
+        List<PostDetail> actual = postService.latestDetails();
+
+        assertThat(actual)
+                .extracting(PostDetail::likeCount)
+                .containsExactly(3L, 0L);
+        assertThat(actual)
+                .extracting(detail -> detail.post().getAuthor())
+                .containsExactly("alice", "bob");
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+        verify(likeRepository).countByPostId(1L);
+        verify(likeRepository).countByPostId(2L);
+    }
+
+    @Test
     @DisplayName("投稿作成_create_投稿者と本文を保存する")
     void 投稿作成_create_投稿者と本文を保存する() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
