@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class PostController {
@@ -31,7 +35,9 @@ public class PostController {
 
     @GetMapping({ "/", "/posts", "/posts/" })
     public String list(@RequestParam(name = "q", required = false) String query, Model model) {
-        model.addAttribute("posts", postService.search(query));
+        List<Post> posts = postService.search(query);
+        model.addAttribute("posts", posts);
+        model.addAttribute("likeCounts", likeCounts(posts));
         model.addAttribute("q", query);
         model.addAttribute("searched", postService.hasSearchQuery(query));
         return "posts/list";
@@ -88,5 +94,13 @@ public class PostController {
         }
     }
 
-    // 演習中に追加するエンドポイント:
+    private Map<Long, Long> likeCounts(List<Post> posts) {
+        Map<Long, Long> likeCounts = new LinkedHashMap<>();
+        for (Post post : posts) {
+            if (post.getId() != null) {
+                likeCounts.put(post.getId(), postService.countLikes(post.getId()));
+            }
+        }
+        return likeCounts;
+    }
 }
