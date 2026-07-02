@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
@@ -33,9 +34,11 @@ class PostControllerTest {
     private static final String POSTS_PATH = "/posts";
     private static final String POSTS_VIEW = "posts/list.html";
     private static final String POSTS_ATTRIBUTE = "posts";
-    private static final String POST_FORM_PATH = "/posts/form";
+    private static final String POST_FORM_PATH = "/posts/new";
     private static final String POST_FORM_VIEW = "posts/form.html";
     private static final String POST_FORM_ATTRIBUTE = "postForm";
+    private static final String POST_DETAIL_VIEW = "posts/detail.html";
+    private static final String POST_ATTRIBUTE = "post";
 
     @Autowired
     private MockMvc mockMvc;
@@ -76,6 +79,19 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_表示したとき_新規投稿フォームへのリンクを表示する")
+    void 投稿一覧_表示したとき_新規投稿フォームへのリンクを表示する() throws Exception {
+        given(postService.findLatest50()).willReturn(List.of());
+
+        mockMvc.perform(get(POSTS_PATH))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/new\"")))
+                .andExpect(content().string(containsString(">新規投稿<")));
+
+        verify(postService).findLatest50();
+    }
+
+    @Test
     @DisplayName("新規投稿フォーム_GETリクエスト_空のPostFormをビューに渡す")
     void 新規投稿フォーム_GETリクエスト_空のPostFormをビューに渡す() throws Exception {
         mockMvc.perform(get(POST_FORM_PATH))
@@ -110,5 +126,32 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("本文を入力してください")));
 
         verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するIDのとき_投稿をビューに渡す")
+    void 投稿詳細_存在するIdのとき_投稿をビューに渡す() throws Exception {
+        Post post = new Post("alice", "詳細で表示する投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get(POSTS_PATH + "/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name(POST_DETAIL_VIEW))
+                .andExpect(model().attribute(POST_ATTRIBUTE, post))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("詳細で表示する投稿")));
+
+        verify(postService).findById(1L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないIDのとき_404を返す")
+    void 投稿詳細_存在しないIdのとき_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get(POSTS_PATH + "/999"))
+                .andExpect(status().isNotFound());
+
+        verify(postService).findById(999L);
     }
 }
