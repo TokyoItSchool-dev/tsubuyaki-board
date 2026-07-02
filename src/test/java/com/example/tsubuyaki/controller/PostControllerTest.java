@@ -52,7 +52,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_0件の場合_まだ投稿はありませんを表示する")
     void list_whenNoPosts_showsEmptyMessage() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.search(null)).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -67,7 +67,7 @@ class PostControllerTest {
         List<Post> posts = List.of(
                 new Post("alice", "本文1", LocalDateTime.parse("2026-05-23T10:00:00")),
                 new Post("bob", "本文2", LocalDateTime.parse("2026-05-23T09:00:00")));
-        given(postService.latest()).willReturn(posts);
+        given(postService.search(null)).willReturn(posts);
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -77,7 +77,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_更新ボタン_押すとpostsへGETリクエストする")
     void list_hasRefreshButtonRequestingPosts() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.search(null)).willReturn(Collections.emptyList());
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -91,7 +91,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿表示_投稿者内容投稿日の順に表示する")
     void list_displaysAuthorBodyCreatedAtInOrder() throws Exception {
-        given(postService.latest()).willReturn(List.of(
+        given(postService.search(null)).willReturn(List.of(
                 new Post("alice", "順序確認の本文", LocalDateTime.parse("2026-05-23T10:30:00"))));
 
         String html = mockMvc.perform(get("/posts"))
@@ -108,7 +108,7 @@ class PostControllerTest {
     void list_displaysPostBlockLinkToDetail() throws Exception {
         Post post = new Post("alice", "リンク確認の本文", LocalDateTime.parse("2026-05-23T10:30:00"));
         ReflectionTestUtils.setField(post, "id", 42L);
-        given(postService.latest()).willReturn(List.of(post));
+        given(postService.search(null)).willReturn(List.of(post));
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -117,6 +117,36 @@ class PostControllerTest {
                 .getContentAsString();
 
         assertThat(html).containsSubsequence("href=\"/posts/42\"", "alice", "リンク確認の本文");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索語あり_Serviceに検索語を渡し結果をmodelに積む")
+    void list_whenQueryExists_setsSearchResultToModel() throws Exception {
+        List<Post> posts = List.of(
+                new Post("alice", "朝会の共有", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postService.search("朝会")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", "朝会"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("q", "朝会"));
+
+        then(postService).should().search("朝会");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索語あり_検索フォームに検索語を保持する")
+    void list_whenQueryExists_keepsQueryInSearchForm() throws Exception {
+        given(postService.search("朝会")).willReturn(Collections.emptyList());
+
+        String html = mockMvc.perform(get("/posts").param("q", "朝会"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("name=\"q\"", "value=\"朝会\"");
     }
 
     @Test

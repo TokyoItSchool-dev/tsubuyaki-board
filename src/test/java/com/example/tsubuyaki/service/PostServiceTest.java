@@ -53,6 +53,71 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_キーワードあり_本文検索結果を返す")
+    void search_whenKeywordExists_returnsBodySearchResult() {
+        List<Post> posts = List.of(
+                new Post("alice", "朝会の共有", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("朝会")).willReturn(posts);
+
+        List<Post> actual = postService.search("朝会");
+
+        assertThat(actual).isSameAs(posts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("朝会");
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワード前後に半角空白があるとき_空白を除去して本文検索する")
+    void search_whenKeywordHasAsciiSpaces_removesSpacesAndSearchesBody() {
+        List<Post> posts = List.of(
+                new Post("alice", "朝会の共有", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("朝会")).willReturn(posts);
+
+        List<Post> actual = postService.search("  朝会  ");
+
+        assertThat(actual).isSameAs(posts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("朝会");
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワード前後に全角スペースがあるとき_空白を除去して本文検索する")
+    void search_whenKeywordHasFullWidthSpaces_removesSpacesAndSearchesBody() {
+        List<Post> posts = List.of(
+                new Post("alice", "朝会の共有", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("朝会")).willReturn(posts);
+
+        List<Post> actual = postService.search("　朝会　");
+
+        assertThat(actual).isSameAs(posts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("朝会");
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワードnull_新着50件を返す")
+    void search_whenKeywordIsNull_returnsLatest50() {
+        List<Post> posts = List.of(
+                new Post("alice", "新しい投稿", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> actual = postService.search(null);
+
+        assertThat(actual).isSameAs(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワード空白のみ_新着50件を返す")
+    void search_whenKeywordIsBlank_returnsLatest50() {
+        List<Post> posts = List.of(
+                new Post("alice", "新しい投稿", LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        List<Post> actual = postService.search("   ");
+
+        assertThat(actual).isSameAs(posts);
+        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在するidの場合_RepositoryのfindById結果を返す")
     void findById_whenPostExists_returnsRepositoryPost() {
         Post post = new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:00:00"));

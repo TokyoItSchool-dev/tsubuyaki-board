@@ -15,6 +15,7 @@
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
     <form class="toolbar" th:action="@{/posts}" method="get">
+        <input type="search" name="q" th:value="${q}" placeholder="本文を検索">
         <button type="submit">更新</button>
     </form>
 

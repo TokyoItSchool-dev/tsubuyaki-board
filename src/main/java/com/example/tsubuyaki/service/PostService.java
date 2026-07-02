@@ -30,6 +30,13 @@ public class PostService {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    public List<Post> search(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return latest();
+        }
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword.strip());
+    }
+
     public Optional<Post> findById(Long id) {
         return repository.findById(id);
     }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class PostController {
@@ -28,8 +29,9 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String keyword, Model model) {
+        model.addAttribute("posts", postService.search(keyword));
+        model.addAttribute("q", keyword);
         return "posts/list";
     }
 
