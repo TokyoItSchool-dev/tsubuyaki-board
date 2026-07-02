@@ -1,8 +1,10 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.service.ReplyThreadItem;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import com.example.tsubuyaki.web.dto.ReplyForm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Controller
 public class PostController {
@@ -46,11 +49,47 @@ public class PostController {
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
         String clientHash = clientHash(request);
-        model.addAttribute("post", postService.findDetailPost(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        addDetailAttributes(id, model, clientHash, new ReplyForm());
+        return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/replies")
+    public String createReply(
+            @PathVariable Long id,
+            @Valid ReplyForm replyForm,
+            BindingResult bindingResult,
+            Model model,
+            HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            addDetailAttributes(id, model, clientHash(request), replyForm);
+            return "posts/detail";
+        }
+        try {
+            postService.createReply(id, replyForm.getParentReplyId(), replyForm.getAuthor(), replyForm.getBody());
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "投稿または返信が見つかりません", e);
+        }
+        return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("/posts/{postId}/replies/{replyId}/read")
+    public String toggleReplyRead(@PathVariable Long postId, @PathVariable Long replyId) {
+        try {
+            postService.toggleReplyRead(postId, replyId);
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "返信が見つかりません", e);
+        }
+        return "redirect:/posts/" + postId;
+    }
+
+    private void addDetailAttributes(Long id, Model model, String clientHash, ReplyForm replyForm) {
+        Post post = postService.findDetailPost(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("post", post);
         model.addAttribute("likeCount", postService.countLikes(id));
         model.addAttribute("liked", postService.hasLiked(id, clientHash));
-        return "posts/detail";
+        model.addAttribute("replies", replyThread(id));
+        model.addAttribute("replyForm", replyForm);
     }
 
     @PostMapping("/posts/{id}/likes")
@@ -101,6 +140,14 @@ public class PostController {
             return List.of();
         }
         return posts;
+    }
+
+    private List<ReplyThreadItem> replyThread(Long postId) {
+        List<ReplyThreadItem> replies = postService.findReplyThread(postId);
+        if (replies == null) {
+            return List.of();
+        }
+        return replies;
     }
 
     private static String clientHash(HttpServletRequest request) {

@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Reply;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.service.ReplyThreadItem;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Field;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -187,6 +190,33 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_返信があるとき_リプライフォームと返信ツリーを表示する")
+    void 投稿詳細_返信があるとき_リプライフォームと返信ツリーを表示する() throws Exception {
+        Post post = new Post("alice", "詳細を表示する投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        setId(post, 1L);
+        Reply rootReply = new Reply(post, null, "bob", "親返信です", Instant.parse("2026-05-23T10:01:00Z"));
+        setId(rootReply, 10L);
+        Reply childReply = new Reply(post, rootReply, "carol", "返信への返信です", Instant.parse("2026-05-23T10:02:00Z"));
+        setId(childReply, 11L);
+        given(postService.findDetailPost(1L)).willReturn(Optional.of(post));
+        given(postService.findReplyThread(1L)).willReturn(List.of(
+                new ReplyThreadItem(rootReply, 0),
+                new ReplyThreadItem(childReply, 1)));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"reply-form\"")))
+                .andExpect(content().string(containsString("name=\"author\"")))
+                .andExpect(content().string(containsString("name=\"body\"")))
+                .andExpect(content().string(containsString("maxlength=\"1000\"")))
+                .andExpect(content().string(containsString("↳")))
+                .andExpect(content().string(containsString("親返信です")))
+                .andExpect(content().string(containsString("返信への返信です")))
+                .andExpect(content().string(containsString("name=\"parentReplyId\" value=\"10\"")))
+                .andExpect(content().string(containsString("name=\"read\"")));
+    }
+
+    @Test
     @DisplayName("投稿詳細_未いいねのとき_無色のいいねボタンを表示する")
     void 投稿詳細_未いいねのとき_無色のいいねボタンを表示する() throws Exception {
         Post post = new Post("alice", "未いいねの投稿", Instant.parse("2026-05-23T10:00:00Z"));
@@ -281,6 +311,41 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts/1"));
 
         verify(postService).toggleLike(1L, clientHash("192.0.2.10", "MockBrowser/1.0"));
+    }
+
+    @Test
+    @DisplayName("返信作成_POST_posts_id_replies_Serviceで返信を登録し詳細へリダイレクトする")
+    void 返信作成_POST_posts_id_replies_Serviceで返信を登録し詳細へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/1/replies")
+                        .param("author", "bob")
+                        .param("body", "返信本文"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).createReply(1L, null, "bob", "返信本文");
+    }
+
+    @Test
+    @DisplayName("返信作成_親返信IDがあるとき_Serviceで返信への返信を登録する")
+    void 返信作成_親返信IDがあるとき_Serviceで返信への返信を登録する() throws Exception {
+        mockMvc.perform(post("/posts/1/replies")
+                        .param("parentReplyId", "10")
+                        .param("author", "carol")
+                        .param("body", "返信への返信本文"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).createReply(1L, 10L, "carol", "返信への返信本文");
+    }
+
+    @Test
+    @DisplayName("返信既読_POST_posts_id_replies_replyId_read_Serviceで既読状態を切り替える")
+    void 返信既読_POST_posts_id_replies_replyId_read_Serviceで既読状態を切り替える() throws Exception {
+        mockMvc.perform(post("/posts/1/replies/10/read"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).toggleReplyRead(1L, 10L);
     }
 
     @Test
@@ -385,5 +450,11 @@ class PostControllerTest {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 が利用できません", e);
         }
+    }
+
+    private static void setId(Object target, Long id) throws Exception {
+        Field idField = target.getClass().getDeclaredField("id");
+        idField.setAccessible(true);
+        idField.set(target, id);
     }
 }

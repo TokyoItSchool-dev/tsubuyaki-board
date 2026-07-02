@@ -213,4 +213,35 @@ class PostListLayoutTest {
         assertThat(css).contains("background: #facc15");
         assertThat(css).contains("border-color: #eab308");
     }
+
+    @Test
+    @DisplayName("リプライフォーム_詳細画面_返信ボタンを右下に配置し1000文字上限を持つ")
+    void リプライフォーム_詳細画面_返信ボタンを右下に配置し1000文字上限を持つ() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+        String html = new ClassPathResource("templates/posts/detail.html")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html).contains("class=\"reply-form\"");
+        assertThat(html).contains("maxlength=\"1000\"");
+        assertThat(css).contains(".reply-form__actions");
+        assertThat(css).contains("justify-content: flex-end");
+    }
+
+    @Test
+    @DisplayName("リプライツリー_詳細画面_狭い画面でも本文を折り返して階層表示できる")
+    void リプライツリー_詳細画面_狭い画面でも本文を折り返して階層表示できる() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+        String html = new ClassPathResource("templates/posts/detail.html")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html).contains("class=\"reply-tree\"");
+        assertThat(html).contains("↳");
+        assertThat(html).contains("--reply-depth");
+        assertThat(css).contains(".reply");
+        assertThat(css).contains("overflow-wrap: anywhere");
+        assertThat(css).contains("word-break: break-word");
+        assertThat(css).contains("margin-left: min(");
+    }
 }

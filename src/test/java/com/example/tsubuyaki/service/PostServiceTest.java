@@ -2,8 +2,10 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.domain.Reply;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.ReplyRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -30,6 +33,9 @@ class PostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private ReplyRepository replyRepository;
 
     private PostService postService;
 
@@ -188,5 +194,91 @@ class PostServiceTest {
         postService.deletePost(1L);
 
         assertThat(post.getDeletedAt()).isEqualTo(fixedInstant);
+    }
+
+    @Test
+    @DisplayName("返信作成_投稿IDと本文を受け取ったとき_現在時刻付きの返信を保存する")
+    void 返信作成_投稿IDと本文を受け取ったとき_現在時刻付きの返信を保存する() {
+        Instant fixedInstant = Instant.parse("2026-05-23T10:15:30Z");
+        postService = new PostService(
+                postRepository,
+                postLikeRepository,
+                replyRepository,
+                Clock.fixed(fixedInstant, ZoneOffset.UTC));
+        Post post = new Post("alice", "返信対象の投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+
+        postService.createReply(1L, null, "bob", "返信本文");
+
+        ArgumentCaptor<Reply> replyCaptor = ArgumentCaptor.forClass(Reply.class);
+        verify(replyRepository).save(replyCaptor.capture());
+        assertThat(replyCaptor.getValue().getPost()).isEqualTo(post);
+        assertThat(replyCaptor.getValue().getParent()).isNull();
+        assertThat(replyCaptor.getValue().getAuthor()).isEqualTo("bob");
+        assertThat(replyCaptor.getValue().getBody()).isEqualTo("返信本文");
+        assertThat(replyCaptor.getValue().getCreatedAt()).isEqualTo(fixedInstant);
+    }
+
+    @Test
+    @DisplayName("返信作成_親返信IDがあるとき_親返信に紐づけて保存する")
+    void 返信作成_親返信IDがあるとき_親返信に紐づけて保存する() {
+        postService = new PostService(postRepository, postLikeRepository, replyRepository);
+        Post post = new Post("alice", "返信対象の投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        Reply parent = new Reply(post, null, "bob", "親返信", Instant.parse("2026-05-23T10:01:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+        given(replyRepository.findByIdAndPostId(10L, 1L)).willReturn(Optional.of(parent));
+
+        postService.createReply(1L, 10L, "carol", "子返信");
+
+        ArgumentCaptor<Reply> replyCaptor = ArgumentCaptor.forClass(Reply.class);
+        verify(replyRepository).save(replyCaptor.capture());
+        assertThat(replyCaptor.getValue().getParent()).isEqualTo(parent);
+    }
+
+    @Test
+    @DisplayName("返信ツリー_親子返信があるとき_親の直下に子返信を深さ付きで返す")
+    void 返信ツリー_親子返信があるとき_親の直下に子返信を深さ付きで返す() throws Exception {
+        postService = new PostService(postRepository, postLikeRepository, replyRepository);
+        Post post = new Post("alice", "返信対象の投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        Reply root = new Reply(post, null, "bob", "親返信", Instant.parse("2026-05-23T10:01:00Z"));
+        setId(root, 10L);
+        Reply otherRoot = new Reply(post, null, "dave", "別の親返信", Instant.parse("2026-05-23T10:02:00Z"));
+        setId(otherRoot, 11L);
+        Reply child = new Reply(post, root, "carol", "子返信", Instant.parse("2026-05-23T10:03:00Z"));
+        setId(child, 12L);
+        given(replyRepository.findByPostIdOrderByCreatedAtAscIdAsc(1L))
+                .willReturn(List.of(root, otherRoot, child));
+
+        List<ReplyThreadItem> actual = postService.findReplyThread(1L);
+
+        assertThat(actual).extracting(item -> item.reply().getBody())
+                .containsExactly("親返信", "子返信", "別の親返信");
+        assertThat(actual).extracting(ReplyThreadItem::depth)
+                .containsExactly(0, 1, 0);
+    }
+
+    @Test
+    @DisplayName("返信既読_未読の返信を指定したとき_既読時刻を設定する")
+    void 返信既読_未読の返信を指定したとき_既読時刻を設定する() {
+        Instant fixedInstant = Instant.parse("2026-05-23T10:15:30Z");
+        postService = new PostService(
+                postRepository,
+                postLikeRepository,
+                replyRepository,
+                Clock.fixed(fixedInstant, ZoneOffset.UTC));
+        Post post = new Post("alice", "返信対象の投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        Reply reply = new Reply(post, null, "bob", "返信本文", Instant.parse("2026-05-23T10:01:00Z"));
+        given(replyRepository.findByIdAndPostId(10L, 1L)).willReturn(Optional.of(reply));
+
+        postService.toggleReplyRead(1L, 10L);
+
+        assertThat(reply.isRead()).isTrue();
+        assertThat(reply.getReadAt()).isEqualTo(fixedInstant);
+    }
+
+    private static void setId(Object target, Long id) throws Exception {
+        Field idField = target.getClass().getDeclaredField("id");
+        idField.setAccessible(true);
+        idField.set(target, id);
     }
 }

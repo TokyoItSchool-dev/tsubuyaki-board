@@ -42,6 +42,78 @@
             </form>
         </div>
     </article>
+
+    <section class="reply-panel" aria-label="返信">
+        <form class="reply-form" th:action="@{/posts/{id}/replies(id=${post.id})}" th:object="${replyForm}" method="post">
+            <input th:if="${_csrf != null}" type="hidden"
+                   th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <div class="reply-form__fields">
+                <label>
+                    <span>ユーザー名</span>
+                    <input type="text" th:field="*{author}" maxlength="15" required>
+                </label>
+                <p th:if="${#fields.hasErrors('author')}" th:errors="*{author}">ユーザー名エラー</p>
+                <label>
+                    <span>コメント</span>
+                    <textarea th:field="*{body}" maxlength="1000" required></textarea>
+                </label>
+                <p th:if="${#fields.hasErrors('body')}" th:errors="*{body}">コメントエラー</p>
+            </div>
+            <div class="reply-form__actions">
+                <button type="submit">返信</button>
+            </div>
+        </form>
+
+        <div class="reply-tree">
+            <p th:if="${#lists.isEmpty(replies)}">まだ返信はありません</p>
+            <article class="reply"
+                     th:each="replyItem : ${replies}"
+                     th:style="|--reply-depth: ${replyItem.depth}|">
+                <p class="reply__author">
+                    <span class="reply__mark" aria-hidden="true">↳</span>
+                    <span th:text="${replyItem.reply.author}">返信者</span>
+                </p>
+                <p class="reply__body" th:text="${replyItem.reply.body}">返信本文</p>
+                <time class="reply__created-at"
+                      th:datetime="${replyItem.reply.createdAt}"
+                      th:text="${#temporals.format(replyItem.reply.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:01</time>
+                <form class="reply__read-form"
+                      th:action="@{/posts/{postId}/replies/{replyId}/read(postId=${post.id},replyId=${replyItem.reply.id})}"
+                      method="post">
+                    <input th:if="${_csrf != null}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <label>
+                        <input type="checkbox"
+                               name="read"
+                               th:checked="${replyItem.reply.read}"
+                               onchange="this.form.submit()">
+                        <span>既読</span>
+                    </label>
+                    <button type="submit">更新</button>
+                </form>
+                <form class="reply-form reply-form--child"
+                      th:action="@{/posts/{id}/replies(id=${post.id})}"
+                      method="post">
+                    <input th:if="${_csrf != null}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <input type="hidden" name="parentReplyId" th:value="${replyItem.reply.id}">
+                    <div class="reply-form__fields">
+                        <label>
+                            <span>ユーザー名</span>
+                            <input type="text" name="author" maxlength="15" required>
+                        </label>
+                        <label>
+                            <span>コメント</span>
+                            <textarea name="body" maxlength="1000" required></textarea>
+                        </label>
+                    </div>
+                    <div class="reply-form__actions">
+                        <button type="submit">返信</button>
+                    </div>
+                </form>
+            </article>
+        </div>
+    </section>
 </main>
 <script defer th:src="@{/js/falling-leaves.js}"></script>
 </body>
