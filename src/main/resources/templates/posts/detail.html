@@ -14,6 +14,18 @@
     </nav>
 
     <article class="post">
+        <div class="post-menu" data-post-menu>
+            <button class="post-menu__toggle"
+                    type="button"
+                    aria-label="投稿メニュー"
+                    aria-expanded="false"
+                    data-post-menu-toggle>…</button>
+            <div class="post-menu__dropdown" hidden data-post-menu-dropdown>
+                <form method="post" th:action="@{/posts/{id}/delete(id=${postId})}">
+                    <button class="post-menu__delete" type="submit">削除</button>
+                </form>
+            </div>
+        </div>
         <p class="post__author" th:text="${post.author}">投稿者</p>
         <p class="post__body" th:text="${post.body}">本文</p>
         <p class="post__tags" th:if="${post.hasTags()}">
@@ -32,9 +44,6 @@
             <button type="submit">Like</button>
         </form>
     </section>
-    <form method="post" th:action="@{/posts/{id}/delete(id=${postId})}">
-        <button type="submit">削除</button>
-    </form>
     <section class="comment-panel">
         <h2>コメント</h2>
         <form class="comment-form" method="post" th:action="@{/posts/{id}/comments(id=${postId})}">
@@ -53,5 +62,43 @@
     </section>
 
 </main>
+<script>
+    (() => {
+        const menu = document.querySelector("[data-post-menu]");
+        if (!menu) {
+            return;
+        }
+
+        const toggle = menu.querySelector("[data-post-menu-toggle]");
+        const dropdown = menu.querySelector("[data-post-menu-dropdown]");
+        if (!toggle || !dropdown) {
+            return;
+        }
+
+        const closeMenu = () => {
+            dropdown.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+        };
+
+        toggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const willOpen = dropdown.hidden;
+            dropdown.hidden = !willOpen;
+            toggle.setAttribute("aria-expanded", String(willOpen));
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!menu.contains(event.target)) {
+                closeMenu();
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closeMenu();
+            }
+        });
+    })();
+</script>
 </body>
 </html>

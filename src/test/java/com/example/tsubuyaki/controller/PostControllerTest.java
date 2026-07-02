@@ -265,8 +265,8 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿詳細_存在するIDのとき_削除ボタンを表示する")
-    void detail_存在するIDのとき_削除ボタンを表示する() throws Exception {
+    @DisplayName("投稿詳細_存在するIDのとき_三点メニュー内に削除フォームを表示する")
+    void detail_存在するIDのとき_三点メニュー内に削除フォームを表示する() throws Exception {
         Post post = post("alice", "削除対象の投稿です", LocalDateTime.parse("2026-06-30T01:15:00"));
         given(postService.findById(10L)).willReturn(Optional.of(post));
 
@@ -276,8 +276,13 @@ class PostControllerTest {
                 .andReturn();
 
         String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("class=\"post-menu\"");
+        assertThat(html).contains("class=\"post-menu__toggle\"");
+        assertThat(html).contains("aria-label=\"投稿メニュー\"");
+        assertThat(html).contains(">…<");
+        assertThat(html).contains("class=\"post-menu__dropdown\" hidden");
         assertThat(html).contains("method=\"post\" action=\"/posts/10/delete\"");
-        assertThat(html).contains("<button type=\"submit\">削除</button>");
+        assertThat(html).contains("class=\"post-menu__delete\"");
     }
 
     @Test
