@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.sample;
 
 import com.example.tsubuyaki.controller.PostController;
+import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.service.TagService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,12 @@ class SamplePostControllerTest {
 
     @MockitoBean
     private PostService postService;
+
+    @MockitoBean
+    private PostLikeService postLikeService;
+
+    @MockitoBean
+    private TagService tagService;
 
     @Test
     @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")

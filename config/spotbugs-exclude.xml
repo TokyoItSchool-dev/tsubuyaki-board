@@ -23,6 +23,12 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
+    <!-- Spring Service のコンストラクタ DI は内部表現の公開に当たらない -->
+    <Match>
+        <Class name="~.*\.service\..*Service"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- Lombok 等で生成される equals/hashCode -->
     <Match>
         <Bug pattern="HE_EQUALS_USE_HASHCODE"/>

@@ -14,6 +14,8 @@
     </nav>
 
     <form th:action="@{/posts}" th:object="${postForm}" method="post">
+        <p class="error" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}"
+           th:text="${err}">エラー</p>
         <div>
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
@@ -23,6 +25,17 @@
             <label for="body">本文 (280 文字まで)</label>
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
+        </div>
+        <div>
+            <label for="color">背景色</label>
+            <select id="color" th:field="*{color}" required>
+                <option value="E0F2FE">水色</option>
+                <option value="D9F99D">黄緑</option>
+                <option value="FCE7F3">桃色</option>
+                <option value="FEF3C7">薄黄色</option>
+                <option value="EDE9FE">薄紫</option>
+            </select>
+            <p class="error" th:if="${#fields.hasErrors('color')}" th:errors="*{color}">エラー</p>
         </div>
         <button type="submit">投稿</button>
     </form>
