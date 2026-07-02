@@ -9,9 +9,9 @@
 <body>
 <main>
     <h1>投稿詳細</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
-    </nav>
+    <form class="back-to-list-form" th:action="@{/posts}" method="get">
+        <button type="submit">一覧へ戻る</button>
+    </form>
 
     <article class="post">
         <header>

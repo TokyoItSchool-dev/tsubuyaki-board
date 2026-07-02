@@ -120,7 +120,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧詳細_UPDATE1_アバター色と本文リンクを表示し詳細ボタンを廃止する")
     void 投稿一覧詳細_UPDATE1_アバター色と本文リンクを表示し詳細ボタンを廃止する() throws Exception {
-        Post colored = new Post("alice", "blue", "123456789012345678901234567890追加文字", Instant.parse("2026-05-23T10:00:00Z"));
+        Post colored = new Post("alice", "blue", "1234567890123456789012345678901234567890追加", Instant.parse("2026-05-23T10:00:00Z"));
         ReflectionTestUtils.setField(colored, "id", 42L);
         Post noColor = new Post("bob", null, "色なし投稿です", Instant.parse("2026-05-23T09:00:00Z"));
         ReflectionTestUtils.setField(noColor, "id", 43L);
@@ -144,13 +144,16 @@ class PostControllerTest {
                         "(?s).*<header>\\s*<span[^>]*class=\"post__author\"[^>]*>bob</span>\\s*</header>.*")))
                 .andExpect(content().string(matchesPattern(
                         "(?s).*<p[^>]*class=\"post__summary\"[^>]*>\\s*"
-                                + "<a[^>]*class=\"post__body-link\"[^>]*href=\"/posts/42\"[^>]*>123456789012345678901234567890\\.\\.\\.</a>\\s*"
-                                + "<time[^>]*class=\"post__created-at\".*")))
+                                + "<a[^>]*class=\"post__body-link\"[^>]*href=\"/posts/42\"[^>]*>1234567890123456789012345678901234567890\\.\\.\\.</a>\\s*"
+                                + "</p>\\s*<time[^>]*class=\"post__created-at\".*")))
                 .andExpect(content().string(matchesPattern("(?s).*<p[^>]*class=\"post__likes\"[^>]*>3 いいね</p>.*")))
                 .andExpect(content().string(matchesPattern("(?s)^(?!.*>\\s*詳細\\s*</button>).*$")));
 
         mockMvc.perform(get("/posts/42"))
                 .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<form[^>]*class=\"back-to-list-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*一覧へ戻る\\s*</button>\\s*</form>.*")))
                 .andExpect(content().string(matchesPattern(
                         "(?s).*<span[^>]*class=\"post__author\"[^>]*>alice</span>\\s*"
                                 + "<span[^>]*class=\"avatar-dot avatar-dot--blue\"[^>]*></span>.*")));

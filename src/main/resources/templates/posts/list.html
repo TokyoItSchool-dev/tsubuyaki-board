@@ -34,11 +34,11 @@
             <p class="post__summary">
                 <a class="post__body-link"
                    th:href="@{/posts/{id}(id=${post.id})}"
-                   th:text="${#strings.length(post.body) > 30 ? #strings.substring(post.body, 0, 30) + '...' : post.body}">本文</a>
-                <time class="post__created-at"
-                      th:datetime="${post.createdAt}"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                   th:text="${#strings.length(post.body) > 40 ? #strings.substring(post.body, 0, 40) + '...' : post.body}">本文</a>
             </p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
             <p class="post__likes" th:text="${(likeCounts.get(post.id) ?: 0) + ' いいね'}">0 いいね</p>
         </article>
     </section>

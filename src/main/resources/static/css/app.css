@@ -74,8 +74,13 @@ textarea:focus-visible {
 
 .new-post-form,
 .toolbar,
-.search-form {
+.search-form,
+.back-to-list-form {
     margin: 0;
+}
+
+.back-to-list-form {
+    margin-bottom: 1rem;
 }
 
 .new-post-form button,
