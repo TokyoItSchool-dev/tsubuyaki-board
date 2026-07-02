@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doThrow;
@@ -47,7 +48,7 @@ class PostControllerTest {
     void list_whenLatestPostsExist_passesPostsToViewInNewestOrder() throws Exception {
         PostDto newerPost = new PostDto(1L, "alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
         PostDto olderPost = new PostDto(2L, "bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z"));
-        given(postService.latest()).willReturn(List.of(newerPost, olderPost));
+        given(postService.search(null)).willReturn(List.of(newerPost, olderPost));
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -60,7 +61,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿がないとき_空メッセージを表示する")
     void list_whenNoPosts_displaysEmptyMessage() throws Exception {
-        given(postService.latest()).willReturn(List.of());
+        given(postService.search(null)).willReturn(List.of());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -72,7 +73,7 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿があるとき_投稿者内容投稿日の順に表示する")
     void list_whenPostsExist_displaysAuthorBodyCreatedAtInOrder() throws Exception {
         PostDto post = new PostDto(1L, "alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postService.latest()).willReturn(List.of(post));
+        given(postService.search(null)).willReturn(List.of(post));
 
         MvcResult result = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -91,11 +92,63 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿があるとき_詳細画面へのリンクを表示する")
     void list_whenPostsExist_displaysDetailLink() throws Exception {
         PostDto post = new PostDto(1L, "alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postService.latest()).willReturn(List.of(post));
+        given(postService.search(null)).willReturn(List.of(post));
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("<a href=\"/posts/1\">詳細</a>")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_q指定_本文にキーワードを含む投稿だけを一覧画面に渡す")
+    void list_whenQueryGiven_passesSearchResultsToListView() throws Exception {
+        PostDto matchedPost = new PostDto(1L, "alice", "検索できる本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.search("検索")).willReturn(List.of(matchedPost));
+
+        mockMvc.perform(get("/posts").param("q", "検索"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", contains(matchedPost)))
+                .andExpect(model().attribute("q", "検索"))
+                .andExpect(content().string(containsString("<form class=\"search-form\" action=\"/posts\" method=\"get\">")))
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("value=\"検索\"")))
+                .andExpect(content().string(containsString("検索できる本文")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_q未指定_最新50件を一覧画面に渡す")
+    void list_whenQueryMissing_passesLatestPostsToListView() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.search(null)).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("posts", contains(post)))
+                .andExpect(model().attribute("q", nullValue()));
+    }
+
+    @Test
+    @DisplayName("投稿検索_q空白のみ_最新50件を一覧画面に渡す")
+    void list_whenQueryBlank_passesLatestPostsToListView() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.search("   ")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", "   "))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("posts", contains(post)))
+                .andExpect(model().attribute("q", "   "));
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索結果0件_空メッセージを表示する")
+    void list_whenSearchResultIsEmpty_displaysEmptyMessage() throws Exception {
+        given(postService.search("該当なし")).willReturn(List.of());
+
+        mockMvc.perform(get("/posts").param("q", "該当なし"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("posts", empty()))
+                .andExpect(content().string(containsString("まだ投稿はありません")));
     }
 
     @Test

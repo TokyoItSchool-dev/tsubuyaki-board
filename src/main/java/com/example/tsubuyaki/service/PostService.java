@@ -33,6 +33,18 @@ public class PostService {
 
     public List<PostDto> latest() {
         List<Post> posts = repository.findTop50ByOrderByCreatedAtDesc();
+        return toDtoList(posts);
+    }
+
+    public List<PostDto> search(String query) {
+        if (query == null || query.isBlank()) {
+            return latest();
+        }
+        List<Post> posts = repository.findTop50ByBodyContainingOrderByCreatedAtDesc(query);
+        return toDtoList(posts);
+    }
+
+    private List<PostDto> toDtoList(List<Post> posts) {
         if (posts == null) {
             return List.of();
         }

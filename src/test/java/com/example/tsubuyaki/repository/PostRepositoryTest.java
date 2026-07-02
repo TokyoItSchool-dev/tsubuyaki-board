@@ -45,4 +45,19 @@ class PostRepositoryTest {
                                 .mapToObj(number -> "投稿" + number)
                                 .toList());
     }
+
+    @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿だけを新着順で返す")
+    void findTop50ByBodyContainingOrderByCreatedAtDesc_whenBodyContainsKeyword_returnsMatchingPosts() {
+        Post olderMatchedPost = new Post("alice", "検索できる本文", Instant.parse("2026-05-23T09:00:00Z"));
+        Post unmatchedPost = new Post("bob", "関係ない本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post newerMatchedPost = new Post("carol", "あとから検索した本文", Instant.parse("2026-05-23T11:00:00Z"));
+        postRepository.saveAllAndFlush(List.of(olderMatchedPost, unmatchedPost, newerMatchedPost));
+
+        List<Post> actual = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索");
+
+        assertThat(actual)
+                .extracting(Post::getBody)
+                .containsExactly("あとから検索した本文", "検索できる本文");
+    }
 }

@@ -69,6 +69,51 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_q指定_本文部分一致検索の結果を返す")
+    void search_whenQueryGiven_returnsBodySearchResults() {
+        Post matchedPost = new Post("alice", "検索できる本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索"))
+                .willReturn(List.of(matchedPost));
+
+        List<PostDto> actual = postService.search("検索");
+
+        assertThat(actual)
+                .extracting(PostDto::author, PostDto::body, PostDto::createdAt)
+                .containsExactly(tuple("alice", "検索できる本文", Instant.parse("2026-05-23T10:00:00Z")));
+        then(postRepository).should(never()).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_q未指定_最新50件を返す")
+    void search_whenQueryIsNull_returnsLatestPosts() {
+        Post post = new Post("alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+
+        List<PostDto> actual = postService.search(null);
+
+        assertThat(actual)
+                .extracting(PostDto::body)
+                .containsExactly("最新投稿");
+        then(postRepository).should(never()).findTop50ByBodyContainingOrderByCreatedAtDesc(
+                org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    @DisplayName("投稿検索_q空白のみ_最新50件を返す")
+    void search_whenQueryIsBlank_returnsLatestPosts() {
+        Post post = new Post("alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+
+        List<PostDto> actual = postService.search("   ");
+
+        assertThat(actual)
+                .extracting(PostDto::body)
+                .containsExactly("最新投稿");
+        then(postRepository).should(never()).findTop50ByBodyContainingOrderByCreatedAtDesc(
+                org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
     @DisplayName("投稿作成_入力正常のとき_投稿者本文投稿日を保存する")
     void create_whenValid_savesPostWithCreatedAt() {
         PostForm form = new PostForm();
