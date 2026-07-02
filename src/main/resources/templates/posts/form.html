@@ -30,8 +30,17 @@
 				<textarea id="body" th:field="*{body}" rows="4" required></textarea>
 				<p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
 			</div>
+			<div>
+				<label for="tag-input">タグ</label>
+				<input type="text" id="tag-input" autocomplete="off">
+				<div id="tag-suggestions" class="tag-suggestions"
+					th:data-suggestions-url="@{/tags/suggestions}" th:data-confirm-url="@{/tags}"></div>
+				<div id="selected-tags" class="tag-selected-tags" aria-label="確定済みタグ"></div>
+				<div id="tag-hidden-inputs"></div>
+			</div>
 			<button type="submit">投稿</button>
 		</form>
 	</main>
+	<script th:src="@{/js/tag-suggestions.js}" defer></script>
 </body>
 </html>

@@ -19,6 +19,9 @@
             <span class="post__author-name" th:text="${post.author}">投稿者</span>
         </div>
         <p class="post__body" th:text="${post.body}">本文</p>
+        <div class="post__tags" th:if="${!#lists.isEmpty(post.tags)}">
+            <a th:each="tag : ${post.tags}" th:href="@{/tags/{name}(name=${tag.name})}" th:text="|#${tag.name}|">#tag</a>
+        </div>
         <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
             <input th:if="${_csrf != null}"
                    type="hidden"
