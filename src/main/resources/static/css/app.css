@@ -196,6 +196,28 @@ h1 {
     font-weight: 600;
 }
 
+.post-list-empty {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 6%);
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.post-list-empty__title {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.post-list-empty__message {
+    margin: 0.35rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
 .post-form {
     display: flex;
     flex-direction: column;

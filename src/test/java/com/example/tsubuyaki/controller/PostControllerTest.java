@@ -539,6 +539,46 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿検索_検索結果0件の場合_検索用の空状態を表示し検索フォームと件数とキーワードを維持する")
+    void 投稿検索_検索結果0件の場合_検索用の空状態を表示し検索フォームと件数とキーワードを維持する() throws Exception {
+        given(postService.searchPosts("NotFound")).willReturn(Collections.emptyList());
+        given(postService.countActivePosts()).willReturn(5L);
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", "NotFound"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", Collections.emptyList()))
+                .andExpect(model().attribute("keyword", "NotFound"))
+                .andExpect(model().attribute("searchResultCount", 0))
+                .andExpect(model().attribute("postCount", 5L))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("投稿数：5件")
+                .contains("value=\"NotFound\"")
+                .contains("🔍「<strong class=\"search-result__keyword\">NotFound</strong>」の検索結果")
+                .contains(">0</span>件")
+                .contains("class=\"post-list-empty\"")
+                .contains("class=\"post-list-empty__title\"")
+                .contains("該当する投稿は見つかりませんでした。")
+                .contains("class=\"post-list-empty__message\"")
+                .contains("別のキーワードで検索してみましょう。")
+                .doesNotContain("まだ投稿はありません")
+                .doesNotContain("class=\"post post--list\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".post-list-empty")
+                .contains("text-align: center")
+                .contains(".post-list-empty__title")
+                .contains(".post-list-empty__message")
+                .contains("color: var(--color-muted)");
+
+        then(postService).should().searchPosts("NotFound");
+    }
+
+    @Test
     @DisplayName("投稿検索_キーワードを指定しない場合_従来どおり投稿一覧を表示する")
     void 投稿検索_キーワードを指定しない場合_従来どおり投稿一覧を表示する() throws Exception {
         List<Post> latestPosts = List.of(

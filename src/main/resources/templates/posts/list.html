@@ -31,12 +31,16 @@
                 <button class="post-refresh__button" type="submit" title="更新" aria-label="更新">↺</button>
             </form>
         </div>
-        <p class="search-result" th:if="${searchResultCount != null}">「<strong class="search-result__keyword"
+        <p class="search-result" th:if="${searchResultCount != null}">🔍「<strong class="search-result__keyword"
                 th:text="${keyword}">キーワード</strong>」の検索結果：<span th:text="${searchResultCount}">0</span>件</p>
     </header>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <div class="post-list-empty" th:if="${searchResultCount != null and #lists.isEmpty(posts)}">
+            <p class="post-list-empty__title">該当する投稿は見つかりませんでした。</p>
+            <p class="post-list-empty__message">別のキーワードで検索してみましょう。</p>
+        </div>
+        <p th:if="${searchResultCount == null and #lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
         <article class="post post--list" th:each="post : ${posts}">
             <a class="post__link" th:href="@{/posts/{id}(id=${post.id})}">
                 <div class="post__author-line">
