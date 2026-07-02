@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.Tag;
+import com.example.tsubuyaki.domain.Comment;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -293,6 +294,25 @@ class PostControllerTest {
         String html = result.getResponse().getContentAsString();
         assertThat(html).contains("href=\"/tags/java\"");
         assertThat(html).contains(">#java<");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_コメント欄_見出し直下に入力フォームとコメント一覧を表示する")
+    void detail_コメント欄_見出し直下に入力フォームとコメント一覧を表示する() throws Exception {
+        Post post = post("alice", "詳細表示の本文です", LocalDateTime.parse("2026-06-30T10:15:00"));
+        Comment comment = new Comment(post, "コメント本文です", BASE_TIME.plusMinutes(1));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+        given(postService.findCommentsByPostId(10L)).willReturn(List.of(comment));
+
+        MvcResult result = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("class=\"comment-panel\"");
+        assertThat(html).contains("class=\"comment-list\"");
+        assertThat(html).contains("class=\"comment-form\"");
+        assertThat(html).containsSubsequence("コメント", "class=\"comment-form\"", "class=\"comment-list\"", "コメント本文です");
     }
 
     @Test

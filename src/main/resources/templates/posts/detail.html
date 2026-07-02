@@ -35,19 +35,21 @@
     <form method="post" th:action="@{/posts/{id}/delete(id=${postId})}">
         <button type="submit">削除</button>
     </form>
-    <section>
+    <section class="comment-panel">
         <h2>コメント</h2>
-        <form method="post" th:action="@{/posts/{id}/comments(id=${postId})}">
+        <form class="comment-form" method="post" th:action="@{/posts/{id}/comments(id=${postId})}">
             <textarea name="body"></textarea>
             <button type="submit">コメントする</button>
         </form>
-        <p th:if="${#lists.isEmpty(comments)}">まだコメントはありません</p>
-        <article class="comment" th:each="comment : ${comments}">
-            <p class="comment__body" th:text="${comment.body}">コメント本文</p>
-            <time class="comment__created-at"
-                  th:datetime="${comment.createdAt}"
-                  th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-        </article>
+        <div class="comment-list">
+            <p th:if="${#lists.isEmpty(comments)}">まだコメントはありません</p>
+            <article class="comment" th:each="comment : ${comments}">
+                <p class="comment__body" th:text="${comment.body}">コメント本文</p>
+                <time class="comment__created-at"
+                      th:datetime="${comment.createdAt}"
+                      th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </article>
+        </div>
     </section>
 
 </main>

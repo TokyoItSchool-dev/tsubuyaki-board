@@ -314,7 +314,7 @@ main > article + section + form {
 }
 
 main > article + section + form {
-    margin-bottom: 1rem;
+    margin-bottom: 0.35rem;
 }
 
 main > article.post + section button,
@@ -332,15 +332,30 @@ main > article + section + form button:focus {
     background: var(--color-accent);
 }
 
-main > section:last-of-type h2 {
-    margin: 1.75rem 0 0.8rem;
+.comment-panel {
+    display: grid;
+    grid-template-rows: auto auto minmax(12rem, 1fr);
+    gap: 0.8rem;
+    height: min(72vh, 42rem);
+    min-height: 28rem;
+    overflow: hidden;
+}
+
+.comment-panel h2 {
+    margin: 0.75rem 0 0.8rem;
     font-size: 1.2rem;
 }
 
-main > section:last-of-type > form {
+.comment-list {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.15rem 0.25rem 0.15rem 0;
+}
+
+.comment-form {
     display: grid;
     gap: 0.75rem;
-    margin-bottom: 1rem;
     padding: 1.1rem;
     border: 1px solid var(--color-border);
     border-radius: 14px;
@@ -348,16 +363,17 @@ main > section:last-of-type > form {
     box-shadow: var(--shadow-card);
 }
 
-main > section:last-of-type > form textarea {
-    min-height: 7rem;
+.comment-form textarea {
+    min-height: 5rem;
+    max-height: 8rem;
     resize: vertical;
 }
 
-main > section:last-of-type > form button {
+.comment-form button {
     justify-self: end;
 }
 
-main > section:last-of-type > p {
+.comment-list > p {
     margin: 0 0 0.8rem;
     padding: 1rem;
     border: 1px solid var(--color-border);
