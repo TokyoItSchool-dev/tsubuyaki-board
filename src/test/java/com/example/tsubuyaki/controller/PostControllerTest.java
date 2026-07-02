@@ -1,9 +1,13 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.service.ClientHashService;
+import com.example.tsubuyaki.service.LikeToggleResult;
+import com.example.tsubuyaki.service.PostDetail;
 import com.example.tsubuyaki.service.PostRegistrationException;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
@@ -40,6 +45,9 @@ class PostControllerTest {
 
     @MockitoBean
     private PostService postService;
+
+    @MockitoBean
+    private ClientHashService clientHashService;
 
     @Test
     @DisplayName("投稿一覧_0件の場合_まだ投稿はありませんを表示する")
@@ -115,21 +123,25 @@ class PostControllerTest {
     @DisplayName("投稿詳細_存在するidの場合_posts_detailビューとpostを返す")
     void detail_whenPostExists_returnsDetailViewWithPost() throws Exception {
         Post post = new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:30:00"));
-        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(clientHashService.from(any(HttpServletRequest.class))).willReturn("a1b2c3d4");
+        given(postService.findDetail(1L, "a1b2c3d4")).willReturn(Optional.of(new PostDetail(post, 2L, false)));
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
-                .andExpect(model().attribute("post", post));
+                .andExpect(model().attribute("post", post))
+                .andExpect(model().attribute("likeCount", 2L))
+                .andExpect(model().attribute("liked", false));
 
-        then(postService).should().findById(1L);
+        then(postService).should().findDetail(1L, "a1b2c3d4");
     }
 
     @Test
     @DisplayName("投稿詳細_存在するidの場合_投稿者本文投稿日を表示する")
     void detail_whenPostExists_displaysAuthorBodyCreatedAt() throws Exception {
-        given(postService.findById(1L)).willReturn(Optional.of(
-                new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:30:00"))));
+        given(clientHashService.from(any(HttpServletRequest.class))).willReturn("a1b2c3d4");
+        given(postService.findDetail(1L, "a1b2c3d4")).willReturn(Optional.of(new PostDetail(
+                new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:30:00")), 2L, false)));
 
         String html = mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
@@ -143,14 +155,84 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在しないidの場合_404エラー画面を表示する")
     void detail_whenPostDoesNotExist_returnsNotFoundErrorView() throws Exception {
-        given(postService.findById(999L)).willReturn(Optional.empty());
+        given(clientHashService.from(any(HttpServletRequest.class))).willReturn("a1b2c3d4");
+        given(postService.findDetail(999L, "a1b2c3d4")).willReturn(Optional.empty());
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound())
                 .andExpect(view().name("error/404"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿が見つかりません")));
 
-        then(postService).should().findById(999L);
+        then(postService).should().findDetail(999L, "a1b2c3d4");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいね情報_いいね数とLikeボタンを表示する")
+    void detail_displaysLikeCountAndLikeButton() throws Exception {
+        given(clientHashService.from(any(HttpServletRequest.class))).willReturn("a1b2c3d4");
+        given(postService.findDetail(1L, "a1b2c3d4")).willReturn(Optional.of(new PostDetail(
+                new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:30:00")), 2L, false)));
+
+        String html = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains(
+                "いいね 2",
+                "action=\"/posts/1/likes\"",
+                "method=\"post\"",
+                "いいね");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいね済みの場合_いいね解除ボタンを表示する")
+    void detail_whenLiked_displaysUnlikeButton() throws Exception {
+        given(clientHashService.from(any(HttpServletRequest.class))).willReturn("a1b2c3d4");
+        given(postService.findDetail(1L, "a1b2c3d4")).willReturn(Optional.of(new PostDetail(
+                new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:30:00")), 2L, true)));
+
+        String html = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("いいね解除");
+    }
+
+    @Test
+    @DisplayName("いいね_POST_posts_id_likes_サービスでトグルして詳細へリダイレクトする")
+    void like_whenPostExists_togglesLikeAndRedirectsToDetail() throws Exception {
+        given(clientHashService.from(any(HttpServletRequest.class))).willReturn("a1b2c3d4");
+        given(postService.toggleLike(1L, "a1b2c3d4")).willReturn(Optional.of(new LikeToggleResult(true)));
+
+        mockMvc.perform(post("/posts/1/likes")
+                        .header("User-Agent", "Mozilla/5.0")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        }))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(clientHashService).should().from(any(HttpServletRequest.class));
+        then(postService).should().toggleLike(1L, "a1b2c3d4");
+    }
+
+    @Test
+    @DisplayName("いいね_POST_posts_id_likes_存在しない投稿の場合_404エラー画面を表示する")
+    void like_whenPostDoesNotExist_returnsNotFoundErrorView() throws Exception {
+        given(clientHashService.from(any(HttpServletRequest.class))).willReturn("a1b2c3d4");
+        given(postService.toggleLike(999L, "a1b2c3d4")).willReturn(Optional.empty());
+
+        mockMvc.perform(post("/posts/999/likes"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error/404"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("投稿が見つかりません")));
+
+        then(postService).should().toggleLike(999L, "a1b2c3d4");
     }
 
     @Test

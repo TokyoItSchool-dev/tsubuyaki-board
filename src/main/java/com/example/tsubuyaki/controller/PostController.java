@@ -1,8 +1,11 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.service.ClientHashService;
+import com.example.tsubuyaki.service.PostDetail;
 import com.example.tsubuyaki.service.PostRegistrationException;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -17,9 +20,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class PostController {
 
     private final PostService postService;
+    private final ClientHashService clientHashService;
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService, ClientHashService clientHashService) {
         this.postService = postService;
+        this.clientHashService = clientHashService;
     }
 
     @GetMapping({ "/", "/posts" })
@@ -29,16 +34,12 @@ public class PostController {
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model, HttpServletResponse response) {
-        return postService.findById(id)
-                .map(post -> {
-                    model.addAttribute("post", post);
-                    return "posts/detail";
-                })
-                .orElseGet(() -> {
-                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    return "error/404";
-                });
+    public String detail(@PathVariable Long id, Model model, HttpServletRequest request,
+            HttpServletResponse response) {
+        String clientHash = clientHashService.from(request);
+        return postService.findDetail(id, clientHash)
+                .map(detail -> detailView(id, detail, model))
+                .orElseGet(() -> notFound(response));
     }
 
     @GetMapping("/posts/new")
@@ -64,5 +65,24 @@ public class PostController {
         return "redirect:/posts";
     }
 
-    // 演習中に追加するエンドポイント:
+    @PostMapping("/posts/{id}/likes")
+    public String like(@PathVariable Long id, HttpServletRequest request, HttpServletResponse response) {
+        String clientHash = clientHashService.from(request);
+        return postService.toggleLike(id, clientHash)
+                .map(result -> "redirect:/posts/" + id)
+                .orElseGet(() -> notFound(response));
+    }
+
+    private String detailView(Long id, PostDetail detail, Model model) {
+        model.addAttribute("post", detail.post());
+        model.addAttribute("postId", id);
+        model.addAttribute("likeCount", detail.likeCount());
+        model.addAttribute("liked", detail.liked());
+        return "posts/detail";
+    }
+
+    private String notFound(HttpServletResponse response) {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return "error/404";
+    }
 }

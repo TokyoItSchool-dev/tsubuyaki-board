@@ -92,3 +92,15 @@ h1 {
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+.like-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.post__likes {
+    margin: 0;
+    color: var(--color-muted);
+}

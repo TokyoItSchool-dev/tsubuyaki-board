@@ -19,6 +19,12 @@
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <form class="like-form" th:action="@{/posts/{id}/likes(id=${postId})}" method="post">
+            <input type="hidden" th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <p class="post__likes" th:text="|いいね ${likeCount}|">いいね 0</p>
+            <button type="submit" th:text="${liked} ? 'いいね解除' : 'いいね'">いいね</button>
+        </form>
     </article>
 </main>
 </body>
