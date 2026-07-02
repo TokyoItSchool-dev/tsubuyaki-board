@@ -30,7 +30,9 @@ class H2SeedMigrationTest {
         try (Connection connection = DriverManager.getConnection(url, "sa", "");
              Statement statement = connection.createStatement()) {
             assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts")).isEqualTo(10);
+            assertThat(singleLong(statement, "SELECT COUNT(*) FROM post_likes")).isZero();
             assertThat(singleLong(statement, "SELECT NEXT VALUE FOR posts_seq")).isEqualTo(11);
+            assertThat(singleLong(statement, "SELECT NEXT VALUE FOR post_likes_seq")).isEqualTo(1);
         }
     }
 

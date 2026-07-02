@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <header class="page-header">
+        <div>
+            <h1>投稿詳細</h1>
+            <nav aria-label="関連投稿一覧:">
+                <a th:href="@{/posts}">一覧に戻る</a>
+            </nav>
+        </div>
+    </header>
+
+    <article class="post">
+        <dl class="post-detail">
+            <div class="post-detail__row">
+                <dt>投稿者</dt>
+                <dd>
+                    <span class="avatar"
+                          th:classappend="|avatar--${#strings.toLowerCase(post.avatarColor)}|"
+                          aria-hidden="true"></span>
+                    <span class="post__author" th:text="${post.author}">投稿者名</span>
+                </dd>
+            </div>
+            <div class="post-detail__row">
+                <dt>本文</dt>
+                <dd class="post__body" th:title="${post.body}">
+                    <th:block th:each="segment : ${T(com.example.tsubuyaki.web.HashtagLinkifier).linkify(post.body)}">
+                        <a th:if="${segment.hashtag}"
+                           th:href="@{/tags/{name}(name=${segment.tagName})}"
+                           th:text="${segment.text}">#tag</a>
+                        <span th:unless="${segment.hashtag}" th:text="${segment.text}">本文</span>
+                    </th:block>
+                </dd>
+            </div>
+        </dl>
+        <time class="post__created-at" th:datetime="${post.createdAt}" th:text="${post.createdAt}">2026-05-23T10:00</time>
+        <div class="post-like">
+            <span>いいね数: </span>
+            <span th:text="${likeCount}">0</span>
+            <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                <button type="submit">Like</button>
+            </form>
+        </div>
+    </article>
+</main>
+</body>
+</html>
