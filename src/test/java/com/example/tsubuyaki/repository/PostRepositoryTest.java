@@ -40,4 +40,30 @@ class PostRepositoryTest {
                 .endsWith("user-2")
                 .doesNotContain("user-1");
     }
+
+    @Test
+    @DisplayName("投稿検索_bodyにキーワードを含む投稿だけをcreated_at降順で返す")
+    void 投稿検索_bodyにキーワードを含む投稿だけをCreatedAt降順で返す() {
+        postRepository.saveAll(List.of(
+                new Post("alice", "週次の共有です", LocalDateTime.parse("2026-06-26T09:00:00")),
+                new Post("bob", "検索対象の共有です", LocalDateTime.parse("2026-06-26T11:00:00")),
+                new Post("carol", "検索対象の古い共有です", LocalDateTime.parse("2026-06-26T10:00:00"))));
+
+        List<Post> searchResults = postRepository.findByBodyContainingOrderByCreatedAtDesc("検索対象");
+
+        assertThat(searchResults).extracting(Post::getAuthor)
+                .containsExactly("bob", "carol");
+    }
+
+    @Test
+    @DisplayName("投稿検索_SQLインジェクション文字列_検索条件を文字列値として扱う")
+    void 投稿検索_SQLインジェクション文字列_検索条件を文字列値として扱う() {
+        postRepository.saveAll(List.of(
+                new Post("alice", "通常の投稿です", LocalDateTime.parse("2026-06-26T09:00:00")),
+                new Post("bob", "別の投稿です", LocalDateTime.parse("2026-06-26T10:00:00"))));
+
+        List<Post> searchResults = postRepository.findByBodyContainingOrderByCreatedAtDesc("' OR '1'='1");
+
+        assertThat(searchResults).isEmpty();
+    }
 }

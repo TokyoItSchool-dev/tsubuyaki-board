@@ -10,10 +10,10 @@
 <main>
     <h1>新規投稿</h1>
     <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
+        <a th:href="${searchPerformed} ? @{/posts(q=${q})} : @{/posts}">一覧に戻る</a>
     </nav>
 
-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
+    <form th:action="${searchPerformed} ? @{/posts(q=${q})} : @{/posts}" th:object="${postForm}" method="post">
         <div>
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30">

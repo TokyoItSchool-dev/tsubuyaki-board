@@ -12,16 +12,23 @@
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
-        <a th:href="@{/posts/new}">新規投稿</a>
+        <a th:href="${searchPerformed} ? @{/posts/new(q=${q})} : @{/posts/new}">新規投稿</a>
     </nav>
+    <form class="search-form" method="get" th:action="@{/posts}">
+        <label class="search-form__label" for="post-search">本文検索</label>
+        <input id="post-search" type="search" name="q" th:value="${q}" placeholder="キーワード">
+        <button type="submit">検索</button>
+    </form>
     <form class="reload-form" method="get" th:action="@{/posts/}">
         <button type="submit">更新</button>
     </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <p th:if="${#lists.isEmpty(posts) and searchPerformed}">該当する投稿はありません</p>
+        <p th:if="${#lists.isEmpty(posts) and !searchPerformed}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <a class="post__link" th:href="@{/posts/{id}(id=${post.id})}">
+            <a class="post__link"
+               th:href="${searchPerformed} ? @{/posts/{id}(id=${post.id}, q=${q})} : @{/posts/{id}(id=${post.id})}">
                 <span class="post__author" th:text="${post.author}">投稿者</span>
                 <p class="post__body" th:text="${post.body}">本文</p>
                 <time class="post__created-at"
