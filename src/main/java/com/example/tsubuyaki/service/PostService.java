@@ -26,18 +26,18 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     public List<Post> search(String query) {
         if (query == null || query.isBlank()) {
             return latest();
         }
-        return repository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(query.trim());
+        return repository.findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(query.trim());
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findByIdAndDeletedAtIsNull(id);
     }
 
     public long countLikes(Long postId) {
@@ -59,8 +59,15 @@ public class PostService {
     }
 
     @Transactional
+    public void deletePost(Long id) {
+        Post post = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new NoSuchElementException("post not found: " + id));
+        post.delete(Instant.now());
+    }
+
+    @Transactional
     public void toggleLike(Long postId, String clientHash) {
-        if (!repository.existsById(postId)) {
+        if (!repository.existsByIdAndDeletedAtIsNull(postId)) {
             throw new NoSuchElementException("post not found: " + postId);
         }
         if (postLikeRepository.existsByPostIdAndClientHash(postId, clientHash)) {

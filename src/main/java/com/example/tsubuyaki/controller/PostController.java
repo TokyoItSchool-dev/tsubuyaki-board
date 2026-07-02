@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Controller
 public class PostController {
@@ -75,6 +76,16 @@ public class PostController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         postService.toggleLike(id, clientHash(request));
         return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        try {
+            postService.deletePost(id);
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
+        return "redirect:/posts";
     }
 
     private String clientHash(HttpServletRequest request) {

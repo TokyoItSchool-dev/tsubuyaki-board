@@ -13,9 +13,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentCaptor.forClass;
@@ -38,98 +40,103 @@ class PostServiceTest {
     @DisplayName("投稿一覧_latest_Repositoryの新着50件を返す")
     void 投稿一覧_latest_Repositoryの新着50件を返す() {
         List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> latestPosts = postService.latest();
 
         assertThat(latestPosts).isSameAs(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
     @DisplayName("投稿検索_キーワードあり_Repositoryの本文検索を返す")
     void 投稿検索_キーワードあり_Repositoryの本文検索を返す() {
         List<Post> posts = List.of(new Post("alice", "共有です", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有")).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有"))
+                .willReturn(posts);
 
         List<Post> searchResults = postService.search("共有");
 
         assertThat(searchResults).isSameAs(posts);
-        verify(postRepository).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
+        verify(postRepository).findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
     }
 
     @Test
     @DisplayName("投稿検索_前後空白あり_trimして検索する")
     void 投稿検索_前後空白あり_trimして検索する() {
         List<Post> posts = List.of(new Post("alice", "共有です", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有")).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有"))
+                .willReturn(posts);
 
         List<Post> searchResults = postService.search("  共有  ");
 
         assertThat(searchResults).isSameAs(posts);
-        verify(postRepository).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
+        verify(postRepository).findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
     }
 
     @Test
     @DisplayName("投稿検索_空白のみ_latestを返す")
     void 投稿検索_空白のみ_latestを返す() {
         List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> searchResults = postService.search("   ");
 
         assertThat(searchResults).isSameAs(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
-        verify(postRepository, never()).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        verify(postRepository, never())
+                .findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
     }
 
     @Test
     @DisplayName("投稿検索_null_latestを返す")
     void 投稿検索_null_latestを返す() {
         List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> searchResults = postService.search(null);
 
         assertThat(searchResults).isSameAs(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
-        verify(postRepository, never()).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        verify(postRepository, never())
+                .findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
     }
 
     @Test
     @DisplayName("投稿検索_空文字_latestを返す")
     void 投稿検索_空文字_latestを返す() {
         List<Post> posts = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> searchResults = postService.search("");
 
         assertThat(searchResults).isSameAs(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
-        verify(postRepository, never()).findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        verify(postRepository, never())
+                .findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(anyString());
     }
 
     @Test
     @DisplayName("投稿詳細_findById_Repositoryの検索結果を返す")
     void 投稿詳細_findById_Repositoryの検索結果を返す() {
         Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(post));
 
         Optional<Post> actual = postService.findById(10L);
 
         assertThat(actual).containsSame(post);
-        verify(postRepository).findById(10L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(10L);
     }
 
     @Test
     @DisplayName("投稿詳細_findById_存在しないとき空を返す")
     void 投稿詳細_findById_存在しないとき空を返す() {
-        given(postRepository.findById(404L)).willReturn(Optional.empty());
+        given(postRepository.findByIdAndDeletedAtIsNull(404L)).willReturn(Optional.empty());
 
         Optional<Post> actual = postService.findById(404L);
 
         assertThat(actual).isEmpty();
-        verify(postRepository).findById(404L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(404L);
     }
 
     @Test
@@ -169,9 +176,30 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿削除_存在する投稿_削除日時を設定する")
+    void 投稿削除_存在する投稿_削除日時を設定する() {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(post));
+
+        postService.deletePost(10L);
+
+        assertThat(post.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在しないID_例外を投げる")
+    void 投稿削除_存在しないID_例外を投げる() {
+        given(postRepository.findByIdAndDeletedAtIsNull(404L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.deletePost(404L))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("post not found: 404");
+    }
+
+    @Test
     @DisplayName("いいねトグル_未いいね_いいねを登録する")
     void いいねトグル_未いいね_いいねを登録する() {
-        given(postRepository.existsById(10L)).willReturn(true);
+        given(postRepository.existsByIdAndDeletedAtIsNull(10L)).willReturn(true);
         given(postLikeRepository.existsByPostIdAndClientHash(10L, "abcdef12")).willReturn(false);
 
         postService.toggleLike(10L, "abcdef12");
@@ -183,7 +211,7 @@ class PostServiceTest {
     @Test
     @DisplayName("いいねトグル_いいね済み_いいねを削除する")
     void いいねトグル_いいね済み_いいねを削除する() {
-        given(postRepository.existsById(10L)).willReturn(true);
+        given(postRepository.existsByIdAndDeletedAtIsNull(10L)).willReturn(true);
         given(postLikeRepository.existsByPostIdAndClientHash(10L, "abcdef12")).willReturn(true);
 
         postService.toggleLike(10L, "abcdef12");

@@ -13,12 +13,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -227,6 +229,26 @@ class PostControllerTest {
         given(postService.findById(404L)).willReturn(Optional.empty());
 
         mockMvc.perform(post("/posts/404/likes"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_サービスを呼び一覧へリダイレクトする")
+    void 投稿削除_POST_サービスを呼び一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/10/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).deletePost(10L);
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_存在しないid_404を返す")
+    void 投稿削除_POST_存在しないid_404を返す() throws Exception {
+        doThrow(new NoSuchElementException("post not found: 404"))
+                .when(postService).deletePost(404L);
+
+        mockMvc.perform(post("/posts/404/delete"))
                 .andExpect(status().isNotFound());
     }
 }

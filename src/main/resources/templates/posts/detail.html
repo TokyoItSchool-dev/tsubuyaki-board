@@ -30,6 +30,11 @@
                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button type="submit" th:text="${likedByClient} ? 'いいね済み' : 'Like'">Like</button>
             </form>
+            <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+                <input th:if="${_csrf != null}" type="hidden"
+                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit">削除</button>
+            </form>
         </footer>
     </article>
 </main>

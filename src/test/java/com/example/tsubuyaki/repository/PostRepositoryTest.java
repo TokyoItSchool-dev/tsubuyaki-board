@@ -28,7 +28,7 @@ class PostRepositoryTest {
         postRepository.deleteAll();
         postRepository.saveAll(postsWithSequentialCreatedAt(51));
 
-        List<Post> latestPosts = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> latestPosts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(latestPosts).hasSize(50);
         assertThat(latestPosts).extracting(Post::getBody)
@@ -44,7 +44,7 @@ class PostRepositoryTest {
         postRepository.save(new Post("bob", "ランチの話です", Instant.parse("2026-05-23T11:00:00Z")));
         postRepository.save(new Post("carol", "夕会の共有です", Instant.parse("2026-05-23T12:00:00Z")));
 
-        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("共有");
 
         assertThat(posts).extracting(Post::getBody)
                 .containsExactly("夕会の共有です", "朝会の共有です");
@@ -56,9 +56,37 @@ class PostRepositoryTest {
         postRepository.deleteAll();
         postRepository.save(new Post("alice", "朝会の共有です", Instant.parse("2026-05-23T10:00:00Z")));
 
-        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("障害対応");
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingIgnoreCaseOrderByCreatedAtDesc("障害対応");
 
         assertThat(posts).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿一覧_削除済み投稿があるとき_未削除のみ新着順で返す")
+    void 投稿一覧_削除済み投稿があるとき_未削除のみ新着順で返す() {
+        postRepository.deleteAll();
+        Post visible = postRepository.save(new Post("alice", "表示する投稿",
+                Instant.parse("2026-05-23T10:00:00Z")));
+        Post deleted = postRepository.save(new Post("bob", "削除済み投稿",
+                Instant.parse("2026-05-23T11:00:00Z")));
+        deleted.delete(Instant.parse("2026-05-23T12:00:00Z"));
+        postRepository.save(deleted);
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(posts).containsExactly(visible);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_削除済み投稿があるとき_未削除のみ取得できる")
+    void 投稿詳細_削除済み投稿があるとき_未削除のみ取得できる() {
+        postRepository.deleteAll();
+        Post deleted = postRepository.save(new Post("bob", "削除済み投稿",
+                Instant.parse("2026-05-23T11:00:00Z")));
+        deleted.delete(Instant.parse("2026-05-23T12:00:00Z"));
+        postRepository.save(deleted);
+
+        assertThat(postRepository.findByIdAndDeletedAtIsNull(deleted.getId())).isEmpty();
     }
 
     @Test
