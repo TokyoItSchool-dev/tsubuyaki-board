@@ -31,6 +31,9 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @Column(name = "avatar_color", length = 20, nullable = false)
     private String avatarColor;
 
@@ -65,8 +68,16 @@ public class Post {
         return createdAt;
     }
 
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
     public String getAvatarColor() {
         return avatarColor;
+    }
+
+    public void markDeleted(Instant deletedAt) {
+        this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must not be null");
     }
 
     private static String normalizeAvatarColor(String avatarColor) {

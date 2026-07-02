@@ -60,6 +60,8 @@ class PostControllerDetailTest {
                 .andExpect(content().string(containsString("Like")))
                 .andExpect(content().string(containsString("action=\"/posts/1/likes\"")))
                 .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("削除")))
+                .andExpect(content().string(containsString("action=\"/posts/1/delete\"")))
                 .andExpect(content().string(not(containsString("class=\"post__link\""))))
                 .andExpect(content().string(not(containsString("href=\"/posts/1\""))));
     }
@@ -111,6 +113,27 @@ class PostControllerDetailTest {
                             request.setRemoteAddr("203.0.113.10");
                             return request;
                         }))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_削除後に一覧へリダイレクトする")
+    void delete_whenPostExists_redirectsToList() throws Exception {
+        given(postService.delete(1L)).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(1L);
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_存在しない投稿ID_404を返す")
+    void delete_whenPostDoesNotExist_returnsNotFound() throws Exception {
+        given(postService.delete(999L)).willReturn(false);
+
+        mockMvc.perform(post("/posts/999/delete"))
                 .andExpect(status().isNotFound());
     }
 

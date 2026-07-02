@@ -27,6 +27,9 @@
             <form th:action="@{/posts/{id}/likes(id=${postId})}" method="post">
                 <button type="submit">Like</button>
             </form>
+            <form th:action="@{/posts/{id}/delete(id=${postId})}" method="post">
+                <button type="submit">削除</button>
+            </form>
         </div>
     </article>
 </main>

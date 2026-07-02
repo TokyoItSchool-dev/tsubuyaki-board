@@ -29,7 +29,7 @@ class PostRepositoryTest {
             postRepository.save(new Post("user" + i, "body" + i, baseTime.plusSeconds(i)));
         }
 
-        List<Post> posts = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(posts).hasSize(50);
         assertThat(posts)
@@ -48,7 +48,7 @@ class PostRepositoryTest {
             postRepository.save(new Post("user" + i, "検索対象の投稿" + i, baseTime.plusSeconds(10 + i)));
         }
 
-        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索対象");
 
         assertThat(posts).hasSize(50);
         assertThat(posts)
@@ -62,9 +62,44 @@ class PostRepositoryTest {
     void searchByBodyContaining_whenNoMatched_returnsEmptyList() {
         postRepository.save(new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z")));
 
-        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("存在しない");
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("存在しない");
 
         assertThat(posts).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿一覧_論理削除済みの投稿は表示しない")
+    void findLatest_excludesSoftDeletedPosts() {
+        Post activePost = postRepository.save(new Post(
+                "alice",
+                "表示される投稿",
+                Instant.parse("2026-05-23T10:00:00Z")
+        ));
+        Post deletedPost = new Post(
+                "bob",
+                "削除済み投稿",
+                Instant.parse("2026-05-23T11:00:00Z")
+        );
+        deletedPost.markDeleted(Instant.parse("2026-05-24T00:00:00Z"));
+        postRepository.save(deletedPost);
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(posts).containsExactly(activePost);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_論理削除済みの投稿はID検索で取得しない")
+    void findByIdAndDeletedAtIsNull_whenSoftDeleted_returnsEmpty() {
+        Post deletedPost = new Post(
+                "alice",
+                "削除済み投稿",
+                Instant.parse("2026-05-23T10:00:00Z")
+        );
+        deletedPost.markDeleted(Instant.parse("2026-05-24T00:00:00Z"));
+        Post savedPost = postRepository.save(deletedPost);
+
+        assertThat(postRepository.findByIdAndDeletedAtIsNull(savedPost.getId())).isEmpty();
     }
 
     @Test
