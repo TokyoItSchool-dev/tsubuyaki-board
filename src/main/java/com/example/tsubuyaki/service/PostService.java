@@ -48,6 +48,10 @@ public class PostService {
         return postRepository.findAllWithTagsByIdIn(ids);
     }
 
+    public List<Post> deleted() {
+        return postRepository.findDeleted();
+    }
+
     public List<PostApiResponse> latestForApi() {
         List<Long> ids = postRepository.findLatestIds(PageRequest.of(0, LATEST_POST_LIMIT));
         if (ids.isEmpty()) {

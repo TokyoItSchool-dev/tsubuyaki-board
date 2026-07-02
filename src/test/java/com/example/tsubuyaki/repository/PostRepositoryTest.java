@@ -202,6 +202,41 @@ class PostRepositoryTest {
     }
 
     @Test
+    @DisplayName("削除一覧_削除済み投稿だけを更新日時の新しい順でタグ付き取得する")
+    void findDeleted_returnsDeletedPostsWithTagsOrderByUpdatedAtDesc() {
+        Post activePost = postRepository.save(new Post(
+                "alice", "#java 表示しない投稿", Instant.parse("2026-05-23T01:00:00Z")));
+        Post olderDeletedPost = new Post("bob", "#spring 古い削除済み投稿", Instant.parse("2026-05-23T02:00:00Z"));
+        olderDeletedPost.update("bob", "#spring 古い削除済み投稿", "blue", Instant.parse("2026-05-24T01:00:00Z"));
+        olderDeletedPost.delete(Instant.parse("2026-05-25T00:00:00Z"));
+        Post newerDeletedPost = new Post("carol", "#oracle 新しい削除済み投稿", Instant.parse("2026-05-23T03:00:00Z"));
+        newerDeletedPost.update("carol", "#oracle 新しい削除済み投稿", "green", Instant.parse("2026-05-24T03:00:00Z"));
+        newerDeletedPost.delete(Instant.parse("2026-05-25T01:00:00Z"));
+        postRepository.saveAll(List.of(olderDeletedPost, newerDeletedPost));
+        Tag java = tagRepository.save(new Tag("java"));
+        Tag spring = tagRepository.save(new Tag("spring"));
+        Tag oracle = tagRepository.save(new Tag("oracle"));
+        postTagRepository.saveAll(List.of(
+                new PostTag(activePost, java),
+                new PostTag(olderDeletedPost, spring),
+                new PostTag(newerDeletedPost, oracle)
+        ));
+        flushAndClear();
+
+        List<Post> posts = postRepository.findDeleted();
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("#oracle 新しい削除済み投稿", "#spring 古い削除済み投稿");
+        assertThat(posts.get(0).getTags())
+                .extracting(Tag::getName)
+                .containsExactly("oracle");
+        assertThat(posts.get(1).getTags())
+                .extracting(Tag::getName)
+                .containsExactly("spring");
+    }
+
+    @Test
     @DisplayName("投稿一覧API_JOIN行_削除済みを除外しタグといいね数を返す")
     void findApiRowsByIds_excludesDeletedPostsAndReturnsTagsAndLikes() {
         Post activePost = postRepository.save(new Post(

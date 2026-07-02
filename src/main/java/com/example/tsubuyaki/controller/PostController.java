@@ -39,6 +39,14 @@ public class PostController {
         return "posts/list";
     }
 
+    @GetMapping("/posts/deleted")
+    public String deletedList(Model model) {
+        model.addAttribute("posts", postService.deleted());
+        model.addAttribute("deletedMode", true);
+        model.addAttribute("q", "");
+        return "posts/list";
+    }
+
     @GetMapping("/tags/{name}")
     public String tagList(@PathVariable String name, Model model) {
         setupListModel(postService.findByTagName(name), model);

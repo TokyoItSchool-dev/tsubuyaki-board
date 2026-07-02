@@ -12,11 +12,14 @@
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
+        <a th:href="@{/posts/deleted}">削除一覧</a>
+        |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
 
     <section>
-        <form class="toolbar" method="get" th:action="@{/posts}">
+        <h2 th:if="${deletedMode == true}">削除済み一覧</h2>
+        <form class="toolbar" method="get" th:action="@{/posts}" th:if="${deletedMode != true}">
             <input type="text" name="q" th:value="${q}">
             <button type="submit">検索</button>
         </form>
@@ -41,6 +44,7 @@
             </p>
             <form class="post__like-form"
                   method="post"
+                  th:if="${deletedMode != true}"
                   th:action="@{/posts/{id}/likes(id=${post.id})}">
                 <input type="hidden"
                        th:if="${_csrf != null}"
@@ -54,7 +58,7 @@
                             ? likeCounts[post.id] : 0}|"
                         title="いいね">👍 0</button>
             </form>
-            <p>
+            <p th:if="${deletedMode != true}">
                 <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
                 |
                 <a th:href="@{/posts/{id}/edit(id=${post.id})}">編集</a>

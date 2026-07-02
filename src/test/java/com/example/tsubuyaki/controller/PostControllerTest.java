@@ -286,6 +286,63 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_メニュー_削除一覧リンクを表示する")
+    void list_menuShowsDeletedListLink() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/posts/deleted\"")))
+                .andExpect(content().string(containsString("削除一覧")));
+    }
+
+    @Test
+    @DisplayName("削除一覧_GET_posts_deleted_削除済み投稿を一覧ビューに渡す")
+    void deletedList_showsDeletedPosts() throws Exception {
+        Post post = postWithTags("alice", "#java 削除済み投稿", List.of("java"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        post.update("alice", "#java 削除済み投稿", "purple", Instant.parse("2026-05-24T02:00:00Z"));
+        post.delete(Instant.parse("2026-05-25T00:00:00Z"));
+        given(postService.deleted()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts/deleted"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(model().attribute("deletedMode", true))
+                .andExpect(content().string(containsString("削除済み一覧")))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("#java 削除済み投稿")))
+                .andExpect(content().string(containsString("● purple")))
+                .andExpect(content().string(containsString("2026-05-24 11:00")))
+                .andExpect(content().string(containsString("href=\"/tags/java\"")));
+
+        verify(postService).deleted();
+        verify(postService, never()).latest();
+        verify(postService, never()).countLikesByPostIds(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
+    @DisplayName("削除一覧_削除済み投稿_いいねボタンと詳細編集リンクを表示しない")
+    void deletedList_hidesLikeButtonAndPostLinks() throws Exception {
+        Post post = new Post("alice", "削除済み投稿", Instant.parse("2026-05-23T01:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        post.delete(Instant.parse("2026-05-24T00:00:00Z"));
+        given(postService.deleted()).willReturn(List.of(post));
+
+        String html = mockMvc.perform(get("/posts/deleted"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).doesNotContain("action=\"/posts/42/likes\"");
+        assertThat(html).doesNotContain("class=\"post__like-mark\"");
+        assertThat(html).doesNotContain("href=\"/posts/42\"");
+        assertThat(html).doesNotContain("href=\"/posts/42/edit\"");
+    }
+
+    @Test
     @DisplayName("投稿作成フォーム_GET_posts_new_postFormをビューに渡す")
     void newForm_setsPostForm() throws Exception {
         mockMvc.perform(get("/posts/new"))

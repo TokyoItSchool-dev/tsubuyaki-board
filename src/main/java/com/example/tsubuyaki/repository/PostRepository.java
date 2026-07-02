@@ -36,6 +36,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findAllWithTagsByIdIn(@Param("ids") List<Long> ids);
 
     @Query("""
+            SELECT DISTINCT p
+            FROM Post p
+            LEFT JOIN FETCH p.postTags pt
+            LEFT JOIN FETCH pt.tag
+            WHERE p.deletedAt IS NOT NULL
+            ORDER BY p.updatedAt DESC
+            """)
+    List<Post> findDeleted();
+
+    @Query("""
             SELECT new com.example.tsubuyaki.repository.PostApiRow(
                 p.id,
                 p.author,

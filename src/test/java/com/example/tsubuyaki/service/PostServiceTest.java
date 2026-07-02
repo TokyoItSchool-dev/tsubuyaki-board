@@ -106,6 +106,20 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("削除一覧_Repositoryの削除済み投稿一覧を返す")
+    void deleted_returnsRepositoryDeletedPosts() {
+        List<Post> posts = List.of(
+                new Post("alice", "削除済み投稿", Instant.parse("2026-05-23T10:00:00Z"))
+        );
+        given(postRepository.findDeleted()).willReturn(posts);
+
+        List<Post> actual = postService.deleted();
+
+        assertThat(actual).isSameAs(posts);
+        verify(postRepository).findDeleted();
+    }
+
+    @Test
     @DisplayName("投稿一覧API_最新50件のJOIN行をタグ配列といいね数に変換する")
     void latestForApi_groupsRowsIntoApiResponses() {
         Instant newer = Instant.parse("2026-05-23T03:00:00Z");
