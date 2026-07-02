@@ -1546,32 +1546,530 @@ UI/UXの改善が実装出来た。
 また、Codexと壁打ちし、仕様の詳細化を実施した
 
 
-## プロンプト 16
+## プロンプト 17
 
-**フェーズ**:
-
-**プロンプト本文**:
-
-```
-
-```
-
-**結果**: 効いた / 部分的に効いた / 効かなかった
-
-**振り返り**:
-
-
-
-## プロンプト 16
-
-**フェーズ**:
+**フェーズ**:投稿カード：UI/UX改善
 
 **プロンプト本文**:
 
 ```
+投稿一覧・投稿詳細の「投稿部」について、表示順と表示項目を変えずに、より使いやすく見やすい UI/UX に改善してくださ
+い。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書く (Red)。
+2. その失敗テストを通す最小実装を書く (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングする (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認する。
+5. Conventional Commits でコミットする (`feat(<scope>): <要約>`)。
+
+仕様:
+- すべて日本語で応答すること。
+- AGENTS.md と .codex/instructions.md を最優先で守ること。
+- 1つのTDDサイクルとして進めること。
+  1. まず受入基準を満たすための失敗テストを1本だけ書く (Red)
+  2. その失敗テストを通す最小実装を書く (Green)
+  3. 重複・命名・抽象度の観点でリファクタリングする (Refactor)
+- JavaScript は追加しない。
+- 外部CDN、外部フォント、外部アイコンライブラリは使わない。
+- Thymeleaf の出力は XSS 対策として th:text を使い、th:utext は使わない。
+- 表示項目を追加・削除しない。
+- 現在の表示順を変更しない。
+
+現在維持する表示順
+投稿一覧・投稿詳細の投稿部では、以下の順序を維持してください。
+1. 投稿者
+2. 本文
+3. 投稿日時
+4. 編集済み日時
+5. いいね数
+6. いいねボタン
+7. 一覧のみ: 詳細を見る
+8. 詳細のみ: 編集 / 削除
+
+改修内容
+1. 投稿カードの視覚階層を整理する
+- 投稿者は投稿の起点として見つけやすくする。
+- 本文は投稿カードの主役として読みやすくする。
+- 投稿日時・編集済み日時はメタ情報として控えめに統一する。
+- 背景色付き投稿でも本文が読みやすいようにする。
+
+2. 一覧と詳細で読みやすさを変える
+
+- 一覧はスキャンしやすいカード表示にする。
+- 詳細は読む画面として、本文の行間・余白を一覧より少し広くする。
+- 表示項目と順序は変えない。
+- 詳細画面の投稿に `post--detail` のような補助classを付けてもよい。
+3. アクション領域を操作バーとして見せる
+- 投稿本文・日時と、いいね/詳細/編集/削除の操作領域を視覚的に分ける。
+- `.post__actions` に上境界線や余白を付け、操作できる領域だと分かりやすくする。
+- いいね数 → いいねボタン → 詳細/編集/削除 の順序は変えない。
+4. いいね数とボタンを見やすくする
+- いいね数を小さなカウンター表示として見やすくする。
+- いいねボタン、詳細を見る、編集、削除の高さや余白を揃える。
+- モバイル幅でも押しやすく、テキストがはみ出さないようにする。
+5. 長文・改行あり投稿の崩れを抑える
+- `white-space: pre-wrap` は維持する。
+- `overflow-wrap` / `word-break` など既存の長文対策を壊さない。
+- 行間と余白を調整して読み疲れを減らす。
+
+受入基準:
+以下の観点のテストを用意してから本機能の実装を行う。
+1. 投稿一覧の投稿部に、既存順序どおり以下が出る。
+   - `post__author`
+   - `post__body`
+   - `post__created-at`
+   - `post__updated-at`
+   - `post__actions`
+   - `post__like-count`
+   - `post__like-button`
+   - `post__detail-link`
+2. 投稿詳細の投稿部に、既存順序どおり以下が出る。
+   - `post__author`
+   - `post__body`
+   - `post__created-at`
+   - `post__updated-at`
+   - `post__actions`
+   - `post__like-count`
+   - `post__like-button`
+   - `post__edit-link`
+   - `post__delete-link`
+3. 詳細画面の投稿には、一覧と区別できる補助classがある。
+   - 例: `post post--detail`
+4. CSS に以下の改善が含まれる。
+   - `.post__actions` に `border-top` と `padding-top` がある。
+   - `.post__like-count` がカウンター風に見える `border-radius` または `background` を持つ。
+   - `.post--detail .post__body` で詳細画面の本文を読みやすくする。
+   - `.post__body` の `white-space: pre-wrap`、`overflow-wrap`、`word-break` を維持する。
+   - モバイル向けの `.post__actions` 調整を維持する。
+5. JavaScript・外部CDN・`th:utext` を追加していない。
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+- Maven Central / GitHub / api.openai.com 以外へのネットワークアクセスはしない。
+- Thymeleaf では XSS 対策として `th:text` を維持し、`th:utext` は使わない。
+- JavaScript は追加しない。
+- 外部 CDN、外部画像、外部フォント、外部コンポーネントは使わない。
 
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+  Red:
+
+  - src/test/java/com/example/tsubuyaki/controller/PostCardLayoutFeatureTest.java の1本を更新し、post--detail 未実
+    装で失敗することを確認しました。
+
+  - テスト名: 投稿カード_一覧と詳細_表示順を維持して読みやすい操作バーにする
+
+  Green / Refactor:
+
+  - src/main/resources/templates/posts/detail.html に詳細投稿用 post--detail classを追加。
+  - src/main/resources/static/css/app.css で投稿本文、メタ情報、操作バー、いいねカウンター、詳細本文の読みやすさを
+    調整。
+
+  - Refactorとして、投稿日時/編集済み日時の共通メタ情報スタイルをまとめました。
+  - 表示項目と表示順は変更していません。
+  - JavaScript、外部CDN、外部フォント、th:utext は追加していません。
+
+  確認:
+
+  - ./mvnw -B -Ph2 -Dtest=PostCardLayoutFeatureTest test 成功
+  - ./mvnw -B -Ph2 test 成功
+    Tests run: 20, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット:
+
+  - 3bdb2e4 feat(ui): 投稿カードの視認性を改善する
+
+
 
 **振り返り**:
+UI/UXの改善が実装出来た。
+ソースについても、当該箇所の実装、WEBアプリも動いていることが確認出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+また、Codexと壁打ちし、仕様の詳細化を実施した
+
+
+
+
+## プロンプト 18
+
+**フェーズ**:コード全体のバグ確認
+
+**プロンプト本文**:
+
+```
+あなたが生成した以下ソースコードについて、客観的に見直し、厳格なコードレビューを実施してください。
+
+対象
+src/main/resources/templates 配下
+src/main/resources/static 配下
+src/main/resources/db/migration 配下
+src/main/java 配下
+
+レビューは以下の5つの観点で行い、問題点とその修正案を構造化して報告してください。
+
+### 1. 機能の正確性とエッジケース
+- 仕様漏れやロジックのエラーはありませんか？
+- 空の値、極端な入力値、異常系データが入力された場合の挙動は考慮されていますか？
+
+### 2. セキュリティ
+- 脆弱性（インジェクション、クロスサイトスクリプティング、不適切なオーソリゼーション、秘密情報のハードコードなど）は含まれていませんか？
+
+### 3. パフォーマンスとリソース効率
+- 無駄なループ、冗長なデータベースクエリ、メモリリークの懸念など、ボトルネックになる箇所はありませんか？
+
+### 4. コード品質とメンテナンス性
+- 変数名や関数名は直感的で適切ですか？
+- 密結合になりすぎている箇所や、より簡潔にリファクタリングできる箇所はありませんか？
+- 可読性を高めるためのコメントやドキュメントは適切ですか？
+
+### 5. エラーハンドリング
+- 例外処理（try-catchなど）は適切に実装され、エラー発生時にシステムが安全に停止、または回復できるようになっていますか？
+
+---
+
+出力フォーマット：
+1. 【総評】（コード全体の品質に対する簡潔な評価）
+2. 【指摘事項と改善案】（バグや改善点を箇条書きで。重要度：高/中/低 を明記）
+```
+
+**結果**: 効いた
+1. 【総評】
+     対象範囲全体として、研修用ミニSNSとしては十分に動く構成です。Thymeleafは概ね th:text を使っており、CSRFも
+     フォームに維持されています。
+     ただし、厳格に見ると 認可方式の弱さ、いいね数取得のN+1クエリ、フォームのアクセシビリティ属性不整合、CSS/HTMLテ
+     ストの脆さ は改善余地があります。特に認可とN+1は、利用者数や実運用を想定するなら優先して直すべきです。
+
+  2. 【指摘事項と改善案】
+
+  - 重要度: 高 / セキュリティ・認可
+    編集・削除権限が clientHash = IP + User-Agent のSHA-256先頭8桁 に依存しています。該当箇所は src/main/java/com/
+    example/tsubuyaki/controller/PostController.java:195、src/main/java/com/example/tsubuyaki/domain/Post.java:101
+    です。User-Agentは容易に偽装でき、社内ネットワークやプロキシ配下ではIP共有も起きます。別ユーザーが同じIP/UA条件
+    になった場合、編集・削除できる可能性があります。
+    改善案: 本来はSpring Securityの認証ユーザーIDに紐づける。研修スコープで認証を入れない場合でも、サーバー発行の署
+    名付き投稿者トークンをCookieに保持し、IP/UAだけに依存しない方式にする。
+
+  - 重要度: 中 / パフォーマンス
+    投稿一覧50件を PostView に変換するたび、各投稿ごとに likeRepository.countByPostId(post.getId()) を呼んでいま
+    す。該当箇所は src/main/java/com/example/tsubuyaki/service/PostService.java:124 です。最大50件表示なので、一覧1
+    回で投稿取得1回 + いいね数50回のN+1クエリになります。
+    改善案: Repositoryで投稿といいね数を集計してDTO投影する、または post_id -> count をまとめて取得するクエリを追加
+    する。
+
+  - 重要度: 中 / 機能の正確性・UX
+    一覧検索中に「いいね！」を押すと、returnTo=list により /posts へ戻るため検索条件が失われます。該当箇所は src/
+    main/resources/templates/posts/list.html:64、src/main/java/com/example/tsubuyaki/controller/
+    PostController.java:165 です。検索結果上で操作したユーザーは同じ検索結果へ戻ることを期待します。
+    改善案: hiddenで現在の q を渡し、redirect:/posts?q=... へ戻す。あるいは returnUrl をサーバー側で安全に組み立て
+    る。
+
+  - 重要度: 中 / アクセシビリティ・エッジケース
+    通常表示時にも aria-describedby="author-help author-error" / body-help body-error が出ますが、エラーがない場合
+    author-error / body-error 要素は存在しません。該当箇所は src/main/resources/templates/posts/form.html:32、src/
+    main/resources/templates/posts/edit.html:39 です。
+    改善案: エラーがある場合だけ error id を含める、または空のエラー領域を常時描画する。併せて aria-invalid を
+    #fields.hasErrors(...) に応じて付与する。
+
+  - 重要度: 中 / UI仕様・コード品質
+    .post__like-button の min-height が 2.25rem で、.button 系の 2.5rem と揃っていません。該当箇所は src/main/
+    resources/static/css/app.css:406 です。「いいねボタン、詳細を見る、編集、削除の高さや余白を揃える」という仕様に
+    対して不完全です。
+    改善案: .post__like-button を min-height: 2.5rem にする。必要なら .post__like-count も 2.5rem に揃える。
+
+  - 重要度: 中 / コード品質・テスト保守性
+    CSS検証がCSS全体への文字列 contains になっており、対象セレクタに設定されていることを保証できません。該当箇所は
+    src/test/java/com/example/tsubuyaki/controller/PostCardLayoutFeatureTest.java:93 です。
+    改善案: .post__actions { ... } など対象ブロックを抽出し、そのブロック内に border-top / padding-top があることを
+    検証する。
+
+  - 重要度: 低 / セキュリティ
+    th:style で背景色を出しています。該当箇所は src/main/resources/templates/posts/list.html:48、src/main/
+    resources/templates/posts/detail.html:30、src/main/resources/templates/posts/delete-confirm.html:33 です。現状
+    は src/main/java/com/example/tsubuyaki/domain/PostBackgroundColor.java:15 の許可色正規化があるため危険度は低い
+    です。ただし将来のCSP強化時にinline styleが制約になります。
+    改善案: post--bg-white など許可色ごとのCSS classに変換する。
+
+  - 重要度: 低 / 機能の正確性・入力エッジケース
+    検索語 q に上限がありません。投稿本文自体は280文字ですが、検索入力には長大文字列を渡せます。該当箇所は src/
+    main/java/com/example/tsubuyaki/controller/PostController.java:39 と src/main/resources/templates/posts/
+    list.html:36 です。
+    改善案: 検索語を280文字程度に切り詰める、または長すぎる場合はエラー/空検索扱いにする。検索inputにも maxlength
+    を付ける。
+
+  - 重要度: 低 / パフォーマンス
+    findTop50ByBodyContainingAndDeletedAtOrderByCreatedAtDesc は部分一致検索なので、DB規模が増えると重くなります。
+    該当箇所は src/main/java/com/example/tsubuyaki/repository/PostRepository.java:17 です。研修規模では問題化しにく
+    いですが、実運用ではボトルネック候補です。
+    改善案: 件数増加を想定するなら全文検索、検索専用index、または検索仕様の制限を検討する。
+
+  - 重要度: 低 / コード品質
+    [PostView.java] はコンストラクタ引数が多く、Checkstyleでも ParameterNumber 警告が出ています。DTO拡張のたびに呼
+    び出し側が壊れやすくなります。
+    改善案: record化、builder、static factory、または用途別DTOへ分割する。
+
+  - 重要度: 低 / コード品質
+    src/main/resources/static/css/app.css:351 と src/main/resources/static/css/app.css:370 で #111827 を直接指定し
+    ています。既存はCSS変数中心なので色管理が分散します。
+    改善案: --color-text-strong を追加するか、既存 --color-text に寄せる。
+
+  - 重要度: 低 / エラーハンドリング
+    showDetail は削除済み投稿ではHTTP 200で「投稿が見つかりません。」を表示し、存在しない投稿では404を返します。該
+    当箇所は src/main/java/com/example/tsubuyaki/controller/PostController.java:172 です。ユーザー向けには自然です
+    が、HTTP semanticsとしては削除済みも404/410の方が一貫します。
+    改善案: 画面表示は維持しつつ、削除済み投稿も404または410にする方針を検討する。研修要件が「削除済み詳細でメッ
+    セージ表示」なら現状維持でよいです。
+
+
+**振り返り**:
+自身のソースのバクについて、列挙出来たと考えている
+今回は以下の要件について、修正を行う（重要度：高については認証部分の仕様となるため、今回は割愛）
+  - 重要度: 中 / パフォーマンス
+  - 重要度: 中 / 機能の正確性・UX
+  - 重要度: 中 / アクセシビリティ・エッジケース
+  - 重要度: 中 / UI仕様・コード品質
+  - 重要度: 中 / コード品質・テスト保守性
+  - 重要度: 低 / セキュリティ
+  - 重要度: 低 / 機能の正確性・入力エッジケース
+  - 重要度: 低 / コード品質
+  - 重要度: 低 / コード品質
+  - 重要度: 低 / エラーハンドリング
+
+
+
+## プロンプト 19
+
+**フェーズ**:コード全体のバグ修正
+
+**プロンプト本文**:
+
+```
+以下内容について、TDD実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書く (Red)。
+2. その失敗テストを通す最小実装を書く (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングする (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認する。
+5. Conventional Commits でコミットする (`feat(<scope>): <要約>`)。
+
+対象課題:
+- 重要度: 中 / パフォーマンス
+  - 投稿一覧・検索でいいね数取得がN+1クエリになっている。
+- 重要度: 中 / 機能の正確性・UX
+  - 検索中の一覧で「いいね！」を押すと検索条件が失われる。
+- 重要度: 中 / アクセシビリティ・エッジケース
+  - エラーなし表示時にも aria-describedby が存在しない error id を参照している。
+- 重要度: 中 / UI仕様・コード品質
+  - `.post__like-button` の高さが `.button` 系操作と揃っていない。
+- 重要度: 中 / コード品質・テスト保守性
+  - CSS検証がCSS全体containsで、対象セレクタ内のプロパティを保証できていない。
+- 重要度: 低 / セキュリティ
+  - `th:style` のinline styleを、許可済み背景色class方式へ寄せたい。
+- 重要度: 低 / 機能の正確性・入力エッジケース
+  - 検索語 `q` に上限がない。
+- 重要度: 低 / コード品質
+  - `PostView` のコンストラクタ引数が多い。
+- 重要度: 低 / コード品質
+  - CSSに `#111827` など直接色指定が増えている。
+- 重要度: 低 / エラーハンドリング
+  - 削除済み投稿の詳細アクセスがHTTP 200で表示される。HTTP semanticsとして404または410へ寄せたい。
+
+受入基準:
+以下の観点のテストを用意してから本機能の実装を行う。
+
+改善1: いいね数N+1クエリを解消する
+- 投稿一覧 `latest()` と本文検索 `searchByBody()` で、投稿ごとに `countByPostId` を繰り返さない。
+- 複数投稿のいいね数をまとめて取得し、`PostView.likeCount` に反映する。
+- 詳細画面の `findById` は既存挙動を維持する。
+- 投稿が0件の場合も例外にならない。
+
+改善2: 検索中いいね後も検索条件を維持する
+- `/posts?q=検索語` の一覧でいいねを押した後、`/posts?q=検索語` に戻る。
+- 空白検索や空文字では `/posts` に戻る。
+- 任意URLをhiddenで受け取ってリダイレクトしない。Controller側で安全にURLを組み立てる。
+- 検索語はURLエンコードされる。
+
+改善3: フォームのARIA不整合を修正する
+
+- 新規投稿フォームの通常表示では、存在しない `author-error` / `body-error` を `aria-describedby` に含めない。
+- 編集フォームの通常表示では、存在しない `body-error` を `aria-describedby` に含めない。
+- バリデーションエラー時は、該当入力に `aria-invalid="true"` が付く。
+- エラー時は `aria-describedby` にエラー要素idを含める。
+- エラー文は入力欄直下に表示される。
+
+改善4: 投稿カード操作の高さ統一とCSS検証強化
+- `.post__like-button` は `min-height: 2.5rem` を持つ。
+- `.post__actions` ブロック内に `border-top` と `padding-top` がある。
+- `.post__like-count` ブロック内に `border-radius` と `background` がある。
+- `.post--detail .post__body` ブロック内に詳細向け `line-height` がある。
+- CSS検証はCSS全体containsではなく、対象セレクタのブロック抽出で検証する。
+
+改善5: inline style背景色をclass方式へ寄せる
+- 投稿一覧・詳細・削除確認で `th:style="background-color: ..."` を使わない。
+- 許可済み背景色に対応するCSS classを使う。
+- 不正な背景色は既存どおりデフォルト白相当になる。
+- 背景色選択フォームのスウォッチについては、必要最小限ならinline styleを残してよいが、投稿カード本体はclass方式に
+する。
+- `th:utext` は使わない。
+
+改善6: 検索語qの上限制御
+- 検索語は最大280文字まで扱う。
+- 280文字を超える場合は280文字に切り詰める、または検索エラーとして扱う。今回は「切り詰め」で実装する。
+- 空白のみは既存どおり検索扱いにしない。
+- 検索フォーム input に `maxlength="280"` がある。
+
+改善7: PostViewの多引数コンストラクタを整理する
+- 既存の画面表示・テストを壊さない。
+- `PostView` 生成時の引数順ミスが起きにくい形にする。
+- Checkstyleの `ParameterNumber` 警告を減らす。
+
+
+改善8: CSS色の直接指定を変数化する
+- `#111827` など投稿カード本文・投稿者用の直接色指定をCSS変数へ寄せる。
+- 既存の見た目を大きく変えない。
+- danger色も可能なら変数化する。ただし差分が大きくなる場合は投稿カード周辺だけでよい。
+
+改善9: 削除済み投稿詳細のHTTPステータス整理
+- 削除済み投稿の詳細アクセスはHTTP 404または410にする。今回は410 Goneを採用する。
+- 存在しない投稿は既存どおり404。
+- 通常投稿の詳細は200。
+- 削除後の一覧・検索からは引き続き除外される。
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+- Maven Central / GitHub / api.openai.com 以外へのネットワークアクセスはしない。
+- Thymeleaf では XSS 対策として `th:text` を維持し、`th:utext` は使わない。
+- JavaScript は追加しない。
+- 外部 CDN、外部画像、外部フォント、外部コンポーネントは使わない。
+```
+
+**結果**: 効いた
+ 実装・テスト・コミットまで完了しました。
+  変更内容
+  
+  src/main/java/com/example/tsubuyaki/controller/PostController.java
+
+  - 検索語 q を最大280文字に切り詰めるよう修正。
+  - 検索中に「いいね！」した後、/posts?q=... に戻るよう修正。
+  - 空白検索では /posts に戻るよう修正。
+  - 削除済み投稿の詳細アクセスを 410 Gone に変更。
+
+  src/main/java/com/example/tsubuyaki/repository/PostLikeRepository.java
+
+  - 複数投稿のいいね数をまとめて取得する集計クエリを追加。
+  - 投稿一覧・検索で countByPostId を投稿ごとに繰り返さないためのProjectionを追加。
+
+  src/main/java/com/example/tsubuyaki/service/PostService.java
+
+  - 投稿一覧 latest() と検索 searchByBody() で、いいね数を一括取得するよう修正。
+  - 投稿0件時も例外にならないよう空Mapで処理。
+  - 詳細画面 findById の既存挙動は維持。
+
+  src/main/java/com/example/tsubuyaki/domain/PostBackgroundColor.java
+
+  - 背景色コードを許可済みCSS classへ変換する cssClass を追加。
+  - 不正な背景色は既存どおりデフォルト白相当へ寄せる動作を維持。
+
+  src/main/java/com/example/tsubuyaki/web/dto/PostView.java
+
+  - 多引数コンストラクタをBuilder形式へ整理。
+  - 背景色classを返す getBackgroundColorClass() を追加。
+  - 既存の画面表示用getterは維持。
+
+  src/main/resources/templates/posts/list.html
+
+  - 検索inputに maxlength="280" を追加。
+  - 検索中のいいねフォームに q hiddenを追加。
+  - 投稿カード本体の th:style による背景色指定をやめ、背景色class方式へ変更。
+
+  src/main/resources/templates/posts/detail.html
+
+  - 投稿カード本体のinline background styleをやめ、背景色class方式へ変更。
+
+  src/main/resources/templates/posts/delete-confirm.html
+
+  - 削除確認画面の投稿カード本体も背景色class方式へ変更。
+
+  src/main/resources/templates/posts/form.html
+
+  - エラーなし通常表示では aria-describedby に author-error / body-error を含めないよう修正。
+  - バリデーションエラー時のみ error id と aria-invalid="true" を付与。
+
+  src/main/resources/templates/posts/edit.html
+
+  - 編集フォーム本文欄の aria-describedby をエラー有無で切替。
+  - エラー時のみ aria-invalid="true" を付与。
+
+  src/main/resources/static/css/app.css
+
+  - 投稿背景色用の class を追加。
+  - .post__like-button の min-height を 2.5rem に統一。
+  - 投稿者・本文・danger系の直接色指定をCSS変数へ整理。
+  - .post__actions / .post__like-count / .post--detail .post__body の既存改善を維持。
+
+  src/test/java/com/example/tsubuyaki/controller/PostReviewImprovementFeatureTest.java
+
+  - 今回の受入基準を1本で検証するFeature Testを新規追加。
+  - N+1解消、検索条件維持、ARIA、CSS、背景class、検索語上限、410 Goneを検証。
+
+  src/test/java/com/example/tsubuyaki/controller/PostBackgroundColorFeatureTest.java
+
+  - 背景色反映の期待値をinline styleからCSS class方式へ更新。
+
+  src/test/java/com/example/tsubuyaki/controller/PostCardLayoutFeatureTest.java
+
+  - CSS全体containsではなく、対象セレクタのブロック抽出で検証するよう改善。
+
+  src/test/java/com/example/tsubuyaki/controller/PostDeleteFeatureTest.java
+
+  - 削除済み投稿の詳細アクセス期待値を 200 表示から 410 Gone に更新。
+
+  src/test/java/com/example/tsubuyaki/controller/PostEditFeatureTest.java
+
+  - 通常表示時のARIA期待値をerror idなしに更新。
+  - 削除済み投稿の編集アクセス期待値を 410 Gone に更新。
+
+  src/test/java/com/example/tsubuyaki/controller/PostListFeatureTest.java
+
+  - 投稿カードclass期待値を背景色class付きに更新。
+
+  src/test/java/com/example/tsubuyaki/controller/PostNewFormFeatureTest.java
+
+  - 通常表示時のARIA期待値をerror idなしに更新。
+  
+  Redでは追加した1本の PostReviewImprovementFeatureTest が、いいね数取得で 4L <= 2L を満たせず失敗することを確認し
+  ました。その後Green/Refactorで以下を対応しました。
+
+  - PostService / PostLikeRepository: 一覧・検索のいいね数を一括取得し、N+1を解消
+  - PostController / テンプレート: 検索中いいね後の q 維持、検索語280文字切り詰め、削除済み詳細を410 Gone化
+  - PostView / PostBackgroundColor / CSS: 背景色をclass方式へ移行、Builder化、色変数化、操作領域といいねボタン高さ
+    を調整
+
+  - フォームテンプレート: エラーなし時の aria-describedby 不整合を修正
+  - 既存テスト: 新仕様に合わせて期待値を更新し、CSS検証をセレクタブロック単位へ改善
+
+  確認結果:
+  ./mvnw -B -Ph2 test 成功
+  Tests run: 21, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット:
+  6766e05 feat(post): レビュー指摘をまとめて改善する
+
+  なお、作業前からの未コミット変更として以下は未ステージのまま残しています。
+  EasySetupForMacOS/bin/setup-secrets-mac.sh, education/prompts-i-used.md, scripts/setup-secrets.sh, かんたんセット
+  アップ/bin/setup3-secrets.ps1
+
+
+**振り返り**:
+自身のソースのバク/課題にについて、修正を実施できた。
+ソース内容を確認し、修正されていることを確認。また、WEBアプリとして動作することを確認している。
