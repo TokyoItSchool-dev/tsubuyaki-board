@@ -976,7 +976,217 @@ Red: src/test/java/com/example/tsubuyaki/controller/PostBackgroundColorFeatureTe
 ソースについても、当該箇所の修正、WEBアプリも動いていることが確認出来た。
 
 
+## プロンプト 15
+
+**フェーズ**:投稿一覧のモダンなタイムラインUI化
+経緯：
+現在のつぶやきボードアプリのデザインがモダンではないため、デザイン変更を実施する
+デザイン案をCodexと壁打ちし作成、テンプレートとCSS（外部CDNを使用しない）にて実装する。
+
+**プロンプト本文**:
+
+```
+現在の「社内つぶやきボード」アプリのデザインを、業務アプリ寄りのモダンな X 風ミニ SNS UI に改善する。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書きます (Red)。
+2. その失敗テストを通す最小実装を書きます (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングします (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認します。
+5. Conventional Commits でコミットします (`feat(<scope>): <要約>`)。
+
+実装したいデザイン:
+- 全体は薄いグレー背景の、落ち着いた社内向け UI
+- 中央にタイムラインを配置する 1 カラム中心のレイアウト
+- 投稿フォームは白背景のカード風 UI
+- 投稿一覧は白背景の投稿カードとして表示
+- カードの角丸は 8px 程度
+- border と余白で読みやすく整理
+- ボタンは控えめなアクセントカラーで統一
+- 本文は読みやすい行間にする
+- スマホ表示でも 1 カラムで破綻しないレスポンシブ CSS にする
+- ランディングページ風・派手なグラデーション・装飾過多にはしない
+- Thymeleaf では XSS 対策として th:text を維持し、th:utext は使わない
+- Spring Security の CSRF がある場合はフォームの _csrf を維持する
+
+受入基準:
+- 投稿一覧画面がモダンな中央タイムライン型 UI になっている
+- 投稿フォームと投稿カードが視覚的に分離されている
+- PC / スマホ幅の両方でレイアウトが破綻しない
+
+実装上の注意:
+- HTML 構造は大きく変えすぎず、既存機能のテストが通る範囲で class 追加を中心にする。
+- CSS は既存の static/css 配下の構成に合わせて配置する。
+- 既存 CSS がある場合は、無関係なリセットや全面置換ではなく、読みやすく整理した差分にする。
+- th:text を th:utext に変更しない。
+- JavaScript は追加しない。
+- 画像や外部 CDN は使わない。
+- Maven Central / GitHub / api.openai.com 以外へのネットワークアクセスはしない。
+
+制約:
+- 既存機能の挙動を変えず、主にテンプレートと CSS の改善に限定すること。
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+
+
+```
+
+**結果**: 効いた
+  差分
+
+  - src/test/java/com/example/tsubuyaki/controller/PostListFeatureTest.java: モダン UI 用の Red テストを 1 本追加
+  - src/main/resources/templates/posts/list.html: app-shell、app-header、composer-card、timeline-feed、post-card を
+    追加
+    ポンシブを追加
+
+  検証
+
+  - Red: 追加テストが未実装 class 不足で失敗することを確認
+  - Green: 追加テスト成功
+  - 全体: ./mvnw -B -Ph2 test 成功
+      - Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット
+
+  - 2b2b7bf feat(ui): 投稿一覧をモダンなタイムラインUIにする
+  
+**振り返り**:
+一覧及び詳細画面のレイアウト修正は出来た。
+ソースについても、当該箇所の修正、WEBアプリも動いていることが確認出来た。
+また、Codexと壁打ちし、よりよい仕様に出来た。
+
+
 ## プロンプト 14
+
+**フェーズ**:C2: 投稿削除
+
+**プロンプト本文**:
+
+```
+投稿削除機能（POST /posts/{id}/del）を TDD で実装してください。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書く (Red)。
+2. その失敗テストを通す最小実装を書く (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングする (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認する。
+5. Conventional Commits でコミットする (`feat(<scope>): <要約>`)。
+
+受入基準:
+概要
+- ユーザログイン機能が無い現状で、投稿者本人に近い判定として clientHash を使い、投稿削除機能を追加する。
+- 削除は物理削除ではなく論理削除とする。
+- 削除時はいきなり削除せず、削除確認画面を挟む。
+
+仕様内容
+- postsテーブルに 「client_hash」と「deleted_at」を作成する
+  - 「deleted_at」のデフォルト値は0とする
+- 投稿作成時に clientHash を取得し、Posts テーブルに保存する。
+- clientHash は「ハッシュ化された IP + UA、SHA-256 の先頭 8 文字」である。
+- 詳細画面 （posts/detail.html） に削除確認画面へ進むボタンまたはリンクを追加する。
+- 投稿したユーザ、つまり clientHash が同一の投稿にのみ削除確認ボタンを表示する。
+- 削除確認ボタン押下時に /posts/{id}/delete-confirm に GET リクエストする。
+- 削除確認画面（posts/delete-confirm.html） を追加する。
+- 削除確認画面では、削除対象の投稿内容と警告メッセージを表示する。
+  - 文言例: `この投稿を削除します。よろしいですか？`
+- 削除確認画面には以下を表示する。
+  - 削除実行ボタン
+  - キャンセルリンクまたは戻るリンク
+- 削除実行ボタン押下時に /posts/{id}/del に POST リクエストする。
+- 削除リクエストでは現在の clientHash を再計算し、投稿の clientHash と比較する。
+  - 一致していれば削除 OK。
+  - 一致していなければ削除 NG とし、エラーメッセージを表示する。
+- 削除 OK の場合、論理削除を行う。
+  - `posts.deleted_at = 1` とする。
+- 論理削除済みデータは投稿一覧画面（posts/list.html） で非表示にする。
+- 論理削除済みデータは検索対象外にする。
+- 論理削除済みデータに詳細画面 URL から直接アクセスした場合、エラーメッセージを表示する。
+
+以下の観点のテストを用意してから本機能の実装を行う。
+- postsテーブルに 「client_hash」と「deleted_at」 が追加されていること。
+- 投稿作成時に 「clientHash」 が保存されること。
+- 詳細画面で投稿者本人のみ削除確認ボタンが表示されること。
+- 削除確認ボタンがあり 「GET /posts/{id}/delete-confirm」 にリクエストされること。
+- 削除確認画面（posts/delete-confirm.html） があること。
+- 削除確認画面に削除対象の投稿内容と警告メッセージが表示されること。
+- 削除確認画面に削除実行ボタンとキャンセルリンクが表示されること。
+- 削除実行ボタンがあり、「POST /posts/{id}/del」にリクエストされること。
+- clientHash 一致時のみ「posts.deleted_at = 1」になること。
+- clientHash 不一致時は削除されず、エラーメッセージが表示されること。
+- 論理削除済み投稿は一覧に表示されないこと。
+- 論理削除済み投稿は検索対象外であること。
+- 論理削除済み投稿の詳細 URL 直アクセスではエラーメッセージが表示されること。
+- 既存の投稿作成、一覧、検索、詳細、いいね機能が壊れていないこと。
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+- Maven Central / GitHub / api.openai.com 以外へのネットワークアクセスはしない。
+- Thymeleaf では XSS 対策として `th:text` を維持し、`th:utext` は使わない。
+- JavaScript は追加しない。
+- 外部 CDN、外部画像、外部フォント、外部コンポーネントは使わない。
+
+```
+
+**結果**: 効いた
+  追加内容:
+
+  - client_hash / deleted_at 追加 migration を作成
+  - 投稿作成時に IP + ":" + User-Agent を SHA-256 化し、先頭 8 文字を保存
+  - 詳細画面で本人投稿のみ削除確認リンクを表示
+  - GET /posts/{id}/delete-confirm の確認画面を追加
+  - POST /posts/{id}/del で clientHash 一致時のみ deleted_at = 1
+  - 削除済み投稿を一覧・検索・詳細表示から除外
+  - 削除済み詳細直アクセス時は 投稿が見つかりません。 を表示
+
+  主な変更ファイル:
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java
+  - src/main/java/com/example/tsubuyaki/service/PostService.java
+  - src/main/java/com/example/tsubuyaki/domain/Post.java
+  - src/main/resources/db/migration/V4__add_post_delete_columns.sql
+  - src/main/resources/templates/posts/delete-confirm.html
+  - src/test/java/com/example/tsubuyaki/controller/PostDeleteFeatureTest.java
+
+  検証:
+
+  - Red: PostDeleteFeatureTest を 1 本追加し、client_hash 未追加で失敗確認
+  - Green: 実装後、追加テスト成功
+  - 全体: ./mvnw -B -Ph2 test 成功
+      - Tests run: 17, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット:
+
+  - 77a6282 feat(post): 投稿削除機能を追加する
+
+**振り返り**:
+投稿の削除機能が実装出来た。
+ソースについても、当該箇所の実装、WEBアプリも動いていることが確認出来た。
+また、Codexと壁打ちし、仕様の詳細化を実施した
+
+
+## プロンプト 15
+
+**フェーズ**:
+
+**プロンプト本文**:
+
+```
+
+```
+
+**結果**: 効いた / 部分的に効いた / 効かなかった
+
+**振り返り**:
+
+
+## プロンプト 15
 
 **フェーズ**:
 
