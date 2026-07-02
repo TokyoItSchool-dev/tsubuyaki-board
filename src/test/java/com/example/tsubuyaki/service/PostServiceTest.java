@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,6 +25,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostLikeRepository postLikeRepository;
 
     @InjectMocks
     private PostService postService;
@@ -59,5 +65,50 @@ class PostServiceTest {
 
         assertThat(actual).isEmpty();
         verify(postRepository).findById(404L);
+    }
+
+    @Test
+    @DisplayName("いいねトグル_未いいね_いいねを登録する")
+    void いいねトグル_未いいね_いいねを登録する() {
+        given(postRepository.existsById(10L)).willReturn(true);
+        given(postLikeRepository.existsByPostIdAndClientHash(10L, "abcdef12")).willReturn(false);
+
+        postService.toggleLike(10L, "abcdef12");
+
+        verify(postLikeRepository).save(new PostLike(10L, "abcdef12"));
+        verify(postLikeRepository, never()).deleteByPostIdAndClientHash(10L, "abcdef12");
+    }
+
+    @Test
+    @DisplayName("いいねトグル_いいね済み_いいねを削除する")
+    void いいねトグル_いいね済み_いいねを削除する() {
+        given(postRepository.existsById(10L)).willReturn(true);
+        given(postLikeRepository.existsByPostIdAndClientHash(10L, "abcdef12")).willReturn(true);
+
+        postService.toggleLike(10L, "abcdef12");
+
+        verify(postLikeRepository).deleteByPostIdAndClientHash(10L, "abcdef12");
+    }
+
+    @Test
+    @DisplayName("いいね数_countLikes_Repositoryの件数を返す")
+    void いいね数_countLikes_Repositoryの件数を返す() {
+        given(postLikeRepository.countByPostId(10L)).willReturn(3L);
+
+        long likeCount = postService.countLikes(10L);
+
+        assertThat(likeCount).isEqualTo(3);
+        verify(postLikeRepository).countByPostId(10L);
+    }
+
+    @Test
+    @DisplayName("いいね状態_likedBy_Repositoryの存在確認結果を返す")
+    void いいね状態_likedBy_Repositoryの存在確認結果を返す() {
+        given(postLikeRepository.existsByPostIdAndClientHash(10L, "abcdef12")).willReturn(true);
+
+        boolean likedByClient = postService.likedBy(10L, "abcdef12");
+
+        assertThat(likedByClient).isTrue();
+        verify(postLikeRepository).existsByPostIdAndClientHash(10L, "abcdef12");
     }
 }

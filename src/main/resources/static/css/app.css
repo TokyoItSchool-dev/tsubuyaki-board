@@ -54,3 +54,15 @@ h1 {
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+.post__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.post__likes {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}

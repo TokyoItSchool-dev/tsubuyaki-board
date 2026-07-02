@@ -1,7 +1,10 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.service.ClientHashService;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -18,8 +21,11 @@ public class PostController {
 
     private final PostService postService;
 
-    public PostController(PostService postService) {
+    private final ClientHashService clientHashService;
+
+    public PostController(PostService postService, ClientHashService clientHashService) {
         this.postService = postService;
+        this.clientHashService = clientHashService;
     }
 
     @GetMapping({ "/", "/posts" })
@@ -44,9 +50,25 @@ public class PostController {
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("post", postService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+    public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
+        Post post = postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        String clientHash = clientHash(request);
+        model.addAttribute("post", post);
+        model.addAttribute("likeCount", postService.countLikes(id));
+        model.addAttribute("likedByClient", postService.likedBy(id, clientHash));
         return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        postService.toggleLike(id, clientHash(request));
+        return "redirect:/posts/" + id;
+    }
+
+    private String clientHash(HttpServletRequest request) {
+        return clientHashService.generate(request.getRemoteAddr(), request.getHeader("User-Agent"));
     }
 }
