@@ -117,8 +117,38 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿詳細_詳細ボタンから遷移し存在しないidは404を返す")
-    void 投稿詳細_詳細ボタンから遷移し存在しないidは404を返す() throws Exception {
+    @DisplayName("投稿一覧詳細_UPDATE1_アバター色と本文リンクを表示し詳細ボタンを廃止する")
+    void 投稿一覧詳細_UPDATE1_アバター色と本文リンクを表示し詳細ボタンを廃止する() throws Exception {
+        Post colored = new Post("alice", "blue", "長い本文を1行で表示します", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(colored, "id", 42L);
+        Post noColor = new Post("bob", null, "色なし投稿です", Instant.parse("2026-05-23T09:00:00Z"));
+        ReflectionTestUtils.setField(noColor, "id", 43L);
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(colored, noColor));
+        given(postRepository.findById(42L)).willReturn(Optional.of(colored));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<span[^>]*class=\"avatar-dot avatar-dot--blue\"[^>]*></span>\\s*"
+                                + "<span[^>]*class=\"post__author\"[^>]*>alice</span>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<header>\\s*<span[^>]*class=\"post__author\"[^>]*>bob</span>\\s*</header>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<p[^>]*class=\"post__summary\"[^>]*>\\s*"
+                                + "<a[^>]*class=\"post__body-link\"[^>]*href=\"/posts/42\"[^>]*>長い本文を1行で表示します</a>\\s*"
+                                + "<time[^>]*class=\"post__created-at\".*")))
+                .andExpect(content().string(matchesPattern("(?s)^(?!.*>\\s*詳細\\s*</button>).*$")));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<span[^>]*class=\"avatar-dot avatar-dot--blue\"[^>]*></span>\\s*"
+                                + "<span[^>]*class=\"post__author\"[^>]*>alice</span>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_本文リンクから遷移し存在しないidは404を返す")
+    void 投稿詳細_本文リンクから遷移し存在しないidは404を返す() throws Exception {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));
         ReflectionTestUtils.setField(post, "id", 42L);
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
@@ -128,8 +158,7 @@ class PostControllerTest {
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(matchesPattern(
-                        "(?s).*<form[^>]*action=\"/posts/42\"[^>]*method=\"get\"[^>]*>.*"
-                                + "<button[^>]*>\\s*詳細\\s*</button>.*")));
+                        "(?s).*<a[^>]*class=\"post__body-link\"[^>]*href=\"/posts/42\"[^>]*>本文です</a>.*")));
 
         mockMvc.perform(get("/posts/42"))
                 .andExpect(status().isOk())

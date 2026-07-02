@@ -27,15 +27,18 @@
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
             <header>
+                <span th:if="${!#strings.isEmpty(post.avatarColor)}"
+                      th:class="'avatar-dot avatar-dot--' + ${post.avatarColor}"></span>
                 <span class="post__author" th:text="${post.author}">投稿者</span>
             </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
-            <time class="post__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-            <form th:action="@{/posts/{id}(id=${post.id})}" method="get">
-                <button type="submit">詳細</button>
-            </form>
+            <p class="post__summary">
+                <a class="post__body-link"
+                   th:href="@{/posts/{id}(id=${post.id})}"
+                   th:text="${post.body}">本文</a>
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </p>
         </article>
     </section>
 </main>
