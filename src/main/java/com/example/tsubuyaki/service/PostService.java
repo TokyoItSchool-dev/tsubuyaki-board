@@ -10,7 +10,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -49,6 +51,12 @@ public class PostService {
 
     public long countLikes(Long postId) {
         return likeRepository.countByPostId(postId);
+    }
+
+    public Map<Long, Long> countLikesByPostId(List<Post> posts) {
+        return posts.stream()
+                .filter(post -> post.getId() != null)
+                .collect(Collectors.toMap(Post::getId, post -> likeRepository.countByPostId(post.getId())));
     }
 
     @Transactional

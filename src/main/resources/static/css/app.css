@@ -32,8 +32,23 @@ h1 {
     margin-bottom: 1rem;
 }
 
-.toolbar {
+.list-toolbar {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
     margin: 1rem 0;
+}
+
+.toolbar,
+.search-form {
+    margin: 0;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .post {

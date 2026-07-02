@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Objects;
 
 @Controller
@@ -36,7 +38,9 @@ public class PostController {
     @GetMapping({ "/", "/posts", "/posts/" })
     public String list(@RequestParam(name = "q", required = false) String q, Model model) {
         String keyword = postService.normalizeKeyword(q);
-        model.addAttribute("posts", postService.searchByBody(keyword));
+        List<Post> posts = postService.searchByBody(keyword);
+        model.addAttribute("posts", posts);
+        model.addAttribute("likeCounts", postService.countLikesByPostId(posts));
         model.addAttribute("q", keyword);
         return "posts/list";
     }

@@ -10,35 +10,36 @@
 <main>
     <h1>社内つぶやきボード</h1>
     <nav>
-        <a th:href="@{/posts}">一覧</a>
-        |
         <a th:href="${#strings.isEmpty(q)} ? @{/posts/form} : @{/posts/form(q=${q})}">新規投稿</a>
     </nav>
-    <form class="toolbar" th:action="@{/posts/}" method="get">
-        <button type="submit">更新</button>
-    </form>
-    <form class="search-form" th:action="@{/posts}" method="get">
-        <label for="q">本文検索</label>
-        <input type="search" id="q" name="q" th:value="${q}" maxlength="280">
-        <button type="submit">検索</button>
-    </form>
+    <div class="list-toolbar">
+        <form class="toolbar" th:action="@{/posts/}" method="get">
+            <button type="submit">更新</button>
+        </form>
+        <form class="search-form" th:action="@{/posts}" method="get">
+            <label for="q">本文検索</label>
+            <input type="search" id="q" name="q" th:value="${q}" maxlength="280">
+            <button type="submit">検索</button>
+        </form>
+    </div>
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
             <header>
+                <span class="post__author" th:text="${post.author}">投稿者</span>
                 <span th:if="${!#strings.isEmpty(post.avatarColor)}"
                       th:class="'avatar-dot avatar-dot--' + ${post.avatarColor}"></span>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
             </header>
             <p class="post__summary">
                 <a class="post__body-link"
                    th:href="@{/posts/{id}(id=${post.id})}"
-                   th:text="${post.body}">本文</a>
+                   th:text="${#strings.length(post.body) > 30 ? #strings.substring(post.body, 0, 30) + '...' : post.body}">本文</a>
                 <time class="post__created-at"
                       th:datetime="${post.createdAt}"
                       th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
             </p>
+            <p class="post__likes" th:text="${(likeCounts.get(post.id) ?: 0) + ' いいね'}">0 いいね</p>
         </article>
     </section>
 </main>
