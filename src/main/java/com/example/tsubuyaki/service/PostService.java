@@ -17,6 +17,8 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class PostService {
 
+    private static final int NOT_DELETED = 0;
+
     private final PostRepository repository;
     private final PostLikeRepository likeRepository;
 
@@ -26,11 +28,11 @@ public class PostService {
     }
 
     public List<PostView> latest() {
-        return toViews(repository.findTop50ByOrderByCreatedAtDesc());
+        return toViews(repository.findTop50ByDeletedAtOrderByCreatedAtDesc(NOT_DELETED));
     }
 
     public List<PostView> searchByBody(String keyword) {
-        return toViews(repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword));
+        return toViews(repository.findTop50ByBodyContainingAndDeletedAtOrderByCreatedAtDesc(keyword, NOT_DELETED));
     }
 
     @Transactional
@@ -40,16 +42,30 @@ public class PostService {
 
     @Transactional
     public void create(String author, String body, String backgroundColor) {
-        repository.save(new Post(author, body, LocalDateTime.now(), backgroundColor));
+        create(author, body, backgroundColor, null);
+    }
+
+    @Transactional
+    public void create(String author, String body, String backgroundColor, String clientHash) {
+        repository.saveAndFlush(new Post(author, body, LocalDateTime.now(), backgroundColor, clientHash));
     }
 
     public Optional<PostView> findById(Long id) {
-        return repository.findById(id).map(this::toView);
+        return findById(id, null);
+    }
+
+    public Optional<PostView> findById(Long id, String clientHash) {
+        return repository.findByIdAndDeletedAt(id, NOT_DELETED)
+                .map(post -> toView(post, clientHash));
+    }
+
+    public boolean existsDeletedById(Long id) {
+        return repository.existsByIdAndDeletedAt(id, 1);
     }
 
     @Transactional
     public boolean toggleLike(Long postId, String clientHash) {
-        Optional<Post> post = repository.findById(postId);
+        Optional<Post> post = repository.findByIdAndDeletedAt(postId, NOT_DELETED);
         if (post.isEmpty()) {
             return false;
         }
@@ -64,14 +80,30 @@ public class PostService {
         return true;
     }
 
+    @Transactional
+    public boolean delete(Long postId, String clientHash) {
+        Optional<Post> post = repository.findByIdAndDeletedAt(postId, NOT_DELETED);
+        if (post.isEmpty() || !post.get().canDelete(clientHash)) {
+            return false;
+        }
+        post.get().markDeleted();
+        repository.flush();
+        return true;
+    }
+
     private PostView toView(Post post) {
+        return toView(post, null);
+    }
+
+    private PostView toView(Post post, String clientHash) {
         return new PostView(
                 post.getId(),
                 post.getAuthor(),
                 post.getBody(),
                 post.getCreatedAt(),
                 likeRepository.countByPostId(post.getId()),
-                post.getBackgroundColor());
+                post.getBackgroundColor(),
+                post.canDelete(clientHash));
     }
 
     private List<PostView> toViews(List<Post> posts) {

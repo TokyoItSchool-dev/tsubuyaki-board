@@ -10,6 +10,7 @@ public class PostView {
     private final LocalDateTime createdAt;
     private final long likeCount;
     private final String backgroundColor;
+    private final boolean canDelete;
 
     public PostView(
             Long id,
@@ -18,12 +19,24 @@ public class PostView {
             LocalDateTime createdAt,
             long likeCount,
             String backgroundColor) {
+        this(id, author, body, createdAt, likeCount, backgroundColor, false);
+    }
+
+    public PostView(
+            Long id,
+            String author,
+            String body,
+            LocalDateTime createdAt,
+            long likeCount,
+            String backgroundColor,
+            boolean canDelete) {
         this.id = id;
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
         this.likeCount = likeCount;
         this.backgroundColor = backgroundColor;
+        this.canDelete = canDelete;
     }
 
     public Long getId() {
@@ -48,5 +61,9 @@ public class PostView {
 
     public String getBackgroundColor() {
         return backgroundColor;
+    }
+
+    public boolean isCanDelete() {
+        return canDelete;
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -77,8 +79,8 @@ class PostCreateFeatureTest {
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
 
-        verify(postService).create("a", "b", PostBackgroundColor.DEFAULT);
-        verify(postService).create(maxAuthor, maxBody, PostBackgroundColor.DEFAULT);
+        verify(postService).create(eq("a"), eq("b"), eq(PostBackgroundColor.DEFAULT), anyString());
+        verify(postService).create(eq(maxAuthor), eq(maxBody), eq(PostBackgroundColor.DEFAULT), anyString());
         verifyNoMoreInteractions(postService);
     }
 }

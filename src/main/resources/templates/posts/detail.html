@@ -13,7 +13,9 @@
         <a th:href="@{/posts}">一覧に戻る</a>
     </nav>
 
-    <article class="post" th:style="|background-color: ${post.backgroundColor};|">
+    <p class="error" th:if="${detailError != null}" th:text="${detailError}">エラー</p>
+
+    <article class="post" th:if="${post != null}" th:style="|background-color: ${post.backgroundColor};|">
         <header>
             <span class="post__author" th:text="${post.author}">投稿者</span>
         </header>
@@ -29,6 +31,8 @@
                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button class="post__like-button" type="submit">いいね！</button>
             </form>
+            <a class="post__delete-link" th:if="${post.canDelete}"
+               th:href="@{/posts/{id}/delete-confirm(id=${post.id})}">削除</a>
         </div>
     </article>
 </main>

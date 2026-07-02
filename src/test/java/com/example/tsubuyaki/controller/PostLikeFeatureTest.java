@@ -122,7 +122,7 @@ class PostLikeFeatureTest {
     private String clientHash() {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest((CLIENT_IP + USER_AGENT).getBytes(StandardCharsets.UTF_8));
+            byte[] hash = digest.digest((CLIENT_IP + ":" + USER_AGENT).getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash, 0, 4);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);

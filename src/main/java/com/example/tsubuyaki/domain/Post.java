@@ -32,6 +32,12 @@ public class Post {
     @Column(name = "background_color", length = 7)
     private String backgroundColor;
 
+    @Column(name = "client_hash", length = 8)
+    private String clientHash;
+
+    @Column(name = "deleted_at", nullable = false)
+    private int deletedAt;
+
     protected Post() {
         // JPA
     }
@@ -41,10 +47,16 @@ public class Post {
     }
 
     public Post(String author, String body, LocalDateTime createdAt, String backgroundColor) {
+        this(author, body, createdAt, backgroundColor, null);
+    }
+
+    public Post(String author, String body, LocalDateTime createdAt, String backgroundColor, String clientHash) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
         this.backgroundColor = backgroundColor;
+        this.clientHash = clientHash;
+        this.deletedAt = 0;
     }
 
     public Long getId() {
@@ -65,6 +77,22 @@ public class Post {
 
     public String getBackgroundColor() {
         return PostBackgroundColor.normalize(backgroundColor);
+    }
+
+    public String getClientHash() {
+        return clientHash;
+    }
+
+    public int getDeletedAt() {
+        return deletedAt;
+    }
+
+    public boolean canDelete(String currentClientHash) {
+        return clientHash != null && clientHash.equals(currentClientHash);
+    }
+
+    public void markDeleted() {
+        this.deletedAt = 1;
     }
 
     @Override

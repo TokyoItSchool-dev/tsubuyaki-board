@@ -336,6 +336,32 @@ textarea:focus-visible {
     background: rgb(29 78 216 / 0.08);
 }
 
+.post__delete-link {
+    color: #b91c1c;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.post-delete-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.post-delete-form__button {
+    border-color: #b91c1c;
+    background: #b91c1c;
+}
+
+.post-delete-form__button:hover {
+    background: #991b1b;
+}
+
+.error {
+    color: #b91c1c;
+    font-weight: 700;
+}
+
 .empty-state {
     margin: 0;
     padding: 1.5rem;

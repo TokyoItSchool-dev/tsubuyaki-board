@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.service.ClientHashGenerator;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import com.example.tsubuyaki.web.dto.PostView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -14,10 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
+import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -26,6 +25,8 @@ public class PostController {
 
     private static final String RETURN_TO_LIST = "list";
     private static final String RETURN_TO_DETAIL = "detail";
+    private static final String DELETE_ERROR_MESSAGE = "この投稿は削除できません。";
+    private static final String NOT_FOUND_MESSAGE = "投稿が見つかりません。";
 
     private final PostService postService;
 
@@ -51,19 +52,49 @@ public class PostController {
     }
 
     @PostMapping("/posts")
-    public String create(@Valid @ModelAttribute("postForm") PostForm postForm, BindingResult bindingResult) {
+    public String create(
+            @Valid @ModelAttribute("postForm") PostForm postForm,
+            BindingResult bindingResult,
+            HttpServletRequest request) {
         if (bindingResult.hasErrors()) {
             return "posts/form";
         }
-        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getBackgroundColor());
+        postService.create(
+                postForm.getAuthor(),
+                postForm.getBody(),
+                postForm.getBackgroundColor(),
+                clientHash(request));
         return "redirect:/posts";
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("post", postService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND)));
-        return "posts/detail";
+    public String detail(@PathVariable Long id, HttpServletRequest request, Model model) {
+        return showDetail(id, clientHash(request), model, null);
+    }
+
+    @GetMapping("/posts/{id}/delete-confirm")
+    public String deleteConfirm(@PathVariable Long id, HttpServletRequest request, Model model) {
+        String clientHash = clientHash(request);
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isEmpty()) {
+            return showDetail(id, clientHash, model, null);
+        }
+        if (!post.get().isCanDelete()) {
+            model.addAttribute("post", post.get());
+            model.addAttribute("detailError", DELETE_ERROR_MESSAGE);
+            return "posts/detail";
+        }
+        model.addAttribute("post", post.get());
+        return "posts/delete-confirm";
+    }
+
+    @PostMapping("/posts/{id}/del")
+    public String delete(@PathVariable Long id, HttpServletRequest request, Model model) {
+        String clientHash = clientHash(request);
+        if (postService.delete(id, clientHash)) {
+            return "redirect:/posts";
+        }
+        return showDetail(id, clientHash, model, DELETE_ERROR_MESSAGE);
     }
 
     @PostMapping("/posts/{id}/likes")
@@ -84,6 +115,22 @@ public class PostController {
         return "redirect:/posts/" + id;
     }
 
+    private String showDetail(Long id, String clientHash, Model model, String errorMessage) {
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isPresent()) {
+            model.addAttribute("post", post.get());
+            if (errorMessage != null) {
+                model.addAttribute("detailError", errorMessage);
+            }
+            return "posts/detail";
+        }
+        if (postService.existsDeletedById(id)) {
+            model.addAttribute("detailError", NOT_FOUND_MESSAGE);
+            return "posts/detail";
+        }
+        throw new ResponseStatusException(NOT_FOUND);
+    }
+
     private String normalizeQuery(String query) {
         if (query == null) {
             return "";
@@ -92,21 +139,6 @@ public class PostController {
     }
 
     private String clientHash(HttpServletRequest request) {
-        String source = request.getRemoteAddr() + userAgent(request);
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(source.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash, 0, 4);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is not available", e);
-        }
-    }
-
-    private String userAgent(HttpServletRequest request) {
-        String userAgent = request.getHeader("User-Agent");
-        if (userAgent == null) {
-            return "";
-        }
-        return userAgent;
+        return ClientHashGenerator.from(request);
     }
 }
