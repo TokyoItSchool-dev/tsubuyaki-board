@@ -58,8 +58,55 @@ h1 {
 }
 
 .post__author {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 600;
     margin: 0 0 0.5rem;
+}
+
+.avatar {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: #ef4444;
+}
+
+.avatar--red,
+.avatar-swatch--red {
+    background: #ef4444;
+}
+
+.avatar--blue,
+.avatar-swatch--blue {
+    background: #3b82f6;
+}
+
+.avatar--green,
+.avatar-swatch--green {
+    background: #22c55e;
+}
+
+.avatar-colors {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin: 0 0 1rem;
+    padding: 0.75rem;
+}
+
+.avatar-colors label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-right: 1rem;
+}
+
+.avatar-swatch {
+    display: inline-block;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
 }
 
 .post__created-at {

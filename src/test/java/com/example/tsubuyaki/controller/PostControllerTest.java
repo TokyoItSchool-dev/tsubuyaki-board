@@ -20,7 +20,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -229,6 +231,16 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿作成フォーム_GET_posts_new_初期状態で赤色が選択されている")
+    void 投稿作成フォーム_GET_posts_new_初期状態で赤色が選択されている() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("postForm", hasProperty("avatarColor", is("red"))))
+                .andExpect(content().string(containsString("value=\"red\"")))
+                .andExpect(content().string(containsString("checked=\"checked\"")));
+    }
+
+    @Test
     @DisplayName("投稿作成_投稿者名と本文が空白のとき_入力チェックエラーを表示する")
     void 投稿作成_投稿者名と本文が空白のとき_入力チェックエラーを表示する() throws Exception {
         mockMvc.perform(post("/posts")
@@ -242,15 +254,28 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿作成_投稿者名と本文が最大文字数を超えるとき_形式エラーを表示する")
-    void 投稿作成_投稿者名と本文が最大文字数を超えるとき_形式エラーを表示する() throws Exception {
+    @DisplayName("投稿作成_投稿者名が15文字を超えるとき_形式エラーを表示する")
+    void 投稿作成_投稿者名が15文字を超えるとき_形式エラーを表示する() throws Exception {
         mockMvc.perform(post("/posts")
-                        .param("author", "a".repeat(31))
+                        .param("author", "a".repeat(16))
+                        .param("avatarColor", "red")
+                        .param("body", "本文"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名は 15 文字以内で入力してください")));
+    }
+
+    @Test
+    @DisplayName("投稿作成_本文が最大文字数を超えるとき_形式エラーを表示する")
+    void 投稿作成_本文が最大文字数を超えるとき_形式エラーを表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("avatarColor", "red")
                         .param("body", "b".repeat(281)))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
-                .andExpect(model().attributeHasFieldErrors("postForm", "author", "body"))
-                .andExpect(content().string(containsString("投稿者名は 30 文字以内で入力してください")))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"))
                 .andExpect(content().string(containsString("本文は 280 文字以内で入力してください")));
     }
 
@@ -259,11 +284,12 @@ class PostControllerTest {
     void 投稿作成_入力が正しいとき_Serviceで登録し投稿一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
+                        .param("avatarColor", "blue")
                         .param("body", "はじめての投稿"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).createPost("alice", "はじめての投稿");
+        verify(postService).createPost("alice", "blue", "はじめての投稿");
     }
 
     private static String clientHash(String ipAddress, String userAgent) {

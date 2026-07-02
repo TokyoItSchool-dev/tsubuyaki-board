@@ -85,7 +85,12 @@ public class PostService {
 
     @Transactional
     public void createPost(String author, String body) {
-        repository.save(new Post(author, body, Instant.now(clock)));
+        createPost(author, "red", body);
+    }
+
+    @Transactional
+    public void createPost(String author, String avatarColor, String body) {
+        repository.save(new Post(author, avatarColor, body, Instant.now(clock)));
     }
 
     private static String normalizeKeyword(String keyword) {

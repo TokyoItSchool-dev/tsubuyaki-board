@@ -17,6 +17,8 @@ import java.util.Objects;
 @Table(name = "posts")
 public class Post {
 
+    private static final String DEFAULT_AVATAR_COLOR = "red";
+
     private static final ZoneOffset DATABASE_ZONE = ZoneOffset.UTC;
 
     @Id
@@ -24,8 +26,11 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "posts_seq_gen")
     private Long id;
 
-    @Column(name = "author", length = 30, nullable = false)
+    @Column(name = "author", length = 15, nullable = false)
     private String author;
+
+    @Column(name = "avatar_color", length = 20, nullable = false)
+    private String avatarColor;
 
     @Column(name = "body", length = 280, nullable = false)
     private String body;
@@ -41,7 +46,12 @@ public class Post {
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, "red", body, createdAt);
+    }
+
+    public Post(String author, String avatarColor, String body, Instant createdAt) {
         this.author = author;
+        this.avatarColor = normalizeAvatarColor(avatarColor);
         this.body = body;
         this.createdAt = toDatabaseTimestamp(createdAt);
     }
@@ -52,6 +62,10 @@ public class Post {
 
     public String getAuthor() {
         return author;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
     }
 
     public String getBody() {
@@ -82,6 +96,13 @@ public class Post {
             return null;
         }
         return timestamp.toInstant(DATABASE_ZONE);
+    }
+
+    private static String normalizeAvatarColor(String avatarColor) {
+        if (avatarColor == null || avatarColor.isBlank()) {
+            return DEFAULT_AVATAR_COLOR;
+        }
+        return avatarColor;
     }
 
     @Override
