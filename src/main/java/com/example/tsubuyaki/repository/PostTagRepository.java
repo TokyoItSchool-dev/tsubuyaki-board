@@ -13,8 +13,10 @@ import java.util.List;
 public interface PostTagRepository extends JpaRepository<PostTag, Long> {
 
     @Query("""
-            SELECT pt.post
+            SELECT DISTINCT pt.post
             FROM PostTag pt
+            LEFT JOIN FETCH pt.post.postTags postTag
+            LEFT JOIN FETCH postTag.tag
             WHERE pt.tag.name = :name
               AND pt.post.deletedAt IS NULL
             ORDER BY pt.post.createdAt DESC

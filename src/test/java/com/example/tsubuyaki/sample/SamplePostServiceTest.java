@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.Collections;
 
@@ -31,7 +32,7 @@ class SamplePostServiceTest {
     @Test
     @DisplayName("Service_latest_投稿がないとき_空リストを返す")
     void latest_returnsEmpty_byDefault() {
-        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
+        given(postRepository.findLatestIds(PageRequest.of(0, 50))).willReturn(Collections.emptyList());
 
         assertThat(postService.latest()).isEmpty();
     }

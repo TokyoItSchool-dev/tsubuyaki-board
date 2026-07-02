@@ -5,10 +5,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -36,6 +39,9 @@ public class Post {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    @OneToMany(mappedBy = "post")
+    private List<PostTag> postTags = new ArrayList<>();
 
     protected Post() {
         // JPA
@@ -74,6 +80,12 @@ public class Post {
 
     public Instant getDeletedAt() {
         return deletedAt;
+    }
+
+    public List<Tag> getTags() {
+        return postTags.stream()
+                .map(PostTag::getTag)
+                .toList();
     }
 
     public void update(String author, String body) {

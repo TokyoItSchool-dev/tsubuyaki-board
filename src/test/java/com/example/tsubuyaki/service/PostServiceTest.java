@@ -15,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -51,12 +52,14 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))
         );
-        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findLatestIds(PageRequest.of(0, 50))).willReturn(List.of(42L));
+        given(postRepository.findAllWithTagsByIdIn(List.of(42L))).willReturn(posts);
 
         List<Post> actual = postService.latest();
 
         assertThat(actual).isSameAs(posts);
-        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        verify(postRepository).findLatestIds(PageRequest.of(0, 50));
+        verify(postRepository).findAllWithTagsByIdIn(List.of(42L));
     }
 
     @Test
@@ -65,13 +68,13 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "abcを含む投稿", Instant.parse("2026-05-23T10:00:00Z"))
         );
-        given(postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("abc")).willReturn(posts);
+        given(postRepository.findByKeywordWithTags("abc")).willReturn(posts);
 
         List<Post> actual = postService.search("abc");
 
         assertThat(actual).isSameAs(posts);
-        verify(postRepository).findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("abc");
-        verify(postRepository, never()).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        verify(postRepository).findByKeywordWithTags("abc");
+        verify(postRepository, never()).findLatestIds(PageRequest.of(0, 50));
     }
 
     @Test
@@ -80,13 +83,27 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))
         );
-        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findLatestIds(PageRequest.of(0, 50))).willReturn(List.of(42L));
+        given(postRepository.findAllWithTagsByIdIn(List.of(42L))).willReturn(posts);
 
         List<Post> actual = postService.search("");
 
         assertThat(actual).isSameAs(posts);
-        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
-        verify(postRepository, never()).findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(anyString());
+        verify(postRepository).findLatestIds(PageRequest.of(0, 50));
+        verify(postRepository).findAllWithTagsByIdIn(List.of(42L));
+        verify(postRepository, never()).findByKeywordWithTags(anyString());
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿なし_タグ付き取得を呼ばず空リストを返す")
+    void latest_whenNoPostIds_returnsEmptyList() {
+        given(postRepository.findLatestIds(PageRequest.of(0, 50))).willReturn(List.of());
+
+        List<Post> actual = postService.latest();
+
+        assertThat(actual).isEmpty();
+        verify(postRepository).findLatestIds(PageRequest.of(0, 50));
+        verify(postRepository, never()).findAllWithTagsByIdIn(org.mockito.ArgumentMatchers.anyList());
     }
 
     @Test

@@ -34,6 +34,11 @@
             <time class="post__created-at"
                   th:datetime="${post.createdAt}"
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <p class="post__tags" th:if="${post.tags != null and !#lists.isEmpty(post.tags)}">
+                <a th:each="tag : ${post.tags}"
+                   th:href="@{/tags/{name}(name=${tag.name})}"
+                   th:text="|#${tag.name}|">#java</a>
+            </p>
             <p>
                 <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
                 |

@@ -1,11 +1,15 @@
 package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostTag;
+import com.example.tsubuyaki.domain.Tag;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
@@ -23,6 +27,15 @@ class PostRepositoryTest {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private TagRepository tagRepository;
+
+    @Autowired
+    private PostTagRepository postTagRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
     @Test
     @DisplayName("投稿一覧_51件以上の投稿がある場合_新着50件だけを返す")
     void findTop50ByOrderByCreatedAtDesc_moreThan51_returnsLatest50() {
@@ -38,6 +51,24 @@ class PostRepositoryTest {
         assertThat(latestPosts).hasSize(50);
         assertThat(latestPosts.get(0).getBody()).isEqualTo("body51");
         assertThat(latestPosts.get(49).getBody()).isEqualTo("body2");
+        assertThat(latestPosts).extracting(Post::getBody).doesNotContain("body1");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_ID取得_新着50件のidだけを返す")
+    void findLatestIds_moreThan51_returnsLatest50Ids() {
+        Instant base = Instant.parse("2026-05-23T00:00:00Z");
+        List<Post> posts = new ArrayList<>();
+        for (int i = 1; i <= 51; i++) {
+            posts.add(new Post("user" + i, "body" + i, base.plusSeconds(i)));
+        }
+        postRepository.saveAll(posts);
+        flushAndClear();
+
+        List<Long> ids = postRepository.findLatestIds(PageRequest.of(0, 50));
+        List<Post> latestPosts = postRepository.findAllById(ids);
+
+        assertThat(ids).hasSize(50);
         assertThat(latestPosts).extracting(Post::getBody).doesNotContain("body1");
     }
 
@@ -107,6 +138,69 @@ class PostRepositoryTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_タグあり_findAllWithTagsは投稿に紐づくタグを含めて返す")
+    void findAllWithTags_whenPostsHaveTags_returnsPostsWithTags() {
+        Post post = postRepository.save(new Post(
+                "alice", "#java #spring 本文です", Instant.parse("2026-05-23T01:00:00Z")));
+        Tag java = tagRepository.save(new Tag("java"));
+        Tag spring = tagRepository.save(new Tag("spring"));
+        postTagRepository.saveAll(List.of(new PostTag(post, java), new PostTag(post, spring)));
+        flushAndClear();
+
+        List<Post> posts = postRepository.findAllWithTagsByIdIn(List.of(post.getId()));
+
+        assertThat(posts).singleElement()
+                .satisfies(actual -> assertThat(actual.getTags())
+                        .extracting(Tag::getName)
+                        .containsExactlyInAnyOrder("java", "spring"));
+    }
+
+    @Test
+    @DisplayName("投稿検索_タグあり_findByKeywordWithTagsは検索結果に紐づくタグを含めて返す")
+    void findByKeywordWithTags_whenPostsHaveTags_returnsMatchingPostsWithTags() {
+        Post matchingPost = postRepository.save(new Post(
+                "alice", "abc #java 本文です", Instant.parse("2026-05-23T01:00:00Z")));
+        Post otherPost = postRepository.save(new Post(
+                "bob", "対象外 #spring 本文です", Instant.parse("2026-05-23T02:00:00Z")));
+        Tag java = tagRepository.save(new Tag("java"));
+        Tag spring = tagRepository.save(new Tag("spring"));
+        postTagRepository.saveAll(List.of(new PostTag(matchingPost, java), new PostTag(otherPost, spring)));
+        flushAndClear();
+
+        List<Post> posts = postRepository.findByKeywordWithTags("abc");
+
+        assertThat(posts).singleElement()
+                .satisfies(actual -> {
+                    assertThat(actual.getBody()).isEqualTo("abc #java 本文です");
+                    assertThat(actual.getTags())
+                            .extracting(Tag::getName)
+                            .containsExactly("java");
+                });
+    }
+
+    @Test
+    @DisplayName("投稿一覧_削除済み投稿_findAllWithTagsは投稿とタグを表示しない")
+    void findAllWithTags_whenPostDeleted_excludesPostAndTags() {
+        Post activePost = new Post("alice", "#java 表示する投稿", Instant.parse("2026-05-23T01:00:00Z"));
+        Post deletedPost = new Post("bob", "#spring 表示しない投稿", Instant.parse("2026-05-23T02:00:00Z"));
+        deletedPost.delete(Instant.parse("2026-05-24T00:00:00Z"));
+        postRepository.saveAll(List.of(activePost, deletedPost));
+        Tag java = tagRepository.save(new Tag("java"));
+        Tag spring = tagRepository.save(new Tag("spring"));
+        postTagRepository.saveAll(List.of(new PostTag(activePost, java), new PostTag(deletedPost, spring)));
+        flushAndClear();
+
+        List<Post> posts = postRepository.findAllWithTagsByIdIn(List.of(activePost.getId(), deletedPost.getId()));
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("#java 表示する投稿");
+        assertThat(posts.get(0).getTags())
+                .extracting(Tag::getName)
+                .containsExactly("java");
+    }
+
+    @Test
     @DisplayName("投稿詳細_削除済み投稿_findByIdAndDeletedAtIsNullは空を返す")
     void findByIdAndDeletedAtIsNull_whenDeleted_returnsEmpty() {
         Post deletedPost = new Post("alice", "削除済み投稿", Instant.parse("2026-05-23T01:00:00Z"));
@@ -116,5 +210,10 @@ class PostRepositoryTest {
         Optional<Post> actual = postRepository.findByIdAndDeletedAtIsNull(savedPost.getId());
 
         assertThat(actual).isEmpty();
+    }
+
+    private void flushAndClear() {
+        entityManager.flush();
+        entityManager.clear();
     }
 }

@@ -8,6 +8,7 @@ import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.PostTagRepository;
 import com.example.tsubuyaki.repository.TagRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -20,6 +21,8 @@ import java.util.Set;
 @Service
 @Transactional(readOnly = true)
 public class PostService {
+
+    private static final int LATEST_POST_LIMIT = 50;
 
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
@@ -38,7 +41,11 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        List<Long> ids = postRepository.findLatestIds(PageRequest.of(0, LATEST_POST_LIMIT));
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return postRepository.findAllWithTagsByIdIn(ids);
     }
 
     public List<Post> search(String query) {
@@ -46,7 +53,7 @@ public class PostService {
             return latest();
         }
 
-        return postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(query);
+        return postRepository.findByKeywordWithTags(query);
     }
 
     public Optional<Post> findById(Long id) {

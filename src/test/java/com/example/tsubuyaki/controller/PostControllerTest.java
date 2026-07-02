@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostTag;
 import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
@@ -113,6 +114,44 @@ class PostControllerTest {
 
         verify(postService).latest();
         verify(postService, never()).search(anyString());
+    }
+
+    @Test
+    @DisplayName("投稿一覧_タグあり_各投稿のタグ一覧とタグリンクを表示する")
+    void list_whenPostHasTags_showsTagLinks() throws Exception {
+        Post post = postWithTags("alice", "#java #spring 本文です", List.of("java", "spring"));
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("post__tags")))
+                .andExpect(content().string(containsString("#java")))
+                .andExpect(content().string(containsString("#spring")))
+                .andExpect(content().string(containsString("href=\"/tags/java\"")))
+                .andExpect(content().string(containsString("href=\"/tags/spring\"")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_タグなし_タグ欄を表示しない")
+    void list_whenPostHasNoTags_hidesTagsBlock() throws Exception {
+        Post post = new Post("alice", "タグなし本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("post__tags"))));
+    }
+
+    @Test
+    @DisplayName("投稿検索_タグあり_検索結果一覧でもタグ一覧を表示する")
+    void list_whenSearchResultHasTags_showsTagLinks() throws Exception {
+        Post post = postWithTags("alice", "abc #java 本文です", List.of("java"));
+        given(postService.search("abc")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", "abc"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("#java")))
+                .andExpect(content().string(containsString("href=\"/tags/java\"")));
     }
 
     @Test
@@ -619,5 +658,14 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts/42"));
 
         verify(postService).update(42L, "alice", "更新後本文です", "green");
+    }
+
+    private Post postWithTags(String author, String body, List<String> tagNames) {
+        Post post = new Post(author, body, Instant.parse("2026-05-23T01:00:00Z"));
+        List<PostTag> postTags = tagNames.stream()
+                .map(tagName -> new PostTag(post, new Tag(tagName)))
+                .toList();
+        ReflectionTestUtils.setField(post, "postTags", postTags);
+        return post;
     }
 }
