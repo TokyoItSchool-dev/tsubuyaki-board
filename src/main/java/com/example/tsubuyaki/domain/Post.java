@@ -8,12 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Table(name = "posts")
 public class Post {
+
+    public static final String DEFAULT_AVATAR_COLOR = "#ffffff";
 
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
@@ -26,16 +28,27 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
+    @Column(name = "avatar_color", length = 7, nullable = false)
+    private String avatarColor;
+
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     protected Post() {
         // JPA
     }
 
-    public Post(String author, String body, Instant createdAt) {
+    public Post(String author, String body, LocalDateTime createdAt) {
+        this(author, body, DEFAULT_AVATAR_COLOR, createdAt);
+    }
+
+    public Post(String author, String body, String avatarColor, LocalDateTime createdAt) {
         this.author = author;
         this.body = body;
+        this.avatarColor = avatarColor;
         this.createdAt = createdAt;
     }
 
@@ -51,8 +64,20 @@ public class Post {
         return body;
     }
 
-    public Instant getCreatedAt() {
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void markDeleted(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override

@@ -11,6 +11,8 @@ spring:
     hikari:
       maximum-pool-size: 5
       connection-timeout: 30000
+      data-source-properties:
+        oracle.jdbc.timezoneAsRegion: "false"
   jpa:
     database-platform: org.hibernate.dialect.OracleDialect
     hibernate:

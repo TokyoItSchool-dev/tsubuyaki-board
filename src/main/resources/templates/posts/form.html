@@ -24,6 +24,37 @@
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
+        <div>
+            <span id="avatarColorLabel">アバター色</span>
+            <div class="avatar-color-options" role="radiogroup" aria-labelledby="avatarColorLabel">
+                <label class="avatar-color-option">
+                    <input type="radio" th:field="*{avatarColor}" value="#ff0000">
+                    <span class="avatar-color-option__swatch avatar-color-option__swatch--red" aria-hidden="true"></span>
+                    <span class="visually-hidden">赤</span>
+                </label>
+                <label class="avatar-color-option">
+                    <input type="radio" th:field="*{avatarColor}" value="#0000ff">
+                    <span class="avatar-color-option__swatch avatar-color-option__swatch--blue" aria-hidden="true"></span>
+                    <span class="visually-hidden">青</span>
+                </label>
+                <label class="avatar-color-option">
+                    <input type="radio" th:field="*{avatarColor}" value="#008000">
+                    <span class="avatar-color-option__swatch avatar-color-option__swatch--green" aria-hidden="true"></span>
+                    <span class="visually-hidden">緑</span>
+                </label>
+                <label class="avatar-color-option">
+                    <input type="radio" th:field="*{avatarColor}" value="#ffff00">
+                    <span class="avatar-color-option__swatch avatar-color-option__swatch--yellow" aria-hidden="true"></span>
+                    <span class="visually-hidden">黄色</span>
+                </label>
+                <label class="avatar-color-option">
+                    <input type="radio" th:field="*{avatarColor}" value="#ffffff">
+                    <span class="avatar-color-option__swatch avatar-color-option__swatch--white" aria-hidden="true"></span>
+                    <span class="visually-hidden">白</span>
+                </label>
+            </div>
+            <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
+        </div>
         <button type="submit">投稿</button>
     </form>
 </main>

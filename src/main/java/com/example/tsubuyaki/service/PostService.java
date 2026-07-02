@@ -1,12 +1,16 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
-import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -14,12 +18,56 @@ public class PostService {
 
     private final PostRepository repository;
 
-    public PostService(PostRepository repository) {
+    private final PostLikeRepository likeRepository;
+
+    public PostService(PostRepository repository, PostLikeRepository likeRepository) {
         this.repository = repository;
+        this.likeRepository = likeRepository;
     }
 
     public List<Post> latest() {
-        // TODO: 演習で実装する (最新 50 件を新着順で返す)
-        return Collections.emptyList();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+    }
+
+    public List<Post> search(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return latest();
+        }
+        return repository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc(keyword.trim());
+    }
+
+    @Transactional
+    public Post create(String author, String body) {
+        return create(author, body, Post.DEFAULT_AVATAR_COLOR);
+    }
+
+    @Transactional
+    public Post create(String author, String body, String avatarColor) {
+        return repository.save(new Post(author, body, avatarColor, LocalDateTime.now()));
+    }
+
+    public Optional<Post> findById(Long id) {
+        return repository.findByIdAndDeletedAtIsNull(id);
+    }
+
+    public long likeCount(Long postId) {
+        return likeRepository.countByPostId(postId);
+    }
+
+    @Transactional
+    public boolean delete(Long id) {
+        return repository.findByIdAndDeletedAtIsNull(id)
+                .map(post -> {
+                    post.markDeleted(LocalDateTime.now());
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    @Transactional
+    public void toggleLike(Long postId, String clientHash) {
+        likeRepository.findByPostIdAndClientHash(postId, clientHash)
+                .ifPresentOrElse(likeRepository::delete,
+                        () -> likeRepository.save(new PostLike(postId, clientHash, LocalDateTime.now())));
     }
 }
