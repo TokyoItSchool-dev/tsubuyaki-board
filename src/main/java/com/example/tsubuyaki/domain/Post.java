@@ -15,6 +15,8 @@ import java.util.Objects;
 @Table(name = "posts")
 public class Post {
 
+    public static final String DEFAULT_AUTHOR_COLOR = "#6b7280";
+
     // Oracle/H2 の posts_seq シーケンスを使って投稿IDを採番する。
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
@@ -24,6 +26,10 @@ public class Post {
     // 投稿者名を保存する。DB側でも NOT NULL と30文字制限を持つ。
     @Column(name = "author", length = 30, nullable = false)
     private String author;
+
+    // 投稿者の好きな色をカラーコードで保存し、一覧・詳細の投稿者アイコンに使う。
+    @Column(name = "author_color", length = 7, nullable = false)
+    private String authorColor = DEFAULT_AUTHOR_COLOR;
 
     // 投稿本文を保存する。DB側でも NOT NULL と280文字制限を持つ。
     @Column(name = "body", length = 280, nullable = false)
@@ -38,8 +44,13 @@ public class Post {
     }
 
     public Post(String author, String body, LocalDateTime createdAt) {
+        this(author, body, DEFAULT_AUTHOR_COLOR, createdAt);
+    }
+
+    public Post(String author, String body, String authorColor, LocalDateTime createdAt) {
         this.author = author;
         this.body = body;
+        this.authorColor = authorColor;
         this.createdAt = createdAt;
     }
 
@@ -49,6 +60,10 @@ public class Post {
 
     public String getAuthor() {
         return author;
+    }
+
+    public String getAuthorColor() {
+        return authorColor;
     }
 
     public String getBody() {

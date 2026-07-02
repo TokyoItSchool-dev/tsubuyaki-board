@@ -1,8 +1,10 @@
 package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -22,6 +24,10 @@ class PostRepositoryTest {
     // 実際の JPA Repository を使い、メソッド名クエリの結果を検証する。
     @Autowired
     private PostRepository postRepository;
+
+    // タグ検索用に、本文から抽出されたタグを保存するRepository。
+    @Autowired
+    private TagRepository tagRepository;
 
     @Test
     @DisplayName("投稿一覧_51件以上の投稿がある場合_新着50件だけを返す")
@@ -80,5 +86,38 @@ class PostRepositoryTest {
 
         // 一致しない場合は空の一覧を返すことを確認する。
         assertThat(posts).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿検索_タグ名に一致する投稿を新着順で返す")
+    void 投稿検索_タグ名に一致する投稿を新着順で返す() {
+        // 本文には検索語を含めず、タグ名だけで一致する投稿を用意する。
+        Post oldPost = postRepository.save(
+                new Post("alice", "古いタグ投稿", LocalDateTime.of(2026, 5, 23, 10, 0)));
+        Post otherPost = postRepository.save(
+                new Post("bob", "別タグ投稿", LocalDateTime.of(2026, 5, 23, 10, 1)));
+        Post newPost = postRepository.save(
+                new Post("carol", "新しいタグ投稿", LocalDateTime.of(2026, 5, 23, 10, 2)));
+        tagRepository.save(new Tag(oldPost, "spring"));
+        tagRepository.save(new Tag(otherPost, "java"));
+        tagRepository.save(new Tag(newPost, "spring"));
+
+        // #spring 検索時はタグ名 spring に一致する投稿だけを createdAt 降順で取得する。
+        List<Post> posts = postRepository.findByTagNameOrderByCreatedAtDesc("spring", PageRequest.of(0, 50));
+
+        assertThat(posts).extracting(Post::getBody)
+                .containsExactly("新しいタグ投稿", "古いタグ投稿");
+    }
+
+    @Test
+    @DisplayName("投稿作成_投稿者カラー_保存後に同じ色を取得できる")
+    void 投稿作成_投稿者カラー_保存後に同じ色を取得できる() {
+        // 投稿者カラーを指定した投稿を保存する。
+        Post savedPost = postRepository.save(
+                new Post("alice", "色付き本文", "#ef4444", LocalDateTime.of(2026, 5, 23, 10, 0)));
+
+        // 保存した投稿を取得し、投稿者カラーがDBに保持されていることを確認する。
+        Post foundPost = postRepository.findById(savedPost.getId()).orElseThrow();
+        assertThat(foundPost.getAuthorColor()).isEqualTo("#ef4444");
     }
 }

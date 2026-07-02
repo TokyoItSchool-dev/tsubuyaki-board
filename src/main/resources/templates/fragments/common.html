@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<body>
+<button th:fragment="themeToggle"
+        type="button"
+        class="theme-toggle"
+        data-theme-toggle
+        aria-pressed="false">ダークモード</button>
+
+<nav th:fragment="mainNav">
+    <a th:href="@{/posts}">一覧</a>
+    |
+    <a th:href="@{/posts/new}">新規投稿</a>
+</nav>
+
+<nav th:fragment="backToListNav">
+    <a th:href="@{/posts}">一覧に戻る</a>
+</nav>
+</body>
+</html>

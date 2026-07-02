@@ -5,16 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>投稿一覧 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/theme.js}" defer></script>
 </head>
 <body>
 <main>
     <h1>社内つぶやきボード</h1>
+    <!-- ブラウザの localStorage に保存したテーマを切り替える。 -->
+    <button th:replace="~{fragments/common :: themeToggle}"></button>
     <!-- 一覧表示と新規投稿画面を移動するためのナビゲーション。 -->
-    <nav>
-        <a th:href="@{/posts}">一覧</a>
-        |
-        <a th:href="@{/posts/new}">新規投稿</a>
-    </nav>
+    <nav th:replace="~{fragments/common :: mainNav}"></nav>
     <!-- 入力されたキーワードを q として GET /posts へ送り、本文検索を実行する。 -->
     <form class="search-form" th:action="@{/posts}" method="get">
         <label for="q">本文検索</label>
@@ -29,8 +28,14 @@
         <!-- 投稿ごとにブロック化し、クリックすると投稿IDに対応した詳細画面へ移動する。 -->
         <a class="post-link" th:each="post : ${posts}" th:href="@{/posts/{id}(id=${post.id})}">
             <article class="post">
-                <!-- th:text でエスケープ表示し、投稿者名のXSSを防ぐ。 -->
-                <p class="post__author" th:text="${post.author}">投稿者</p>
+                <!-- 投稿者カラーのアイコンと投稿者名を横並びで表示する。 -->
+                <p class="post__author">
+                    <span class="post__author-color"
+                          th:style="'background-color: ' + ${post.authorColor}"
+                          aria-hidden="true"></span>
+                    <!-- th:text でエスケープ表示し、投稿者名のXSSを防ぐ。 -->
+                    <span th:text="${post.author}">投稿者</span>
+                </p>
                 <!-- th:text でエスケープ表示し、本文のXSSを防ぐ。 -->
                 <p class="post__body" th:text="${post.body}">本文</p>
                 <!-- 投稿日時を machine-readable な datetime と画面表示用テキストの両方で出す。 -->

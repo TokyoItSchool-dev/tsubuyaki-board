@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.sample;
 
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.service.PostSearchService;
+import com.example.tsubuyaki.service.TagService;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +26,12 @@ class SamplePostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostSearchService postSearchService;
+
+    @Mock
+    private TagService tagService;
 
     @InjectMocks
     private PostService postService;

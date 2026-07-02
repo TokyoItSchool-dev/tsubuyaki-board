@@ -1,11 +1,6 @@
 package com.example.tsubuyaki.controller;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.util.HexFormat;
-import java.util.Objects;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -22,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.service.ClientHashService;
 import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
@@ -29,13 +25,18 @@ import com.example.tsubuyaki.web.dto.PostForm;
 @Controller
 public class PostController {
 
+    private static final String USER_AGENT_HEADER = "User-Agent";
+
     // Controller は画面からのリクエストを受け取り、業務処理を Service に委譲する。
     private final PostService postService;
     private final PostLikeService postLikeService;
+    private final ClientHashService clientHashService;
 
-    public PostController(PostService postService, PostLikeService postLikeService) {
+    public PostController(PostService postService, PostLikeService postLikeService,
+            ClientHashService clientHashService) {
         this.postService = postService;
         this.postLikeService = postLikeService;
+        this.clientHashService = clientHashService;
     }
 
     // 投稿一覧画面を表示する。q があれば本文検索し、結果を posts としてビューへ渡す。
@@ -81,23 +82,9 @@ public class PostController {
     // Likeボタン押下時の処理。クライアントを識別し、いいねの追加・解除をトグルする。
     @PostMapping("/posts/{id}/likes")
     public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
-        postLikeService.toggleLike(id, clientHash(request));
+        String clientHash = clientHashService.hash(
+                request.getRemoteAddr(), request.getHeader(USER_AGENT_HEADER));
+        postLikeService.toggleLike(id, clientHash);
         return "redirect:/posts/" + id;
-    }
-
-    // IPアドレス + User-Agent をSHA-256でハッシュ化し、先頭8文字をclientHashとして使う。
-    private String clientHash(HttpServletRequest request) {
-        String remoteAddress = Objects.toString(request.getRemoteAddr(), "");
-        String userAgent = Objects.toString(request.getHeader("User-Agent"), "");
-        byte[] digest = sha256(remoteAddress + userAgent);
-        return HexFormat.of().formatHex(digest).substring(0, 8);
-    }
-
-    private byte[] sha256(String source) {
-        try {
-            return MessageDigest.getInstance("SHA-256").digest(source.getBytes(StandardCharsets.UTF_8));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm is not available", e);
-        }
     }
 }
