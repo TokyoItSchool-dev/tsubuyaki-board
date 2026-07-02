@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -23,18 +23,18 @@ public class Tag {
     @Column(name = "name", length = 50, nullable = false, unique = true)
     private String name;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
+    private LocalDateTime createdAt;
 
     protected Tag() {
         // JPA
     }
 
     public Tag(String name) {
-        this(name, Instant.now());
+        this(name, LocalDateTime.now());
     }
 
-    public Tag(String name, Instant createdAt) {
+    public Tag(String name, LocalDateTime createdAt) {
         this.name = name;
         this.createdAt = createdAt;
     }
@@ -47,7 +47,7 @@ public class Tag {
         return name;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 

@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -36,11 +36,11 @@ public class Post {
     @Column(name = "avatar_color", length = 20)
     private String avatarColor;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
+    private LocalDateTime createdAt;
 
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
+    @Column(name = "deleted_at", columnDefinition = "TIMESTAMP(6)")
+    private LocalDateTime deletedAt;
 
     @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
@@ -53,11 +53,11 @@ public class Post {
         // JPA
     }
 
-    public Post(String author, String body, Instant createdAt) {
+    public Post(String author, String body, LocalDateTime createdAt) {
         this(author, body, createdAt, null);
     }
 
-    public Post(String author, String body, Instant createdAt, String avatarColor) {
+    public Post(String author, String body, LocalDateTime createdAt, String avatarColor) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
@@ -80,11 +80,11 @@ public class Post {
         return avatarColor;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public Instant getDeletedAt() {
+    public LocalDateTime getDeletedAt() {
         return deletedAt;
     }
 
@@ -100,7 +100,7 @@ public class Post {
         tags.add(Objects.requireNonNull(tag));
     }
 
-    public void markDeleted(Instant deletedAt) {
+    public void markDeleted(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
     }
 

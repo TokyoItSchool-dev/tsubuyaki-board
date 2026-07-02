@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -38,8 +38,8 @@ class PostListIntegrationTest {
         Post post = new Post(
                 "alice",
                 "タグ付き投稿です #java",
-                Instant.parse("2026-06-30T00:00:00Z"));
-        post.addTag(new Tag("java", Instant.parse("2026-06-30T00:00:00Z")));
+                LocalDateTime.parse("2026-06-30T00:00:00"));
+        post.addTag(new Tag("java", LocalDateTime.parse("2026-06-30T00:00:00")));
         postRepository.saveAndFlush(post);
 
         mockMvc.perform(get("/posts"))

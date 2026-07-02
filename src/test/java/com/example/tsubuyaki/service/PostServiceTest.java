@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,7 +40,7 @@ class PostServiceTest {
         List<Post> expected = List.of(new Post(
                 "alice",
                 "hello",
-                Instant.parse("2026-06-30T10:00:00Z")));
+                LocalDateTime.parse("2026-06-30T10:00:00")));
         given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expected);
 
         List<Post> actual = postService.findLatest50();
@@ -55,7 +55,7 @@ class PostServiceTest {
         Optional<Post> expected = Optional.of(new Post(
                 "alice",
                 "詳細表示の本文です",
-                Instant.parse("2026-06-30T10:00:00Z")));
+                LocalDateTime.parse("2026-06-30T10:00:00")));
         given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(expected);
 
         Optional<Post> actual = postService.findById(10L);
@@ -93,11 +93,11 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿登録_投稿者と本文とアバター色を受け取ったとき_現在時刻付きの投稿を保存する")
     void create_投稿者と本文とアバター色を受け取ったとき_現在時刻付きの投稿を保存する() {
-        Instant before = Instant.now();
+        LocalDateTime before = LocalDateTime.now();
 
         postService.create("alice", "本日の共有です", "green");
 
-        Instant after = Instant.now();
+        LocalDateTime after = LocalDateTime.now();
         verify(postRepository).save(argThat(post ->
                 "alice".equals(post.getAuthor())
                         && "本日の共有です".equals(post.getBody())
@@ -109,7 +109,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿登録_本文にタグがあるとき_タグを正規化して投稿に紐づける")
     void create_本文にタグがあるとき_タグを正規化して投稿に紐づける() {
-        Tag spring = new Tag("spring", Instant.parse("2026-06-30T00:00:00Z"));
+        Tag spring = new Tag("spring", LocalDateTime.parse("2026-06-30T00:00:00"));
         given(tagRepository.findByName("java")).willReturn(Optional.empty());
         given(tagRepository.findByName("spring")).willReturn(Optional.of(spring));
 
@@ -143,13 +143,13 @@ class PostServiceTest {
         Post post = new Post(
                 "alice",
                 "削除対象の投稿です",
-                Instant.parse("2026-06-30T10:00:00Z"));
+                LocalDateTime.parse("2026-06-30T10:00:00"));
         given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(post));
-        Instant before = Instant.now();
+        LocalDateTime before = LocalDateTime.now();
 
         postService.delete(10L);
 
-        Instant after = Instant.now();
+        LocalDateTime after = LocalDateTime.now();
         assertThat(post.getDeletedAt()).isNotNull();
         assertThat(post.getDeletedAt()).isBetween(before, after);
         verify(postRepository).findByIdAndDeletedAtIsNull(10L);

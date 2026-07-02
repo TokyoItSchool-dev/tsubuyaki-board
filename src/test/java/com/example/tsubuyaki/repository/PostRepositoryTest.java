@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -25,7 +25,7 @@ class PostRepositoryTest {
     @Test
     @DisplayName("投稿一覧_51件以上あるとき_未削除だけを新着順で最大50件返す")
     void findLatestPosts_51件以上あるとき_未削除だけを新着順で最大50件返す() {
-        Instant base = Instant.parse("2026-06-30T00:00:00Z");
+        LocalDateTime base = LocalDateTime.parse("2026-06-30T00:00:00");
         IntStream.rangeClosed(1, 51)
                 .mapToObj(index -> new Post(
                         "author" + index,
@@ -47,7 +47,7 @@ class PostRepositoryTest {
     @Test
     @DisplayName("投稿検索_本文にキーワードを含む未削除投稿だけを新着順で返す")
     void searchByBody_本文にキーワードを含む未削除投稿だけを新着順で返す() {
-        Instant base = Instant.parse("2026-06-30T00:00:00Z");
+        LocalDateTime base = LocalDateTime.parse("2026-06-30T00:00:00");
         postRepository.save(new Post("alice", "検索対象の共有です", base.plusSeconds(1)));
         postRepository.save(new Post("bob", "検索対象の新しい共有です", base.plusSeconds(2)));
         postRepository.save(new Post("carol", "雑談だけの投稿です", base.plusSeconds(3)));

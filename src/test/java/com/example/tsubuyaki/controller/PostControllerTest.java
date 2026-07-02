@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(PostController.class)
 class PostControllerTest {
 
-    private static final Instant BASE_TIME = Instant.parse("2026-06-30T00:00:00Z");
+    private static final LocalDateTime BASE_TIME = LocalDateTime.parse("2026-06-30T00:00:00");
 
     @Autowired
     private MockMvc mockMvc;
@@ -112,7 +112,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する")
     void list_投稿がある場合_投稿者内容投稿日の順に表示する() throws Exception {
-        Post post = post("alice", "本日の共有です", Instant.parse("2026-06-30T01:15:00Z"));
+        Post post = post("alice", "本日の共有です", LocalDateTime.parse("2026-06-30T10:15:00"));
         given(postService.findLatest50()).willReturn(List.of(post));
 
         MvcResult result = mockMvc.perform(get("/posts"))
@@ -129,7 +129,7 @@ class PostControllerTest {
         Post post = post(
                 "alice",
                 "本日の共有です",
-                Instant.parse("2026-06-30T01:15:00Z"),
+                LocalDateTime.parse("2026-06-30T10:15:00"),
                 "green");
         given(postService.findLatest50()).willReturn(List.of(post));
 
@@ -226,7 +226,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在するIDのとき_投稿を表示する")
     void detail_存在するIDのとき_投稿を表示する() throws Exception {
-        Post post = post("alice", "詳細表示の本文です", Instant.parse("2026-06-30T01:15:00Z"));
+        Post post = post("alice", "詳細表示の本文です", LocalDateTime.parse("2026-06-30T10:15:00"));
         given(postService.findById(10L)).willReturn(Optional.of(post));
         given(postService.countLikes(10L)).willReturn(3L);
 
@@ -250,7 +250,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在するIDのとき_削除ボタンを表示する")
     void detail_存在するIDのとき_削除ボタンを表示する() throws Exception {
-        Post post = post("alice", "削除対象の投稿です", Instant.parse("2026-06-30T01:15:00Z"));
+        Post post = post("alice", "削除対象の投稿です", LocalDateTime.parse("2026-06-30T01:15:00"));
         given(postService.findById(10L)).willReturn(Optional.of(post));
 
         MvcResult result = mockMvc.perform(get("/posts/10"))
@@ -266,7 +266,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_タグがある場合_タグリンクを表示する")
     void detail_タグがある場合_タグリンクを表示する() throws Exception {
-        Post post = post("alice", "タグ付き投稿です", Instant.parse("2026-06-30T01:15:00Z"));
+        Post post = post("alice", "タグ付き投稿です", LocalDateTime.parse("2026-06-30T01:15:00"));
         post.addTag(new Tag("java", BASE_TIME));
         given(postService.findById(10L)).willReturn(Optional.of(post));
 
@@ -436,15 +436,15 @@ class PostControllerTest {
         verify(postService, never()).create(author, "本日の共有です");
     }
 
-    private static Post post(String author, String body, Instant createdAt) {
+    private static Post post(String author, String body, LocalDateTime createdAt) {
         return new Post(author, body, createdAt);
     }
 
-    private static Post post(String author, String body, Instant createdAt, String avatarColor) {
+    private static Post post(String author, String body, LocalDateTime createdAt, String avatarColor) {
         return new Post(author, body, createdAt, avatarColor);
     }
 
-    private static Post postWithId(Long id, String author, String body, Instant createdAt) {
+    private static Post postWithId(Long id, String author, String body, LocalDateTime createdAt) {
         Post post = post(author, body, createdAt);
         ReflectionTestUtils.setField(post, "id", id);
         return post;

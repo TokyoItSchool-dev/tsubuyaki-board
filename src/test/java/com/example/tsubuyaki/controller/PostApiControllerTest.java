@@ -11,7 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
@@ -37,7 +37,7 @@ class PostApiControllerTest {
                 10L,
                 "alice",
                 "APIで共有します",
-                Instant.parse("2026-06-30T01:15:00Z"),
+                LocalDateTime.parse("2026-06-30T01:15:00"),
                 "green");
         given(postService.findLatest50()).willReturn(List.of(post));
 
@@ -48,7 +48,7 @@ class PostApiControllerTest {
                 .andExpect(jsonPath("$[0].author").value("alice"))
                 .andExpect(jsonPath("$[0].body").value("APIで共有します"))
                 .andExpect(jsonPath("$[0].avatarColor").value("green"))
-                .andExpect(jsonPath("$[0].createdAt").value("2026-06-30T01:15:00Z"));
+                .andExpect(jsonPath("$[0].createdAt").value("2026-06-30T01:15:00"));
 
         verify(postService).findLatest50();
     }
@@ -57,7 +57,7 @@ class PostApiControllerTest {
             Long id,
             String author,
             String body,
-            Instant createdAt,
+            LocalDateTime createdAt,
             String avatarColor) {
         Post post = new Post(author, body, createdAt, avatarColor);
         ReflectionTestUtils.setField(post, "id", id);

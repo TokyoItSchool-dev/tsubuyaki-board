@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,7 +39,7 @@ class PostDetailCommentIntegrationTest {
         Post post = postRepository.saveAndFlush(new Post(
                 "alice",
                 "コメント対象の投稿です",
-                Instant.parse("2026-06-30T00:00:00Z")));
+                LocalDateTime.parse("2026-06-30T00:00:00")));
 
         mockMvc.perform(get("/posts/{id}", post.getId()))
                 .andExpect(status().isOk())
@@ -62,7 +62,7 @@ class PostDetailCommentIntegrationTest {
         Post post = postRepository.saveAndFlush(new Post(
                 "alice",
                 "空白コメント対象の投稿です",
-                Instant.parse("2026-06-30T00:00:00Z")));
+                LocalDateTime.parse("2026-06-30T00:00:00")));
 
         mockMvc.perform(post("/posts/{id}/comments", post.getId())
                         .param("body", " "))

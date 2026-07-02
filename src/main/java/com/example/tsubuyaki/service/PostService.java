@@ -9,7 +9,7 @@ import com.example.tsubuyaki.repository.TagRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -90,7 +90,7 @@ public class PostService {
 
     @Transactional
     public void create(String author, String body, String avatarColor, String tagNames) {
-        Post post = new Post(author, body, Instant.now(), avatarColor);
+        Post post = new Post(author, body, LocalDateTime.now(), avatarColor);
         extractTagNames(body, tagNames).stream()
                 .map(this::findOrCreateTag)
                 .forEach(post::addTag);
@@ -100,7 +100,7 @@ public class PostService {
     @Transactional
     public void delete(Long id) {
         repository.findByIdAndDeletedAtIsNull(id)
-                .ifPresent(post -> post.markDeleted(Instant.now()));
+                .ifPresent(post -> post.markDeleted(LocalDateTime.now()));
     }
 
     @Transactional
@@ -109,7 +109,7 @@ public class PostService {
             return;
         }
         repository.findByIdAndDeletedAtIsNull(postId)
-                .ifPresent(post -> commentRepository.save(new Comment(post, body, Instant.now())));
+                .ifPresent(post -> commentRepository.save(new Comment(post, body, LocalDateTime.now())));
     }
 
     private Tag findOrCreateTag(String name) {

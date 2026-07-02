@@ -10,7 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +30,7 @@ class TagRepositoryTest {
     @Test
     @DisplayName("タグ検索_本文中のタグを保存したとき_関連投稿を新着順で返す")
     void findPostsByTagName_本文中のタグを保存したとき_関連投稿を新着順で返す() {
-        Instant base = Instant.parse("2026-06-30T00:00:00Z");
+        LocalDateTime base = LocalDateTime.parse("2026-06-30T00:00:00");
         Tag java = new Tag("java");
         Post older = new Post("alice", "研修メモ #java", base.plusSeconds(1));
         older.addTag(java);
@@ -48,10 +48,10 @@ class TagRepositoryTest {
     @Test
     @DisplayName("タグ保存_同じ名前を保存したとき_一意制約違反になる")
     void save_同じ名前を保存したとき_一意制約違反になる() {
-        tagRepository.saveAndFlush(new Tag("java", Instant.parse("2026-06-30T00:00:00Z")));
+        tagRepository.saveAndFlush(new Tag("java", LocalDateTime.parse("2026-06-30T00:00:00")));
 
         assertThatThrownBy(() -> tagRepository.saveAndFlush(
-                new Tag("java", Instant.parse("2026-06-30T00:00:01Z"))))
+                new Tag("java", LocalDateTime.parse("2026-06-30T00:00:01"))))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -30,14 +30,14 @@ public class Comment {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
+    private LocalDateTime createdAt;
 
     protected Comment() {
         // JPA
     }
 
-    public Comment(Post post, String body, Instant createdAt) {
+    public Comment(Post post, String body, LocalDateTime createdAt) {
         this.post = Objects.requireNonNull(post);
         this.body = body;
         this.createdAt = createdAt;
@@ -55,7 +55,7 @@ public class Comment {
         return body;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 }
