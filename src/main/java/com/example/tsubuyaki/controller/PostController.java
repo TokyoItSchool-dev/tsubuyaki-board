@@ -44,6 +44,15 @@ public class PostController {
         return "posts/list";
     }
 
+    @GetMapping("/tags/{name}")
+    public String tag(@PathVariable String name, Model model) {
+        String tagName = nullToEmpty(name).trim();
+        model.addAttribute("posts", postService.findByTagName(tagName));
+        model.addAttribute("q", "");
+        model.addAttribute("tagName", tagName);
+        return "posts/list";
+    }
+
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("post", postService.findById(id)

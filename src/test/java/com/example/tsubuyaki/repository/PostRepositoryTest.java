@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ class PostRepositoryTest {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
 
     @Test
     @DisplayName("Repository_投稿一覧_最新50件を新着順で返す")
@@ -82,5 +86,26 @@ class PostRepositoryTest {
         assertThat(posts)
                 .extracting(Post::getBody)
                 .containsExactly("検索フォームを実装", "朝会で検索機能を相談");
+    }
+
+    @Test
+    @DisplayName("Repository_タグ別一覧_タグ名に関連する投稿を新着順で返す")
+    void タグ別一覧_タグ名に関連する投稿を新着順で返す() {
+        Tag javaTag = tagRepository.save(new Tag("java"));
+        Tag springTag = tagRepository.save(new Tag("spring"));
+        Post oldPost = new Post("alice", "#java の古い投稿", Instant.parse("2026-06-26T09:00:00Z"));
+        oldPost.addTag(javaTag);
+        Post otherPost = new Post("bob", "#spring の投稿", Instant.parse("2026-06-26T10:00:00Z"));
+        otherPost.addTag(springTag);
+        Post newPost = new Post("carol", "#java の新しい投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        newPost.addTag(javaTag);
+        postRepository.saveAll(List.of(oldPost, otherPost, newPost));
+        postRepository.flush();
+
+        List<Post> posts = postRepository.findTop50DistinctByTagsNameOrderByCreatedAtDesc("java");
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("#java の新しい投稿", "#java の古い投稿");
     }
 }

@@ -27,6 +27,11 @@
             </span>
         </header>
         <p class="post__body" th:text="${post.body}">本文</p>
+        <p class="post__tags" th:if="${!#lists.isEmpty(post.tags)}">
+            <a th:each="tag : ${post.tags}"
+               th:href="@{/tags/{name}(name=${tag.name})}"
+               th:text="|#${tag.name}|">#tag</a>
+        </p>
         <footer class="post__actions">
             <span class="post__likes" th:text="|いいね ${likeCount}|">いいね 0</span>
             <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">

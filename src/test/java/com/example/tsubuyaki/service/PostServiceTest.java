@@ -1,8 +1,10 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,9 @@ class PostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private TagRepository tagRepository;
 
     @InjectMocks
     private PostService postService;
@@ -87,6 +92,24 @@ class PostServiceTest {
         assertThat(savedPost.getBody()).isEqualTo("M3 の投稿");
         assertThat(savedPost.getAvatarColor()).isEqualTo("green");
         assertThat(savedPost.getCreatedAt()).isNotNull();
+        verify(postRepository).save(savedPost);
+    }
+
+    @Test
+    @DisplayName("Service_create_本文のタグ_重複を除いて投稿に関連付ける")
+    void create_本文のタグ_重複を除いて投稿に関連付ける() {
+        Tag existingSpringTag = new Tag("spring");
+        given(tagRepository.findByName("java")).willReturn(Optional.empty());
+        given(tagRepository.findByName("spring")).willReturn(Optional.of(existingSpringTag));
+        given(tagRepository.save(any(Tag.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(postRepository.save(any(Post.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        Post savedPost = postService.create("alice", "#Java と #spring と #java", "green");
+
+        assertThat(savedPost.getTags())
+                .extracting(Tag::getName)
+                .containsExactly("java", "spring");
+        verify(tagRepository).save(any(Tag.class));
         verify(postRepository).save(savedPost);
     }
 

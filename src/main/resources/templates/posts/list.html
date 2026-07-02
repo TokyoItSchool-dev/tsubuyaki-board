@@ -8,7 +8,8 @@
 </head>
 <body>
 <main>
-    <h1>社内つぶやきボード</h1>
+    <h1 th:if="${tagName == null}">社内つぶやきボード</h1>
+    <h1 th:if="${tagName != null}" th:text="|タグ #${tagName}|">タグ #java</h1>
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
@@ -35,6 +36,11 @@
                 </span>
             </header>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <p class="post__tags" th:if="${!#lists.isEmpty(post.tags)}">
+                <a th:each="tag : ${post.tags}"
+                   th:href="@{/tags/{name}(name=${tag.name})}"
+                   th:text="|#${tag.name}|">#tag</a>
+            </p>
             <p><a th:href="@{/posts/{id}(id=${post.id})}">詳細を見る</a></p>
         </article>
     </section>

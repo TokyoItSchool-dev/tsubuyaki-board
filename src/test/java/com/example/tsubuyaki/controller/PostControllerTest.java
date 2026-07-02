@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
@@ -99,6 +100,27 @@ class PostControllerTest {
 
         verify(postService).latest();
         verify(postService, never()).search("   ");
+    }
+
+    @Test
+    @DisplayName("Controller_タグ別一覧_GET_tags_name_関連投稿をmodelに渡す")
+    void タグ別一覧_GET_tags_name_関連投稿をmodelに渡す() throws Exception {
+        Post post = new Post("alice", "#java の投稿", Instant.parse("2026-06-26T10:00:00Z"));
+        post.addTag(new Tag("java"));
+        List<Post> posts = List.of(post);
+        given(postService.findByTagName("java")).willReturn(posts);
+
+        mockMvc.perform(get("/tags/java"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("q", ""))
+                .andExpect(model().attribute("tagName", "java"))
+                .andExpect(content().string(containsString("タグ #java")))
+                .andExpect(content().string(containsString("/tags/java")))
+                .andExpect(content().string(containsString("#java の投稿")));
+
+        verify(postService).findByTagName("java");
     }
 
     @Test
