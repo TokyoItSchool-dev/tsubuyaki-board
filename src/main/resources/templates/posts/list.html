@@ -14,16 +14,55 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="toolbar__refresh" method="get" th:action="@{/posts/}">
+        <button type="submit">更新</button>
+    </form>
 
-    <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+    <section th:with="query=${q == null ? '' : q},
+                      searching=${!#strings.isEmpty(#strings.trim(query))}">
+        <form class="post-search" th:action="@{/posts}" method="get">
+            <label class="post-search__label" for="q">キーワード検索</label>
+            <div class="post-search__controls">
+                <input id="q"
+                       type="search"
+                       name="q"
+                       maxlength="100"
+                       placeholder="本文で検索"
+                       th:value="${query}">
+                <button type="submit">検索</button>
+                <a class="post-search__clear" th:if="${searching}" th:href="@{/posts}">クリア</a>
+            </div>
+        </form>
+        <p class="search-summary"
+           th:if="${searching}"
+           th:text="|「${#strings.trim(query)}」の検索結果|">「キーワード」の検索結果</p>
+
+        <p th:if="${#lists.isEmpty(posts) && !searching}">まだ投稿はありません</p>
+        <p th:if="${#lists.isEmpty(posts) && searching}">該当する投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
+            <div class="post__content">
+                <div class="post__author-row">
+                    <span class="post__avatar"
+                          th:classappend="|post__avatar--${post.avatarColor}|"
+                          th:title="${post.avatarColor}"
+                          aria-hidden="true"></span>
+                    <span class="post__author" th:text="${post.author}">投稿者</span>
+                </div>
+                <p class="post__body" th:text="${post.body}">本文</p>
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                <div class="post__tags" th:if="${!#sets.isEmpty(post.tags)}">
+                    <a class="post__tag"
+                       th:each="tag : ${post.tags}"
+                       th:href="@{/tags/{name}(name=${tag.name})}"
+                       th:text="|#${tag.name}|">#tag</a>
+                </div>
+                <div class="post__actions" th:if="${post.id != null}">
+                    <a class="post__detail-link"
+                       th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+                </div>
+            </div>
         </article>
     </section>
 </main>

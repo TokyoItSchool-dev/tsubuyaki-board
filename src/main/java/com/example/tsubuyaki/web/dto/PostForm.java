@@ -13,6 +13,8 @@ public class PostForm {
     @Size(max = 280, message = "本文は 280 文字以内で入力してください")
     private String body;
 
+    private String avatarColor;
+
     public PostForm() {
     }
 
@@ -30,5 +32,13 @@ public class PostForm {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
     }
 }

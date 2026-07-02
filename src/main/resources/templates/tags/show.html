@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|#${tagName} - 社内つぶやきボード|">#tag - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1 th:text="|#${tagName}|">#tag</h1>
+    <nav>
+        <a th:href="@{/posts}">一覧に戻る</a>
+    </nav>
+
+    <p th:if="${#lists.isEmpty(posts)}" th:text="|#${tagName} の投稿はありません|">#tag の投稿はありません</p>
+    <article class="post" th:each="post : ${posts}">
+        <div class="post__content">
+            <div class="post__author-row">
+                <span class="post__avatar"
+                      th:classappend="|post__avatar--${post.avatarColor}|"
+                      th:title="${post.avatarColor}"
+                      aria-hidden="true"></span>
+                <span class="post__author" th:text="${post.author}">投稿者</span>
+            </div>
+            <p class="post__body" th:text="${post.body}">本文</p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <div class="post__tags" th:if="${!#sets.isEmpty(post.tags)}">
+                <a class="post__tag"
+                   th:each="tag : ${post.tags}"
+                   th:href="@{/tags/{name}(name=${tag.name})}"
+                   th:text="|#${tag.name}|">#tag</a>
+            </div>
+            <div class="post__actions" th:if="${post.id != null}">
+                <a class="post__detail-link"
+                   th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+            </div>
+        </div>
+    </article>
+</main>
+</body>
+</html>
