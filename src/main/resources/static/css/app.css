@@ -33,17 +33,43 @@ h1 {
 
 .toolbar {
     display: flex;
+    gap: 0.5rem;
     justify-content: flex-end;
+    flex-wrap: wrap;
     margin: 1rem 0;
 }
 
-.toolbar button {
+.toolbar button,
+.toolbar input {
     border: 1px solid var(--color-border);
     border-radius: 6px;
     background: white;
     color: var(--color-text);
-    cursor: pointer;
     padding: 0.4rem 0.8rem;
+}
+
+.toolbar button {
+    cursor: pointer;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1 1 18rem;
+}
+
+.search-form__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.search-form input {
+    min-width: 0;
+    flex: 1;
 }
 
 .post {

@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -29,8 +30,14 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+        String normalizedQuery = normalizeQuery(query);
+        model.addAttribute("q", normalizedQuery);
+        if (normalizedQuery.isEmpty()) {
+            model.addAttribute("posts", postService.latest());
+        } else {
+            model.addAttribute("posts", postService.searchByBody(normalizedQuery));
+        }
         return "posts/list";
     }
 
@@ -72,5 +79,11 @@ public class PostController {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);
         }
+    }
+
+    private static String normalizeQuery(String query) {
+        return Optional.ofNullable(query)
+                .map(String::trim)
+                .orElse("");
     }
 }

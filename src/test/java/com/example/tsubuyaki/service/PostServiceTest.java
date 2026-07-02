@@ -77,6 +77,36 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_searchByBody_本文部分一致検索結果にいいね数を付けて返す")
+    void searchByBody_whenMatched_returnsPostsWithLikeCounts() {
+        List<Post> posts = List.of(
+                new Post(1L, "alice", "hello world", Instant.parse("2026-05-23T10:00:00Z")),
+                new Post(2L, "bob", "say hello", Instant.parse("2026-05-23T11:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("hello")).willReturn(posts);
+        given(postLikeRepository.findCountsByPostIdIn(List.of(1L, 2L))).willReturn(List.of(
+                likeCount(1L, 4L),
+                likeCount(2L, 1L)));
+
+        List<PostView> actual = postService.searchByBody("hello");
+
+        assertThat(actual).extracting(PostView::getId).containsExactly(1L, 2L);
+        assertThat(actual).extracting(PostView::getLikeCount).containsExactly(4L, 1L);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("hello");
+        verify(postLikeRepository).findCountsByPostIdIn(List.of(1L, 2L));
+    }
+
+    @Test
+    @DisplayName("投稿検索_searchByBody_0件の場合_いいね数を取得せず空配列を返す")
+    void searchByBody_whenNoMatches_returnsEmptyList() {
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("missing")).willReturn(List.of());
+
+        List<PostView> actual = postService.searchByBody("missing");
+
+        assertThat(actual).isEmpty();
+        verify(postLikeRepository, never()).findCountsByPostIdIn(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
     @DisplayName("投稿詳細_findById_Repositoryの検索結果を返す")
     void findById_returnsRepositoryResult() {
         Post post = new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));

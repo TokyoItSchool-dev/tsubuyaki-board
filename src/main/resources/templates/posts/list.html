@@ -19,6 +19,11 @@
 
     <section>
         <div class="toolbar">
+            <form class="search-form" th:action="@{/posts}" method="get">
+                <label class="search-form__label" for="post-search">本文検索</label>
+                <input id="post-search" type="search" name="q" th:value="${q}" placeholder="本文で検索">
+                <button type="submit">検索</button>
+            </form>
             <form th:action="@{/posts/}" method="get">
                 <button type="submit">更新</button>
             </form>

@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -51,6 +52,63 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attributeExists("posts"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索ボックスと検索ボタンを表示する")
+    void list_showsSearchBoxAndButton() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"get\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"q\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("検索")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_GET_posts_qあり_本文部分一致検索結果を一覧表示する")
+    void list_whenQueryProvided_showsSearchResults() throws Exception {
+        given(postService.searchByBody("hello")).willReturn(List.of(
+                new PostView(new Post(1L, "alice", "hello world", Instant.parse("2026-05-23T10:00:00Z")), 2)));
+
+        mockMvc.perform(get("/posts").param("q", " hello "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("q", "hello"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"hello\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("alice")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("hello world")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("いいね 2")));
+
+        verify(postService).searchByBody("hello");
+        verify(postService, never()).latest();
+    }
+
+    @Test
+    @DisplayName("投稿検索_GET_posts_q空白のみ_通常一覧を表示する")
+    void list_whenQueryIsBlank_showsLatestPosts() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts").param("q", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("q", ""))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("まだ投稿はありません")));
+
+        verify(postService).latest();
+        verify(postService, never()).searchByBody(anyString());
+    }
+
+    @Test
+    @DisplayName("投稿検索_0件の場合_まだ投稿はありませんを表示する")
+    void list_whenSearchResultIsEmpty_showsEmptyMessage() throws Exception {
+        given(postService.searchByBody("missing")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts").param("q", "missing"))
+                .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("まだ投稿はありません")));
     }
 
