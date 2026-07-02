@@ -64,6 +64,55 @@ h1 {
     margin: 0 0 0.25rem;
 }
 
+.post-form {
+    margin-top: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+    margin-bottom: 0.75rem;
+}
+
+.form-row label {
+    padding-top: 0.35rem;
+    font-weight: 600;
+}
+
+.form-row input,
+.form-row textarea {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    font: inherit;
+}
+
+.form-row textarea {
+    resize: vertical;
+}
+
+.form-actions {
+    margin-left: calc(10rem + 0.75rem);
+}
+
+.form-actions button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.form-actions button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
 .post {
     display: block;
     padding: 1rem;
@@ -134,4 +183,19 @@ h1 {
 .post__like-count {
     min-width: 1ch;
     text-align: right;
+}
+
+@media (max-width: 520px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+
+    .form-row label {
+        padding-top: 0;
+    }
+
+    .form-actions {
+        margin-left: 0;
+    }
 }

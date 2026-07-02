@@ -263,10 +263,15 @@ class PostControllerTest {
     @Test
     @DisplayName("新規投稿フォーム_GET_posts_newはpostFormを積んでフォームビューを返す")
     void newForm_addsPostFormAndRendersFormView() throws Exception {
-        mockMvc.perform(get("/posts/new"))
+        MvcResult result = mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
-                .andExpect(model().attributeExists("postForm"));
+                .andExpect(model().attributeExists("postForm"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("class=\"post-form\"");
+        assertThat(html).contains("class=\"form-row\"");
     }
 
     @Test
@@ -299,8 +304,23 @@ class PostControllerTest {
 
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(html.indexOf("一覧に戻る")).isLessThan(html.indexOf("投稿者は必須です。"));
+        assertThat(html.indexOf("投稿者は必須です。")).isLessThan(html.indexOf("本文は必須です。"));
         assertThat(html.indexOf("本文は必須です。")).isLessThan(html.indexOf("<label for=\"author\">投稿者</label>"));
         assertThat(html).contains("class=\"form-errors\"");
+        assertThat(postRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿登録_全角スペースだけ_必須エラーを表示しフォームを再表示する")
+    void create_whenOnlyFullWidthSpaces_showsRequiredMessagesAndRendersForm() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "　")
+                        .param("body", "　　"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(content().string(containsString("投稿者は必須です。")))
+                .andExpect(content().string(containsString("本文は必須です。")));
+
         assertThat(postRepository.findAll()).isEmpty();
     }
 
