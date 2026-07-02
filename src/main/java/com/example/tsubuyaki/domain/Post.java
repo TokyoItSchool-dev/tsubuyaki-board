@@ -21,6 +21,8 @@ public final class Post {
 
     private final List<String> tagNames;
 
+    private Instant deletedAt;
+
     public Post(String author, String body, Instant createdAt) {
         this(null, author, AvatarColor.DEFAULT.name(), body, createdAt);
     }
@@ -38,12 +40,24 @@ public final class Post {
     }
 
     public Post(Long id, String author, String avatarColor, String body, Instant createdAt, List<String> tagNames) {
+        this(id, author, avatarColor, body, createdAt, tagNames, null);
+    }
+
+    public Post(
+            Long id,
+            String author,
+            String avatarColor,
+            String body,
+            Instant createdAt,
+            List<String> tagNames,
+            Instant deletedAt) {
         this.id = id;
         this.author = normalizeRequired(author, "author", AUTHOR_MAX_LENGTH);
         this.avatarColor = AvatarColor.from(avatarColor).name();
         this.body = normalizeRequired(body, "body", BODY_MAX_LENGTH);
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
         this.tagNames = List.copyOf(tagNames);
+        this.deletedAt = deletedAt;
     }
 
     public Long getId() {
@@ -72,6 +86,18 @@ public final class Post {
 
     public List<String> getTagNames() {
         return tagNames;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public void markDeleted(Instant deletedAt) {
+        this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must not be null");
     }
 
     @Override

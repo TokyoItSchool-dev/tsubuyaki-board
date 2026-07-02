@@ -82,4 +82,10 @@ public class PostController {
         likeService.toggleLike(id, clientHash);
         return "redirect:/posts/" + id;
     }
+
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        postService.delete(id);
+        return "redirect:/posts";
+    }
 }

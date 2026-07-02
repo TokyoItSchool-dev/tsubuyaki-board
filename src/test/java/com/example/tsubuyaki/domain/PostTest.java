@@ -45,6 +45,17 @@ class PostTest {
     }
 
     @Test
+    @DisplayName("論理削除_markDeleted_削除日時を保持し削除済み判定できる")
+    void 論理削除_markDeleted_削除日時を保持し削除済み判定できる() {
+        Post post = new Post(1L, "alice", "BLUE", "hello", Instant.parse("2026-06-26T09:00:00Z"));
+
+        post.markDeleted(Instant.parse("2026-06-26T10:00:00Z"));
+
+        assertThat(post.getDeletedAt()).isEqualTo(Instant.parse("2026-06-26T10:00:00Z"));
+        assertThat(post.isDeleted()).isTrue();
+    }
+
+    @Test
     @DisplayName("責務分離_Domain_PostはJPA Entityではない")
     void 責務分離_Domain_PostはJPA_Entityではない() {
         assertThat(Post.class.getAnnotation(Entity.class)).isNull();

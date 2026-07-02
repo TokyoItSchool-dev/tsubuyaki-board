@@ -32,7 +32,7 @@ public class PostService {
     }
 
     List<Post> latest() {
-        return toDomainList(repository.findTop50ByOrderByCreatedAtDescIdDesc());
+        return toDomainList(repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc());
     }
 
     public List<Post> findPosts(String keyword) {
@@ -46,17 +46,18 @@ public class PostService {
         if (keyword == null || keyword.isBlank()) {
             return latest();
         }
-        return toDomainList(repository.findTop50ByBodyContainingOrderByCreatedAtDescIdDesc(keyword.strip()));
+        return toDomainList(repository
+                .findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc(keyword.strip()));
     }
 
     public Post getById(Long id) {
-        return repository.findById(id)
+        return repository.findByIdAndDeletedAtIsNull(id)
                 .map(PostEntityMapper::toDomain)
                 .orElseThrow(() -> new PostNotFoundException(id));
     }
 
     public List<Post> findPostsByTag(String tagName) {
-        return toDomainList(repository.findTop50ByTagsNameOrderByCreatedAtDescIdDesc(tagName));
+        return toDomainList(repository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDescIdDesc(tagName));
     }
 
     public PostDetail getDetail(Long id) {
@@ -74,6 +75,13 @@ public class PostService {
         Post post = new Post(author, avatarColor, body, Instant.now(clock));
         List<TagEntity> tags = tagService.resolveTags(post.getBody());
         return PostEntityMapper.toDomain(repository.save(PostEntityMapper.toEntity(post, tags)));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        PostEntity post = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new PostNotFoundException(id));
+        post.markDeleted(Instant.now(clock));
     }
 
     private static List<Post> toDomainList(List<PostEntity> entities) {

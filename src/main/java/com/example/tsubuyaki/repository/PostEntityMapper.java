@@ -18,7 +18,8 @@ public final class PostEntityMapper {
                 entity.getCreatedAt(),
                 entity.getTags().stream()
                         .map(TagEntity::getName)
-                        .toList());
+                        .toList(),
+                entity.getDeletedAt());
     }
 
     public static PostEntity toEntity(Post post) {
@@ -28,7 +29,8 @@ public final class PostEntityMapper {
                 post.getAvatarColor(),
                 post.getBody(),
                 post.getCreatedAt(),
-                List.of());
+                List.of(),
+                post.getDeletedAt());
     }
 
     public static PostEntity toEntity(Post post, List<TagEntity> tags) {
@@ -38,7 +40,8 @@ public final class PostEntityMapper {
                 post.getAvatarColor(),
                 post.getBody(),
                 post.getCreatedAt(),
-                tags);
+                tags,
+                post.getDeletedAt());
     }
 
 }

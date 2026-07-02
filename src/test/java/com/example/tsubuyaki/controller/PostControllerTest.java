@@ -198,6 +198,9 @@ class PostControllerTest {
         assertThat(html)
                 .contains("post__avatar-color--purple")
                 .contains(">詳細表示を確認します</p>")
+                .contains("action=\"/posts/1/delete\"")
+                .contains("method=\"post\"")
+                .contains(">削除</button>")
                 .doesNotContain(">詳細表示を確認します #java #spring</p>")
                 .contains("href=\"/tags/java\"")
                 .contains("href=\"/tags/spring\"")
@@ -211,6 +214,15 @@ class PostControllerTest {
         given(postService.getDetail(999L)).willThrow(new PostNotFoundException(999L));
 
         mockMvc.perform(get("/posts/{id}", 999L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿詳細_論理削除済み投稿_404を返す")
+    void 投稿詳細_論理削除済み投稿_404を返す() throws Exception {
+        given(postService.getDetail(10L)).willThrow(new PostNotFoundException(10L));
+
+        mockMvc.perform(get("/posts/{id}", 10L))
                 .andExpect(status().isNotFound());
     }
 
@@ -272,6 +284,16 @@ class PostControllerTest {
 
         verify(clientHashService).generate(ip, userAgent);
         verify(likeService).toggleLike(1L, "abc12345");
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_posts_id_delete_論理削除して一覧へリダイレクトする")
+    void 投稿削除_POST_posts_id_delete_論理削除して一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/{id}/delete", 1L).with(csrf()))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(1L);
     }
 
     @Test

@@ -41,7 +41,7 @@ class PostServiceTest {
     @DisplayName("投稿一覧_latest_Repositoryから新着50件を取得する")
     void 投稿一覧_latest_Repositoryから新着50件を取得する() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
-        given(postRepository.findTop50ByOrderByCreatedAtDescIdDesc()).willReturn(List.of(
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc()).willReturn(List.of(
                 new PostEntity(1L, "alice", "BLUE", "hello", Instant.parse("2026-06-26T09:00:00Z"))));
 
         List<Post> actual = postService.latest();
@@ -51,14 +51,14 @@ class PostServiceTest {
                 .containsExactly("alice");
         assertThat(actual.get(0).getAvatarColor()).isEqualTo("BLUE");
         assertThat(actual.get(0).getId()).isEqualTo(1L);
-        verify(postRepository).findTop50ByOrderByCreatedAtDescIdDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
     }
 
     @Test
     @DisplayName("投稿検索_searchPosts_本文部分一致で検索する")
     void 投稿検索_searchPosts_本文部分一致で検索する() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
-        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDescIdDesc("Spring")).willReturn(List.of(
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc("Spring")).willReturn(List.of(
                 new PostEntity(1L, "alice", "GREEN", "Spring Boot の共有です", Instant.parse("2026-06-26T09:00:00Z"))));
 
         List<Post> actual = postService.searchPosts("Spring");
@@ -67,15 +67,15 @@ class PostServiceTest {
                 .extracting(Post::getBody)
                 .containsExactly("Spring Boot の共有です");
         assertThat(actual.get(0).getAvatarColor()).isEqualTo("GREEN");
-        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDescIdDesc("Spring");
-        verify(postRepository, never()).findTop50ByOrderByCreatedAtDescIdDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc("Spring");
+        verify(postRepository, never()).findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
     }
 
     @Test
     @DisplayName("投稿検索_searchPosts_空文字は通常一覧を返す")
     void 投稿検索_searchPosts_空文字は通常一覧を返す() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
-        given(postRepository.findTop50ByOrderByCreatedAtDescIdDesc()).willReturn(List.of(
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc()).willReturn(List.of(
                 new PostEntity(1L, "alice", "BLUE", "hello", Instant.parse("2026-06-26T09:00:00Z"))));
 
         List<Post> actual = postService.searchPosts("  ");
@@ -83,15 +83,15 @@ class PostServiceTest {
         assertThat(actual)
                 .extracting(Post::getBody)
                 .containsExactly("hello");
-        verify(postRepository).findTop50ByOrderByCreatedAtDescIdDesc();
-        verify(postRepository, never()).findTop50ByBodyContainingOrderByCreatedAtDescIdDesc(anyString());
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+        verify(postRepository, never()).findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc(anyString());
     }
 
     @Test
     @DisplayName("投稿一覧_findPosts_空文字は通常一覧を返す")
     void 投稿一覧_findPosts_空文字は通常一覧を返す() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
-        given(postRepository.findTop50ByOrderByCreatedAtDescIdDesc()).willReturn(List.of(
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc()).willReturn(List.of(
                 new PostEntity(1L, "alice", "BLUE", "hello", Instant.parse("2026-06-26T09:00:00Z"))));
 
         List<Post> actual = postService.findPosts("  ");
@@ -99,8 +99,8 @@ class PostServiceTest {
         assertThat(actual)
                 .extracting(Post::getBody)
                 .containsExactly("hello");
-        verify(postRepository).findTop50ByOrderByCreatedAtDescIdDesc();
-        verify(postRepository, never()).findTop50ByBodyContainingOrderByCreatedAtDescIdDesc(anyString());
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+        verify(postRepository, never()).findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc(anyString());
     }
 
     @Test
@@ -129,7 +129,7 @@ class PostServiceTest {
         assertThat(actual.getCreatedAt()).isEqualTo(Instant.parse("2026-06-26T09:00:00Z"));
         verify(tagService).resolveTags("今日の共有です #Java #Java");
         verify(postRepository).save(any(PostEntity.class));
-        verify(postRepository, never()).findTop50ByOrderByCreatedAtDescIdDesc();
+        verify(postRepository, never()).findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
     }
 
     @Test
@@ -183,7 +183,7 @@ class PostServiceTest {
     @DisplayName("投稿詳細_getById_存在しないidは専用例外を投げる")
     void 投稿詳細_getById_存在しないidは専用例外を投げる() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
-        given(postRepository.findById(999L)).willReturn(Optional.empty());
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> postService.getById(999L))
                 .isInstanceOf(PostNotFoundException.class)
@@ -194,7 +194,7 @@ class PostServiceTest {
     @DisplayName("投稿詳細_getDetail_投稿といいね数をまとめて返す")
     void 投稿詳細_getDetail_投稿といいね数をまとめて返す() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
-        given(postRepository.findById(1L)).willReturn(Optional.of(
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(
                 new PostEntity(1L, "alice", "PURPLE", "hello", Instant.parse("2026-06-26T09:00:00Z"))));
         given(likeRepository.countByPostId(1L)).willReturn(15L);
 
@@ -202,7 +202,7 @@ class PostServiceTest {
 
         assertThat(actual.post().getAuthor()).isEqualTo("alice");
         assertThat(actual.likeCount()).isEqualTo(15L);
-        verify(postRepository).findById(1L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(1L);
         verify(likeRepository).countByPostId(1L);
     }
 
@@ -210,7 +210,7 @@ class PostServiceTest {
     @DisplayName("タグ別一覧_findPostsByTag_指定タグの投稿を返す")
     void タグ別一覧_findPostsByTag_指定タグの投稿を返す() {
         PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
-        given(postRepository.findTop50ByTagsNameOrderByCreatedAtDescIdDesc("Java")).willReturn(List.of(
+        given(postRepository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDescIdDesc("Java")).willReturn(List.of(
                 new PostEntity(1L, "alice", "BLUE", "Javaの共有 #Java", Instant.parse("2026-06-26T09:00:00Z"),
                         List.of(new TagEntity(1L, "Java")))));
 
@@ -220,7 +220,36 @@ class PostServiceTest {
                 .extracting(Post::getBody)
                 .containsExactly("Javaの共有 #Java");
         assertThat(actual.get(0).getTagNames()).containsExactly("Java");
-        verify(postRepository).findTop50ByTagsNameOrderByCreatedAtDescIdDesc("Java");
+        verify(postRepository).findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDescIdDesc("Java");
+    }
+
+    @Test
+    @DisplayName("投稿削除_delete_削除日時を設定して保存する")
+    void 投稿削除_delete_削除日時を設定して保存する() {
+        PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
+        PostEntity entity = new PostEntity(1L, "alice", "BLUE", "delete me", Instant.parse("2026-06-25T09:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(entity));
+
+        postService.delete(1L);
+
+        assertThat(entity.getDeletedAt()).isEqualTo(Instant.parse("2026-06-26T09:00:00Z"));
+        assertThat(entity.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("投稿削除_delete_2回目は404相当の例外を投げる")
+    void 投稿削除_delete_2回目は404相当の例外を投げる() {
+        PostService postService = new PostService(postRepository, likeRepository, tagService, fixedClock());
+        given(postRepository.findByIdAndDeletedAtIsNull(1L))
+                .willReturn(Optional.of(
+                        new PostEntity(1L, "alice", "BLUE", "delete me", Instant.parse("2026-06-25T09:00:00Z"))))
+                .willReturn(Optional.empty());
+
+        postService.delete(1L);
+
+        assertThatThrownBy(() -> postService.delete(1L))
+                .isInstanceOf(PostNotFoundException.class)
+                .hasMessageContaining("1");
     }
 
     private Clock fixedClock() {

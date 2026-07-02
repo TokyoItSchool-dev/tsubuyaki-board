@@ -38,6 +38,9 @@ public class PostEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @ManyToMany
     @JoinTable(
             name = "post_tags",
@@ -65,12 +68,24 @@ public class PostEntity {
             String body,
             Instant createdAt,
             List<TagEntity> tags) {
+        this(id, author, avatarColor, body, createdAt, tags, null);
+    }
+
+    public PostEntity(
+            Long id,
+            String author,
+            String avatarColor,
+            String body,
+            Instant createdAt,
+            List<TagEntity> tags,
+            Instant deletedAt) {
         this.id = id;
         this.author = author;
         this.avatarColor = avatarColor;
         this.body = body;
         this.createdAt = createdAt;
         this.tags = new LinkedHashSet<>(tags);
+        this.deletedAt = deletedAt;
     }
 
     public Long getId() {
@@ -95,6 +110,18 @@ public class PostEntity {
 
     public List<TagEntity> getTags() {
         return List.copyOf(tags);
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public void markDeleted(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override

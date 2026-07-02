@@ -88,11 +88,27 @@ class PostRepositoryTest {
         persistPost("new", "body", Instant.parse("2026-06-26T11:00:00Z"));
         persistPost("middle", "body", Instant.parse("2026-06-26T10:00:00Z"));
 
-        List<PostEntity> posts = postRepository.findTop50ByOrderByCreatedAtDescIdDesc();
+        List<PostEntity> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
 
         assertThat(posts)
                 .extracting(PostEntity::getAuthor)
                 .containsExactly("new", "middle", "old");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_論理削除済み投稿_取得されない")
+    void 投稿一覧_論理削除済み投稿_取得されない() {
+        persistPost("active", "visible", Instant.parse("2026-06-26T09:00:00Z"));
+        PostEntity deleted = persistPost("deleted", "hidden", Instant.parse("2026-06-26T10:00:00Z"));
+        deleted.markDeleted(Instant.parse("2026-06-26T11:00:00Z"));
+        entityManager.merge(deleted);
+        flushAndClear();
+
+        List<PostEntity> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+
+        assertThat(posts)
+                .extracting(PostEntity::getAuthor)
+                .containsExactly("active");
     }
 
     @Test
@@ -104,7 +120,7 @@ class PostRepositoryTest {
         }
         flushAndClear();
 
-        List<PostEntity> posts = postRepository.findTop50ByOrderByCreatedAtDescIdDesc();
+        List<PostEntity> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
 
         assertThat(posts).hasSize(50);
         assertThat(posts).extracting(PostEntity::getAuthor)
@@ -119,7 +135,7 @@ class PostRepositoryTest {
         persistPost("new", "Spring Boot の共有", Instant.parse("2026-06-26T11:00:00Z"));
         persistPost("other", "Java の共有", Instant.parse("2026-06-26T10:00:00Z"));
 
-        List<PostEntity> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDescIdDesc("Spring");
+        List<PostEntity> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc("Spring");
 
         assertThat(posts)
                 .extracting(PostEntity::getAuthor)
@@ -131,9 +147,22 @@ class PostRepositoryTest {
     void 投稿検索_該当なし_空リストを返す() {
         persistPost("alice", "Java の共有", Instant.parse("2026-06-26T09:00:00Z"));
 
-        List<PostEntity> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDescIdDesc("NoHit");
+        List<PostEntity> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc("NoHit");
 
         assertThat(posts).isEmpty();
+    }
+
+    @Test
+    @DisplayName("投稿詳細_ID検索_論理削除済み投稿はOptional_emptyを返す")
+    void 投稿詳細_ID検索_論理削除済み投稿はOptional_emptyを返す() {
+        PostEntity deleted = persistPost("alice", "hidden", Instant.parse("2026-06-26T09:00:00Z"));
+        deleted.markDeleted(Instant.parse("2026-06-26T10:00:00Z"));
+        entityManager.merge(deleted);
+        flushAndClear();
+
+        Optional<PostEntity> actual = postRepository.findByIdAndDeletedAtIsNull(deleted.getId());
+
+        assertThat(actual).isEmpty();
     }
 
     @Test
@@ -164,7 +193,7 @@ class PostRepositoryTest {
                 List.of(spring)));
         flushAndClear();
 
-        List<PostEntity> posts = postRepository.findTop50ByTagsNameOrderByCreatedAtDescIdDesc("Java");
+        List<PostEntity> posts = postRepository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDescIdDesc("Java");
 
         assertThat(posts)
                 .extracting(PostEntity::getAuthor)
