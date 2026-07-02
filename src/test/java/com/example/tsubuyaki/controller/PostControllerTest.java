@@ -46,6 +46,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -121,6 +122,56 @@ class PostControllerTest {
         assertThat(html)
                 .contains("class=\"post-count\"")
                 .contains("投稿数：3件");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿成功後のリダイレクトの場合_成功メッセージを一度だけ表示する")
+    void 投稿一覧_投稿成功後のリダイレクトの場合_成功メッセージを一度だけ表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(Collections.emptyList());
+        given(postService.countActivePosts()).willReturn(1L);
+
+        MvcResult redirectedResult = mockMvc.perform(get("/posts")
+                        .flashAttr("successMessage", "✅ 投稿しました！"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String redirectedHtml = redirectedResult.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(redirectedHtml)
+                .contains("class=\"flash-message flash-message--success\"")
+                .contains("✅ 投稿しました！")
+                .containsSubsequence(
+                        "class=\"timeline-header__title-row\"",
+                        "投稿数：1件",
+                        "class=\"flash-message flash-message--success\"",
+                        "class=\"timeline-tabs\"");
+
+        MvcResult reloadResult = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String reloadHtml = reloadResult.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(reloadHtml)
+                .doesNotContain("✅ 投稿しました！")
+                .doesNotContain("flash-message--success");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_成功メッセージがあっても投稿一覧以外では表示しない")
+    void 投稿詳細_成功メッセージがあっても投稿一覧以外では表示しない() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+
+        MvcResult result = mockMvc.perform(get("/posts/1")
+                        .flashAttr("successMessage", "✅ 投稿しました！"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .doesNotContain("✅ 投稿しました！")
+                .doesNotContain("flash-message--success");
     }
 
     @Test
@@ -1324,7 +1375,8 @@ class PostControllerTest {
                         .param("body", "本文です")
                         .param("avatarColor", "blue"))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/posts"));
+                .andExpect(redirectedUrl("/posts"))
+                .andExpect(flash().attribute("successMessage", "✅ 投稿しました！"));
 
         then(postService).should().createPost("alice", "本文です", "blue");
     }

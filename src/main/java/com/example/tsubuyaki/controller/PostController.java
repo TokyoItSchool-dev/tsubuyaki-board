@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -106,13 +107,14 @@ public class PostController {
 
     @PostMapping("/posts")
     public String create(@Valid @ModelAttribute("postForm") PostForm postForm,
-            BindingResult bindingResult, Model model) {
+            BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             addAvatarColors(model);
             return "posts/form";
         }
 
         postService.createPost(postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor());
+        redirectAttributes.addFlashAttribute("successMessage", "✅ 投稿しました！");
         return "redirect:/posts";
     }
 

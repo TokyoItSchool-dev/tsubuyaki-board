@@ -13,6 +13,9 @@
             <h1>社内つぶやきボード</h1>
             <p class="post-count" th:text="|投稿数：${postCount}件|">投稿数：0件</p>
         </div>
+        <div class="flash-message flash-message--success" th:if="${successMessage}" th:text="${successMessage}">
+            ✅ 投稿しました！
+        </div>
         <nav class="timeline-tabs" aria-label="投稿一覧ナビゲーション">
             <a class="timeline-tabs__link timeline-tabs__link--active" th:href="@{/posts}">一覧</a>
             <a class="timeline-tabs__link" th:href="@{/posts/new}">新規投稿</a>
