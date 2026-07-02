@@ -25,6 +25,10 @@ import java.util.Locale;
 @Controller
 public class PostController {
 
+    private static final String SORT_OLD = "old";
+
+    private static final String SORT_NEW = "new";
+
     private final PostService postService;
 
     public PostController(PostService postService) {
@@ -32,15 +36,23 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+    public String list(
+            @RequestParam(name = "q", required = false) String query,
+            @RequestParam(name = "sort", required = false) String sort,
+            Model model) {
         String keyword = normalizeQuery(query);
+        String sortOrder = normalizeSort(sort);
         if (hasText(keyword)) {
-            model.addAttribute("posts", postService.searchByBodyContaining(keyword));
+            model.addAttribute("posts", SORT_OLD.equals(sortOrder)
+                    ? postService.searchByBodyContainingOldest(keyword)
+                    : postService.searchByBodyContaining(keyword));
             model.addAttribute("q", keyword);
+            model.addAttribute("sort", sortOrder);
             return "posts/list";
         }
-        model.addAttribute("posts", postService.findLatest50());
+        model.addAttribute("posts", SORT_OLD.equals(sortOrder) ? postService.findOldest50() : postService.findLatest50());
         model.addAttribute("q", "");
+        model.addAttribute("sort", sortOrder);
         return "posts/list";
     }
 
@@ -49,6 +61,7 @@ public class PostController {
         String tagName = normalizeQuery(name).toLowerCase(Locale.ROOT);
         model.addAttribute("posts", postService.findByTagName(tagName));
         model.addAttribute("q", "");
+        model.addAttribute("sort", SORT_NEW);
         model.addAttribute("tagName", tagName);
         return "posts/list";
     }
@@ -128,6 +141,10 @@ public class PostController {
 
     private static String normalizeQuery(String query) {
         return query == null ? "" : query.trim();
+    }
+
+    private static String normalizeSort(String sort) {
+        return SORT_OLD.equals(sort) ? SORT_OLD : SORT_NEW;
     }
 
     private static String toTagNamesText(List<String> tagNames) {

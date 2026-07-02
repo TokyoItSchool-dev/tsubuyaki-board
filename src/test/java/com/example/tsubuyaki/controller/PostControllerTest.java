@@ -124,6 +124,22 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_sortがoldのとき_古い順の投稿一覧を表示する")
+    void list_sortがoldのとき_古い順の投稿一覧を表示する() throws Exception {
+        List<Post> posts = List.of(post("alice", "古い投稿です", BASE_TIME.plusSeconds(1)));
+        given(postService.findOldest50()).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("sort", "old"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("sort", "old"))
+                .andExpect(content().string(containsString("value=\"old\" selected")));
+
+        verify(postService).findOldest50();
+    }
+
+    @Test
     @DisplayName("投稿一覧_アバター色がある場合_投稿者名に色を反映する")
     void list_アバター色がある場合_投稿者名に色を反映する() throws Exception {
         Post post = post(

@@ -19,6 +19,10 @@
     </form>
     <form class="post-list__search" method="get" th:action="@{/posts}">
         <input type="search" name="q" th:value="${q}" placeholder="本文を検索">
+        <select name="sort" aria-label="並び順">
+            <option value="new" th:selected="${sort != 'old'}">新しい順</option>
+            <option value="old" th:selected="${sort == 'old'}">古い順</option>
+        </select>
         <button type="submit">検索</button>
     </form>
     <p th:if="${tagName != null}" th:text="|#${tagName} の投稿|">#tag の投稿</p>

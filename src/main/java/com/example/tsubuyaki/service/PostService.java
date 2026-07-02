@@ -45,8 +45,16 @@ public class PostService {
         return initializeTags(repository.findTop50ByOrderByCreatedAtDesc());
     }
 
+    public List<Post> findOldest50() {
+        return initializeTags(repository.findTop50ByDeletedAtIsNullOrderByCreatedAtAsc());
+    }
+
     public List<Post> searchByBodyContaining(String keyword) {
         return initializeTags(repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(keyword));
+    }
+
+    public List<Post> searchByBodyContainingOldest(String keyword) {
+        return initializeTags(repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtAsc(keyword));
     }
 
     public Optional<Post> findById(Long id) {
