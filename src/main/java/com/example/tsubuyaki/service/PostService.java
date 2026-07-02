@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.service;
 
+import com.example.tsubuyaki.domain.Comment;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.Tag;
+import com.example.tsubuyaki.repository.CommentRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.TagRepository;
 import org.springframework.stereotype.Service;
@@ -29,11 +31,14 @@ public class PostService {
 
     private final TagRepository tagRepository;
 
+    private final CommentRepository commentRepository;
+
     private final Map<Long, Set<String>> likedClientHashesByPostId = new ConcurrentHashMap<>();
 
-    public PostService(PostRepository repository, TagRepository tagRepository) {
+    public PostService(PostRepository repository, TagRepository tagRepository, CommentRepository commentRepository) {
         this.repository = repository;
         this.tagRepository = tagRepository;
+        this.commentRepository = commentRepository;
     }
 
     public List<Post> findLatest50() {
@@ -50,6 +55,10 @@ public class PostService {
 
     public List<Post> findByTagName(String name) {
         return initializeTags(tagRepository.findPostsByNameOrderByPostCreatedAtDesc(normalizeTagName(name)));
+    }
+
+    public List<Comment> findCommentsByPostId(Long postId) {
+        return commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
     }
 
     public long countLikes(Long postId) {
@@ -92,6 +101,12 @@ public class PostService {
     public void delete(Long id) {
         repository.findByIdAndDeletedAtIsNull(id)
                 .ifPresent(post -> post.markDeleted(Instant.now()));
+    }
+
+    @Transactional
+    public void createComment(Long postId, String body) {
+        repository.findByIdAndDeletedAtIsNull(postId)
+                .ifPresent(post -> commentRepository.save(new Comment(post, body, Instant.now())));
     }
 
     private Tag findOrCreateTag(String name) {

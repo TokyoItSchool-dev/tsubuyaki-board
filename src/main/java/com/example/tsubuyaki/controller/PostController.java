@@ -65,9 +65,16 @@ public class PostController {
                     model.addAttribute("post", post);
                     model.addAttribute("postId", id);
                     model.addAttribute("likeCount", postService.countLikes(id));
+                    model.addAttribute("comments", postService.findCommentsByPostId(id));
                     return "posts/detail";
                 })
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    @PostMapping("/posts/{id}/comments")
+    public String createComment(@PathVariable Long id, @RequestParam String body) {
+        postService.createComment(id, body);
+        return "redirect:/posts/" + id;
     }
 
     @PostMapping("/posts/{id}/likes")
