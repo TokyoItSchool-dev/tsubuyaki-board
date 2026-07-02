@@ -11,8 +11,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,5 +40,16 @@ class PostServiceTest {
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("今日の共有です");
         assertThat(savedPost.getCreatedAt()).isBetween(before, after);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するIDの場合_repositoryから取得した投稿を返す")
+    void 投稿詳細_存在するIDの場合_repositoryから取得した投稿を返す() {
+        Post post = new Post("alice", "詳細です", LocalDateTime.parse("2026-06-26T10:00:00"));
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+
+        Optional<Post> actual = postService.findById(10L);
+
+        assertThat(actual).containsSame(post);
     }
 }

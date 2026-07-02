@@ -48,6 +48,17 @@ h1 {
     margin-right: 0.5rem;
 }
 
+.post__link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+
+.post__link:focus,
+.post__link:hover {
+    color: var(--color-accent);
+}
+
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;
@@ -63,4 +74,22 @@ h1 {
 .error {
     color: #b91c1c;
     font-weight: 600;
+}
+
+.post-detail {
+    margin: 0;
+}
+
+.post-detail__row {
+    margin-bottom: 1rem;
+}
+
+.post-detail__row dt {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.post-detail__row dd {
+    margin: 0.25rem 0 0;
 }

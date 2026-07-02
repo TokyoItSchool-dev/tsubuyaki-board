@@ -8,12 +8,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
@@ -95,6 +97,21 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿カード_詳細画面へのリンクを表示する")
+    void 投稿一覧_投稿カード_詳細画面へのリンクを表示する() throws Exception {
+        Post post = new Post("alice", "リンクを確認する本文", LocalDateTime.parse("2026-06-26T10:00:00"));
+        ReflectionTestUtils.setField(post, "id", 10L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("href=\"/posts/10\"");
+    }
+
+    @Test
     @DisplayName("投稿フォーム_初期表示_posts_formビューと空のpostFormをmodelに設定する")
     void 投稿フォーム_初期表示_postsFormビューと空のPostFormをModelに設定する() throws Exception {
         MvcResult result = mockMvc.perform(get("/posts/new"))
@@ -120,6 +137,32 @@ class PostControllerTest {
 
         String html = result.getResponse().getContentAsString();
         assertThat(html).doesNotContain(" required", "required=");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するIDの場合_posts_detailビューとpostをmodelに設定する")
+    void 投稿詳細_存在するIDの場合_postsDetailビューとPostをModelに設定する() throws Exception {
+        Post post = new Post("alice", "詳細に表示する本文", LocalDateTime.parse("2026-06-26T10:00:00"));
+        ReflectionTestUtils.setField(post, "id", 10L);
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", sameInstance(post)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("10")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("alice")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("詳細に表示する本文")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("2026-06-26 10:00")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないIDの場合_404を返す")
+    void 投稿詳細_存在しないIDの場合_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
