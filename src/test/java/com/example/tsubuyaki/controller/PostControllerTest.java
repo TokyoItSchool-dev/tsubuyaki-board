@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.AfterEach;
@@ -11,10 +12,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -128,6 +131,82 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("タグ別一覧_GET_tags_name_関連投稿をposts_listへ渡す")
+    void タグ別一覧_GetTagsName_関連投稿をPostsListへ渡す() throws Exception {
+        Post post = new Post("alice", "hello #研修", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.listByTag("研修")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/tags/研修"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(model().attribute("tagName", "研修"));
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_存在しないタグ_空一覧を表示する")
+    void タグ別一覧_存在しないタグ_空一覧を表示する() throws Exception {
+        given(postService.listByTag("unknown")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/unknown"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", Collections.emptyList()))
+                .andExpect(model().attribute("tagName", "unknown"))
+                .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("タグ候補_GET_tags_suggestions_前方一致のタグ名を返す")
+    void タグ候補_GetTagsSuggestions_前方一致のタグ名を返す() throws Exception {
+        given(postService.suggestTagNames("sp")).willReturn(List.of("spring", "spring-boot"));
+
+        mockMvc.perform(get("/tags/suggestions").param("q", "sp"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[\"spring\",\"spring-boot\"]"));
+    }
+
+    @Test
+    @DisplayName("タグ候補_GET_tags_suggestions_q空_タグ名を最大10件返す")
+    void タグ候補_GetTagsSuggestions_Q空_タグ名を最大10件返す() throws Exception {
+        given(postService.suggestTagNames("")).willReturn(List.of("java", "研修"));
+
+        mockMvc.perform(get("/tags/suggestions").param("q", ""))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[\"java\",\"研修\"]"));
+    }
+
+    @Test
+    @DisplayName("タグ確定_POST_tags_未登録タグを作成してJSONを返す")
+    void タグ確定_PostTags_未登録タグを作成してJsonを返す() throws Exception {
+        given(postService.confirmTag("spring")).willReturn(new Tag("spring"));
+
+        mockMvc.perform(post("/tags").param("name", "spring"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"name\":\"spring\"}"));
+    }
+
+    @Test
+    @DisplayName("タグ確定_POST_tags_既存タグを再利用してJSONを返す")
+    void タグ確定_PostTags_既存タグを再利用してJsonを返す() throws Exception {
+        given(postService.confirmTag("#研修")).willReturn(new Tag("研修"));
+
+        mockMvc.perform(post("/tags").param("name", "#研修"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"name\":\"研修\"}"));
+    }
+
+    @Test
+    @DisplayName("タグ確定_POST_tags_name空_400を返す")
+    void タグ確定_PostTags_Name空_400を返す() throws Exception {
+        given(postService.confirmTag(""))
+                .willThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST));
+
+        mockMvc.perform(post("/tags").param("name", ""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿あり_投稿者内容投稿日の順に表示する")
     void 投稿一覧_投稿あり_投稿者内容投稿日の順に表示する() throws Exception {
         Post post = new Post(
@@ -208,6 +287,35 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_タグリンクを表示する")
+    void 投稿詳細_タグリンクを表示する() throws Exception {
+        Post post = new Post("alice", "hello #spring", Instant.parse("2026-05-23T10:15:00Z"));
+        post.addTag(new Tag("spring"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<div class=\"post__tags\">\\s*"
+                        + "<a[^>]+href=\"/tags/spring\"[^>]*>#spring</a>\\s*</div>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_関連タグだけをタグリンクとして表示する")
+    void 投稿詳細_関連タグだけをタグリンクとして表示する() throws Exception {
+        Post post = new Post("alice", "hello #spring world", Instant.parse("2026-05-23T10:15:00Z"));
+        post.addTag(new Tag("spring"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<p class=\"post__body\">hello #spring world</p>")))
+                .andExpect(content().string(matchesPattern("(?s).*<div class=\"post__tags\">\\s*"
+                        + "<a[^>]+href=\"/tags/spring\"[^>]*>#spring</a>\\s*</div>.*")));
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在するid_likeCountをmodelに渡す")
     void 投稿詳細_存在するid_likeCountをmodelに渡す() throws Exception {
         Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:15:00Z"));
@@ -270,6 +378,32 @@ class PostControllerTest {
                         + "[^>]+value=\"#3498db\"[^>]*>.*")));
     }
 
+    @Test
+    @DisplayName("投稿作成フォーム_タグ入力フォームと候補リストを表示する")
+    void 投稿作成フォーム_タグ入力フォームと候補リストを表示する() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<label for=\"tag-input\">タグ</label>\\s*"
+                        + "<input[^>]+type=\"text\"[^>]+id=\"tag-input\"[^>]*>\\s*"
+                        + "<div id=\"tag-suggestions\" class=\"tag-suggestions\""
+                        + "\\s+data-suggestions-url=\"/tags/suggestions\" data-confirm-url=\"/tags\"></div>.*"
+                        + "<script[^>]+src=\"/js/tag-suggestions.js\"[^>]+defer(?:=\"defer\")?[^>]*>"
+                        + "</script>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿作成フォーム_確定タグ一覧領域を表示する")
+    void 投稿作成フォーム_確定タグ一覧領域を表示する() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<input[^>]+id=\"tag-input\"[^>]*>\\s*"
+                        + "<div id=\"tag-suggestions\" class=\"tag-suggestions\""
+                        + "\\s+data-suggestions-url=\"/tags/suggestions\" data-confirm-url=\"/tags\"></div>\\s*"
+                        + "<div id=\"selected-tags\" class=\"tag-selected-tags\""
+                        + " aria-label=\"確定済みタグ\"></div>\\s*"
+                        + "<div id=\"tag-hidden-inputs\"></div>.*")));
+    }
+
     @ParameterizedTest
     @CsvSource({
         "false, #3498db, #3498db",
@@ -289,7 +423,21 @@ class PostControllerTest {
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        then(postService).should().create("alice", "hello", expectedColor);
+        then(postService).should().create("alice", "hello", expectedColor, Collections.emptyList());
+    }
+
+    @Test
+    @DisplayName("投稿登録_確定済みタグ名をServiceへ渡す")
+    void 投稿登録_確定済みタグ名をServiceへ渡す() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "hello")
+                        .param("avatarColor", "#3498db")
+                        .param("tagNames", "spring", "研修"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        then(postService).should().create("alice", "hello", "#3498db", List.of("spring", "研修"));
     }
 
     @Test
@@ -301,7 +449,7 @@ class PostControllerTest {
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        then(postService).should().create("alice", "hello", "#3498db");
+        then(postService).should().create("alice", "hello", "#3498db", Collections.emptyList());
     }
 
     @Test
