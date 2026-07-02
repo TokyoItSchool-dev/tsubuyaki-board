@@ -1,3 +1,6 @@
+/*
+ * 新規投稿フォームから送信される投稿者名、本文、任意のアバター色を受け取る DTO。
+ */
 package com.example.tsubuyaki.web.dto;
 
 import jakarta.validation.constraints.NotBlank;

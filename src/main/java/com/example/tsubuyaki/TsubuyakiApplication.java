@@ -1,3 +1,6 @@
+/*
+ * 社内つぶやきボード Spring Boot アプリケーションの起動クラス。
+ */
 package com.example.tsubuyaki;
 
 import org.springframework.boot.SpringApplication;

@@ -1,3 +1,7 @@
+/*
+ * 投稿の取得、検索、作成と、投稿本文から抽出したタグの保存をまとめる
+ * アプリケーションサービス。
+ */
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
@@ -25,10 +29,27 @@ public class PostService {
         this.tagParser = tagParser;
     }
 
+    /**
+     * 一覧画面に表示する最新投稿を取得する。
+     *
+     * <p>画面が重くならないよう、リポジトリ側の派生クエリで作成日時の降順に
+     * 最大 50 件だけ取得する。</p>
+     *
+     * @return 最新順の投稿一覧
+     */
     public List<Post> latest() {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    /**
+     * 投稿本文を対象にキーワード検索する。
+     *
+     * <p>コントローラで空文字を除外した後に呼び出されるため、このメソッドでは
+     * 本文にキーワードを含む投稿だけを新しい順に取得する。</p>
+     *
+     * @param keyword 本文検索キーワード
+     * @return 本文にキーワードを含む投稿一覧
+     */
     public List<Post> search(String keyword) {
         return repository.findByBodyContainingOrderByCreatedAtDesc(keyword);
     }
@@ -37,19 +58,59 @@ public class PostService {
         return repository.findById(id);
     }
 
+    /**
+     * タグ名に完全一致する投稿を取得する。
+     *
+     * <p>{@code GET /tags/{name}} で直接タグ別一覧を開くために使う。
+     * 保存済みタグ名と一致した投稿だけを新しい順に返す。</p>
+     *
+     * @param name タグ名
+     * @return 指定タグに紐づく投稿一覧
+     */
     public List<Post> findByTag(String name) {
         return tagRepository.findPostsByNameOrderByCreatedAtDesc(name);
     }
 
+    /**
+     * タグ名を部分一致で検索し、該当タグを持つ投稿を取得する。
+     *
+     * <p>一覧画面のタグ検索窓から使うため、タグ名そのものを完全一致ではなく
+     * LIKE 相当で検索する。</p>
+     *
+     * @param keyword タグ検索キーワード
+     * @return タグ名にキーワードを含む投稿一覧
+     */
     public List<Post> searchByTag(String keyword) {
         return tagRepository.findPostsByNameContainingOrderByCreatedAtDesc(keyword);
     }
 
+    /**
+     * アバター色を指定せずに投稿を作成する。
+     *
+     * <p>既存呼び出し元との互換性を保つための入口。実際の保存処理は
+     * アバター色付きの作成メソッドへ委譲する。</p>
+     *
+     * @param author 投稿者名
+     * @param body 本文
+     * @return 保存した投稿
+     */
     @Transactional
     public Post create(String author, String body) {
         return create(author, body, null);
     }
 
+    /**
+     * 投稿と本文中のタグを保存する。
+     *
+     * <p>投稿を先に保存して ID を確定させた後、本文中の {@code #tag} を抽出して
+     * 投稿に紐づく {@link Tag} として保存する。アバター色は任意入力のため
+     * {@code null} や空文字でもエラーにしない。</p>
+     *
+     * @param author 投稿者名
+     * @param body 本文
+     * @param avatarColor アバター色
+     * @return 保存した投稿
+     */
     @Transactional
     public Post create(String author, String body, String avatarColor) {
         Post post = repository.save(new Post(author, body, LocalDateTime.now(), avatarColor));

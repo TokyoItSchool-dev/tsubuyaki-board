@@ -1,3 +1,6 @@
+/*
+ * 投稿へのいいね数取得と、利用者ごとのいいね切り替えを扱うサービス。
+ */
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.PostLike;
@@ -20,10 +23,26 @@ public class PostLikeService {
         this.postLikeRepository = postLikeRepository;
     }
 
+    /**
+     * 指定投稿のいいね数を取得する。
+     *
+     * @param postId 投稿 ID
+     * @return 指定投稿に紐づくいいね数
+     */
     public long countLikes(Long postId) {
         return postLikeRepository.countByPostId(postId);
     }
 
+    /**
+     * 指定投稿に対する利用者のいいね状態を反転する。
+     *
+     * <p>同じ投稿 ID とクライアントハッシュの組み合わせが既にあれば削除し、
+     * なければ新しく保存する。対象投稿が存在しない場合は、詳細画面側で
+     * 404 に変換できるよう {@link NoSuchElementException} を投げる。</p>
+     *
+     * @param postId 投稿 ID
+     * @param clientHash 利用者を識別する短いハッシュ
+     */
     @Transactional
     public void toggleLike(Long postId, String clientHash) {
         if (!postRepository.existsById(postId)) {

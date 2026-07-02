@@ -1,3 +1,6 @@
+/*
+ * 投稿本文から抽出したタグ名と、そのタグが属する投稿を保持するエンティティ。
+ */
 package com.example.tsubuyaki.domain;
 
 import jakarta.persistence.Column;

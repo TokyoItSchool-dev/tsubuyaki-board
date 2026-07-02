@@ -1,3 +1,6 @@
+/*
+ * 投稿本文、投稿者名、任意のアバター色、作成日時を保持する投稿エンティティ。
+ */
 package com.example.tsubuyaki.domain;
 
 import jakarta.persistence.Column;
@@ -67,6 +70,15 @@ public class Post {
         return createdAt;
     }
 
+    /**
+     * 同じ投稿かどうかをエンティティ ID で判定する。
+     *
+     * <p>投稿本文やアバター色は後から仕様変更で変わる可能性があるため、
+     * 永続化後の同一性は主キーだけで判断する。</p>
+     *
+     * @param o 比較対象
+     * @return 同じ ID の投稿であれば {@code true}
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -78,6 +90,14 @@ public class Post {
         return Objects.equals(id, other.id);
     }
 
+    /**
+     * エンティティ ID をもとにハッシュ値を返す。
+     *
+     * <p>{@link #equals(Object)} と同じく、投稿内容ではなく主キーに基づいて
+     * コレクション内の同一性を扱う。</p>
+     *
+     * @return ID から計算したハッシュ値
+     */
     @Override
     public int hashCode() {
         return Objects.hash(id);

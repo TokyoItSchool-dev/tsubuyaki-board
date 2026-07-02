@@ -1,3 +1,6 @@
+/*
+ * 投稿に対するクライアント単位のいいね状態を保持するエンティティ。
+ */
 package com.example.tsubuyaki.domain;
 
 import jakarta.persistence.Column;
