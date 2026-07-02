@@ -1,0 +1,308 @@
+package com.example.tsubuyaki.controller;
+
+import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.repository.PostLikeRepository;
+import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostForm;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+@WebMvcTest(PostController.class)
+@Import(PostService.class)
+class PostControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private PostRepository postRepository;
+
+    @MockitoBean
+    private PostLikeRepository postLikeRepository;
+
+    @Test
+    @DisplayName("投稿一覧_新着投稿があるとき_最新50件を新着順で表示する")
+    void 投稿一覧_新着投稿があるとき_最新50件を新着順で表示する() throws Exception {
+        Post newer = new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        Post older = new Post("bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z"));
+        List<Post> posts = List.of(newer, older);
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(content().string(matchesPattern("(?s).*新しい投稿.*古い投稿.*")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_0件の場合_まだ投稿はありませんを表示する")
+    void 投稿一覧_0件の場合_まだ投稿はありませんを表示する() throws Exception {
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", Collections.emptyList()))
+                .andExpect(content().string(matchesPattern("(?s).*まだ投稿はありません.*")));
+    }
+
+    @Test
+    @DisplayName("投稿検索_GET_posts_q指定_本文LIKE検索結果を一覧画面に表示する")
+    void 投稿検索_GET_posts_q指定_本文Like検索結果を一覧画面に表示する() throws Exception {
+        Post matched = new Post("alice", "今日の共有です", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("共有")).willReturn(List.of(matched));
+
+        mockMvc.perform(get("/posts").param("q", "　共有　"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(matched)))
+                .andExpect(model().attribute("q", "共有"))
+                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<input[^>]*name=\"q\"[^>]*value=\"共有\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*今日の共有です.*")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_更新ボタン_押すとpostsスラッシュへGETリクエストする")
+    void 投稿一覧_更新ボタン_押すとpostsスラッシュへGetリクエストする() throws Exception {
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts/\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*method=\"get\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<button[^>]*>\\s*更新\\s*</button>.*")));
+
+        mockMvc.perform(get("/posts/"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する")
+    void 投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*alice.*本文です.*2026-05-23 19:00.*")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧詳細_UPDATE1_アバター色と本文リンクを表示し詳細ボタンを廃止する")
+    void 投稿一覧詳細_UPDATE1_アバター色と本文リンクを表示し詳細ボタンを廃止する() throws Exception {
+        Post colored = new Post("alice", "blue", "1234567890123456789012345678901234567890追加", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(colored, "id", 42L);
+        Post noColor = new Post("bob", null, "色なし投稿です", Instant.parse("2026-05-23T09:00:00Z"));
+        ReflectionTestUtils.setField(noColor, "id", 43L);
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(colored, noColor));
+        given(postRepository.findById(42L)).willReturn(Optional.of(colored));
+        given(postLikeRepository.countByPostId(42L)).willReturn(3L);
+        given(postLikeRepository.countByPostId(43L)).willReturn(0L);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<div[^>]*class=\"list-toolbar\"[^>]*>\\s*"
+                                + "<form[^>]*class=\"new-post-form\"[^>]*action=\"/posts/form\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*新規投稿\\s*</button>\\s*</form>\\s*"
+                                + "<form[^>]*class=\"toolbar\"[^>]*action=\"/posts/\"[^>]*method=\"get\"[^>]*>.*"
+                                + "<form[^>]*class=\"search-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>.*</div>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<span[^>]*class=\"post__author\"[^>]*>alice</span>\\s*"
+                                + "<span[^>]*class=\"avatar-dot avatar-dot--blue\"[^>]*></span>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<header>\\s*<span[^>]*class=\"post__author\"[^>]*>bob</span>\\s*</header>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<p[^>]*class=\"post__summary\"[^>]*>\\s*"
+                                + "<a[^>]*class=\"post__body-link\"[^>]*href=\"/posts/42\"[^>]*>1234567890123456789012345678901234567890\\.\\.\\.</a>\\s*"
+                                + "</p>\\s*<time[^>]*class=\"post__created-at\".*")))
+                .andExpect(content().string(matchesPattern("(?s).*<p[^>]*class=\"post__likes\"[^>]*>3 いいね</p>.*")))
+                .andExpect(content().string(matchesPattern("(?s)^(?!.*>\\s*詳細\\s*</button>).*$")));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<form[^>]*class=\"back-to-list-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*一覧へ戻る\\s*</button>\\s*</form>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<span[^>]*class=\"post__author\"[^>]*>alice</span>\\s*"
+                                + "<span[^>]*class=\"avatar-dot avatar-dot--blue\"[^>]*></span>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_本文リンクから遷移し存在しないidは404を返す")
+    void 投稿詳細_本文リンクから遷移し存在しないidは404を返す() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<a[^>]*class=\"post__body-link\"[^>]*href=\"/posts/42\"[^>]*>本文です</a>.*")));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(matchesPattern("(?s).*alice.*本文です.*2026-05-23 19:00.*")));
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿作成フォーム_GET_posts_form_posts_formを表示しpostFormをビューに渡す")
+    void 投稿作成フォーム_GET_posts_form_posts_formを表示しpostFormをビューに渡す() throws Exception {
+        mockMvc.perform(get("/posts/form"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<form[^>]*class=\"back-to-list-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*一覧へ戻る\\s*</button>\\s*</form>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"post\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<div[^>]*class=\"post-form__actions\"[^>]*>\\s*"
+                                + "<button[^>]*type=\"submit\"[^>]*>\\s*投稿\\s*</button>\\s*</div>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿UI_CSS_フォーム部品とリンクの視認性を整える")
+    void 投稿UI_CSS_フォーム部品とリンクの視認性を整える() throws Exception {
+        mockMvc.perform(get("/css/app.css"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(".post-form__field select")))
+                .andExpect(content().string(containsString("color: var(--color-accent);")))
+                .andExpect(content().string(containsString("flex-wrap: wrap;")))
+                .andExpect(content().string(containsString(".new-post-form button,\n.toolbar button")));
+    }
+
+    @Test
+    @DisplayName("投稿者名拡張_フォームで任意のアバター色を選択して投稿できる")
+    void 投稿者名拡張_フォームで任意のアバター色を選択して投稿できる() throws Exception {
+        mockMvc.perform(get("/posts/form"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s).*<select[^>]*name=\"avatarColor\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<option[^>]*value=\"blue\"[^>]*>\\s*Blue\\s*</option>.*")));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("avatarColor", "blue")
+                        .param("body", "アバター色つき投稿です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postRepository).save(argThat(post -> "alice".equals(post.getAuthor())
+                && "blue".equals(post.getAvatarColor())
+                && "アバター色つき投稿です".equals(post.getBody())));
+    }
+
+    @Test
+    @DisplayName("投稿作成_検索中に新規投稿した場合_検索条件を維持せず最新一覧へ戻る")
+    void 投稿作成_検索中に新規投稿した場合_検索条件を維持せず最新一覧へ戻る() throws Exception {
+        mockMvc.perform(get("/posts").param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<div[^>]*class=\"list-toolbar\"[^>]*>\\s*"
+                                + "<form[^>]*class=\"new-post-form\"[^>]*action=\"/posts/form\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*新規投稿\\s*</button>\\s*</form>\\s*"
+                                + "<form[^>]*class=\"toolbar\"[^>]*action=\"/posts/\"[^>]*method=\"get\"[^>]*>.*"
+                                + "<form[^>]*class=\"search-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>.*</div>.*")))
+                .andExpect(content().string(matchesPattern("(?s)^(?!.*href=\"/posts/form\\?q=).*$")));
+
+        mockMvc.perform(get("/posts/form").param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern("(?s)^(?!.*<input[^>]*type=\"hidden\"[^>]*name=\"q\").*$")));
+
+        mockMvc.perform(post("/posts")
+                        .param("q", "共有")
+                        .param("author", "alice")
+                        .param("body", "共有したい内容です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+    }
+
+    @Test
+    @DisplayName("投稿登録_POST_posts_有効入力は保存し不正入力はフォームを再表示する")
+    void 投稿登録_POST_posts_有効入力は保存し不正入力はフォームを再表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "今日の共有です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postRepository).save(argThat(post -> "alice".equals(post.getAuthor())
+                && "今日の共有です".equals(post.getBody())
+                && post.getCreatedAt() != null));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "   ")
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "　　")
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "a".repeat(31))
+                        .param("body", "本文です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "あ".repeat(281)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"));
+
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "　　"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "body"));
+
+        verify(postRepository, times(1)).save(argThat(post -> post.getCreatedAt() != null));
+    }
+}

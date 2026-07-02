@@ -9,22 +9,35 @@
 <body>
 <main>
     <h1>新規投稿</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
-    </nav>
+    <form class="back-to-list-form" th:action="@{/posts}" method="get">
+        <button type="submit">一覧へ戻る</button>
+    </form>
 
-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
-        <div>
+    <form class="post-form" th:action="@{/posts}" th:object="${postForm}" method="post">
+        <div class="post-form__field">
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
-        <div>
+        <div class="post-form__field">
+            <label for="avatarColor">アバター色</label>
+            <select id="avatarColor" th:field="*{avatarColor}">
+                <option value="">指定なし</option>
+                <option value="blue">Blue</option>
+                <option value="green">Green</option>
+                <option value="pink">Pink</option>
+                <option value="gray">Gray</option>
+            </select>
+            <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
+        </div>
+        <div class="post-form__field post-form__field--textarea">
             <label for="body">本文 (280 文字まで)</label>
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
-        <button type="submit">投稿</button>
+        <div class="post-form__actions">
+            <button type="submit">投稿</button>
+        </div>
     </form>
 </main>
 </body>

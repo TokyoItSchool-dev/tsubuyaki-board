@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <form class="back-to-list-form" th:action="@{/posts}" method="get">
+        <button type="submit">一覧へ戻る</button>
+    </form>
+
+    <article class="post">
+        <header>
+            <span class="post__author" th:text="${post.author}">投稿者</span>
+            <span th:if="${!#strings.isEmpty(post.avatarColor)}"
+                  th:class="'avatar-dot avatar-dot--' + ${post.avatarColor}"></span>
+        </header>
+        <p class="post__body" th:text="${post.body}">本文</p>
+        <time class="post__created-at"
+              th:datetime="${post.createdAt}"
+              th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <p class="post__likes" th:text="${likeCount + ' いいね'}">0 いいね</p>
+        <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+            <button type="submit">Like</button>
+        </form>
+    </article>
+</main>
+</body>
+</html>

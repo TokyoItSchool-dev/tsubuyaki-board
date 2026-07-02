@@ -9,6 +9,8 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 
 @Entity
@@ -23,20 +25,28 @@ public class Post {
     @Column(name = "author", length = 30, nullable = false)
     private String author;
 
+    @Column(name = "avatar_color", length = 20)
+    private String avatarColor;
+
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     protected Post() {
         // JPA
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, null, body, createdAt);
+    }
+
+    public Post(String author, String avatarColor, String body, Instant createdAt) {
         this.author = author;
+        this.avatarColor = avatarColor;
         this.body = body;
-        this.createdAt = createdAt;
+        this.createdAt = LocalDateTime.ofInstant(createdAt, ZoneId.systemDefault());
     }
 
     public Long getId() {
@@ -47,11 +57,15 @@ public class Post {
         return author;
     }
 
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
     public String getBody() {
         return body;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
