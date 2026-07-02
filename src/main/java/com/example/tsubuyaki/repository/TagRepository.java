@@ -9,10 +9,28 @@ import java.util.List;
 
 public interface TagRepository extends JpaRepository<Tag, Long> {
 
+    /**
+     * 投稿 ID に紐づくタグ一覧を取得する。
+     *
+     * @param postId 投稿 ID
+     * @return タグ一覧
+     */
     List<Tag> findByPostId(Long postId);
 
+    /**
+     * 複数投稿 ID に紐づくタグを作成日時、ID の昇順で取得する。
+     *
+     * @param postIds 投稿 ID 一覧
+     * @return タグ一覧
+     */
     List<Tag> findByPostIdInOrderByCreatedAtAscIdAsc(List<Long> postIds);
 
+    /**
+     * タグ名に一致する投稿 ID を投稿日時の降順で取得する。
+     *
+     * @param tagName # 付きのタグ名
+     * @return 投稿 ID 一覧
+     */
     @Query("""
             SELECT t.postId
             FROM Tag t, Post p

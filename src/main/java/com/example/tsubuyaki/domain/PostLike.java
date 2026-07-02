@@ -31,28 +31,58 @@ public class PostLike {
     @JdbcTypeCode(SqlTypes.TIMESTAMP)
     private Instant createdAt;
 
+    /**
+     * JPA がエンティティを復元するためのコンストラクタ。
+     */
     protected PostLike() {
         // JPA
     }
 
+    /**
+     * 投稿へのいいねを生成する。
+     *
+     * @param postId 投稿 ID
+     * @param clientHash いいねしたクライアントのハッシュ
+     * @param createdAt いいね日時
+     */
     public PostLike(Long postId, String clientHash, Instant createdAt) {
         this.postId = postId;
         this.clientHash = clientHash;
         this.createdAt = createdAt;
     }
 
+    /**
+     * いいね ID を返す。
+     *
+     * @return いいね ID
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * 投稿 ID を返す。
+     *
+     * @return 投稿 ID
+     */
     public Long getPostId() {
         return postId;
     }
 
+    /**
+     * クライアントハッシュを返す。
+     *
+     * @return クライアントハッシュ
+     */
     public String getClientHash() {
         return clientHash;
     }
 
+    /**
+     * いいね日時を返す。
+     *
+     * @return いいね日時
+     */
     public Instant getCreatedAt() {
         return createdAt;
     }

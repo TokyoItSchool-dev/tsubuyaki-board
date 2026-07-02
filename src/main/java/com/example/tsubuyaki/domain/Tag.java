@@ -31,28 +31,58 @@ public class Tag {
     @JdbcTypeCode(SqlTypes.TIMESTAMP)
     private Instant createdAt;
 
+    /**
+     * JPA がエンティティを復元するためのコンストラクタ。
+     */
     protected Tag() {
         // JPA
     }
 
+    /**
+     * 投稿に紐づくタグを生成する。
+     *
+     * @param postId 投稿 ID
+     * @param tagName タグ名
+     * @param createdAt 作成日時
+     */
     public Tag(Long postId, String tagName, Instant createdAt) {
         this.postId = postId;
         this.tagName = tagName;
         this.createdAt = createdAt;
     }
 
+    /**
+     * タグ ID を返す。
+     *
+     * @return タグ ID
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * 投稿 ID を返す。
+     *
+     * @return 投稿 ID
+     */
     public Long getPostId() {
         return postId;
     }
 
+    /**
+     * タグ名を返す。
+     *
+     * @return タグ名
+     */
     public String getTagName() {
         return tagName;
     }
 
+    /**
+     * 作成日時を返す。
+     *
+     * @return 作成日時
+     */
     public Instant getCreatedAt() {
         return createdAt;
     }
