@@ -32,13 +32,13 @@ class SamplePostControllerTest {
     private PostService postService;
 
     @Test
-    @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")
+    @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list.html ビューを返す")
     void getPosts_rendersListView() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.findLatest50()).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("posts/list"))
+                .andExpect(view().name("posts/list.html"))
                 .andExpect(model().attributeExists("posts"));
     }
 }
