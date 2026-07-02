@@ -1168,25 +1168,187 @@ Red: src/test/java/com/example/tsubuyaki/controller/PostBackgroundColorFeatureTe
 **振り返り**:
 投稿の削除機能が実装出来た。
 ソースについても、当該箇所の実装、WEBアプリも動いていることが確認出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
 また、Codexと壁打ちし、仕様の詳細化を実施した
 
 
 ## プロンプト 15
 
-**フェーズ**:
+**フェーズ**:投稿編集機能
+UXの観点から、投稿編集機能は必須。
+そのため、Codexと壁打ちし仕様策定、実装を行う。
 
 **プロンプト本文**:
 
 ```
+投稿編集機能を TDD で実装する。
+
+目的:
+- ユーザログイン機能が無い現状で、投稿者本人に近い判定として clientHash を使い、投稿編集機能を追加する。
+- 保守しやすさ・読みやすさを重視する。
+- 新規投稿用 DTO と編集用 DTO を分ける。
+- 更新結果を enum で表現し、Controller の分岐を読みやすくする。
+- JavaScript、外部 CDN、外部コンポーネントは使わない。
+
+順序:
+1. まず受入基準を満たすための失敗テストを 1 本だけ書く (Red)。
+2. その失敗テストを通す最小実装を書く (Green)。
+3. 重複・命名・抽象度の観点でリファクタリングする (Refactor)。
+4. `./mvnw -B -Ph2 test` で全テストが緑であることを確認する。
+5. Conventional Commits でコミットする (`feat(<scope>): <要約>`)。
+
+仕様:
+- 詳細画面 `posts/detail.html` に編集画面へ進むリンクを追加する。
+- 投稿したユーザ、つまり clientHash が同一の投稿にのみ編集リンクを表示する。
+- 編集リンク押下時に `GET /posts/{id}/edit` にリクエストする。
+- 編集画面 `posts/edit.html` を追加する。
+- 編集画面では、編集対象の投稿者名、本文、背景色を表示する。
+- 投稿者名は変更不可とする。
+- 編集できる項目は以下に限定する。
+  - 本文 `body`
+  - 背景色 `backgroundColor`
+- 編集できない項目は以下とする。
+  - 投稿者名 `author`
+  - 投稿日時 `createdAt`
+  - clientHash
+  - deletedAt
+  - likeCount
+- 更新ボタン押下時に `POST /posts/{id}/edit` にリクエストする。
+- 更新リクエストでは現在の clientHash を再計算し、投稿の clientHash と比較する。
+  - 一致していれば更新 OK。
+  - 一致していなければ更新 NG とし、エラーメッセージを表示する。
+- 更新 OK の場合、本文と背景色を更新する。
+- 更新 OK の場合、`posts.updated_at` に更新日時を設定する。
+- 更新成功後は `redirect:/posts/{id}` で詳細画面へ戻る。
+- 論理削除済み投稿は編集不可とする。
+- 論理削除済み投稿に編集画面 URL から直接アクセスした場合、エラーメッセージを表示する。
+- 本文空文字は更新不可とする。
+- 本文 281 文字以上は更新不可とする。
+- Thymeleaf では XSS 対策として `th:text` を維持し、`th:utext` は使わない。
+
+設計方針:
+- `posts.updated_at` カラムを追加する。
+  - 未編集: `null`
+  - 編集済み: 更新日時
+- `clientHash` 生成は既存の削除機能と同じ仕組みを使う。
+- 新規投稿用の `PostForm` は流用しない。
+- 編集専用 DTO として `PostEditForm` を新規作成する。
+- 更新結果 enum として `UpdatePostResult` を新規作成する。
+- 編集画面は `posts/edit.html` として新規作成する。
+- Entity に編集用メソッドを追加する。
+  - 例: `canModify(clientHash)`
+  - 例: `updateBodyAndBackgroundColor(body, backgroundColor, updatedAt)`
+- `PostView` には編集可否を読みやすく表すプロパティを追加する。
+  - 例: `canEdit`
+  - 既存削除機能の `canDelete` は壊さない。
+- Service に編集用メソッドを追加する。
+  - 例: `findEditableById(id, clientHash)`
+  - 例: `update(id, body, backgroundColor, clientHash)`
+- Controller は画面遷移とリクエスト変換に集中させる。
+- 削除機能の既存挙動を壊さない。
+
+`PostEditForm` の方針:
+- パッケージは既存の `PostForm` と同じ `com.example.tsubuyaki.web.dto` に置く。
+- 入力項目は `body` と `backgroundColor` のみとする。
+- `author` はフォーム送信対象に含めない。
+- `body` には以下の validation を付ける。
+  - `@NotBlank(message = "本文を入力してください")`
+  - `@Size(max = 280, message = "本文は 280 文字以内で入力してください")`
+- `backgroundColor` は既存の `PostBackgroundColor` と同じ選択肢を使う。
+- 既存投稿から初期化できるファクトリまたはコンストラクタを用意してよい。
+  - 例: `PostEditForm.from(PostView post)`
+
+`UpdatePostResult` の方針:
+- パッケージは Service 層に置く。
+  - 例: `com.example.tsubuyaki.service.UpdatePostResult`
+- enum として作成する。
+- 値は以下を基本とする。
+  - `UPDATED`
+  - `NOT_FOUND`
+  - `FORBIDDEN`
+- validation error は `BindingResult` で扱うため、enum には含めなくてよい。
+- Service の更新メソッドはこの enum を返す。
+  - 例:
+    - `UpdatePostResult update(Long id, String body, String backgroundColor, String clientHash)`
+- Controller は `switch` または同等の明確な分岐で結果を処理する。
+  - `UPDATED`: `redirect:/posts/{id}`
+  - `FORBIDDEN`: 編集画面または詳細画面に `この投稿は編集できません。` を表示
+  - `NOT_FOUND`: `投稿が見つかりません。` を表示、または既存方針に合わせて詳細画面でエラー表示
+
+
+受入基準:
+以下の観点のテストを用意してから本機能の実装を行う。
+- `posts.updated_at` が追加されている
+- `PostEditForm` が存在し、新規投稿用 `PostForm` と分離されている
+- `UpdatePostResult` が存在し、更新結果を `UPDATED` / `NOT_FOUND` / `FORBIDDEN` で表せる
+- 詳細画面で投稿者本人のみ編集リンクが表示される
+- 編集リンクは `GET /posts/{id}/edit` に遷移する
+- 編集画面 `posts/edit.html` がある
+- 編集画面には投稿者名、本文、背景色が表示される
+- 投稿者名は変更できない
+- 本文と背景色を更新できる
+- 更新成功後は詳細画面へリダイレクトする
+- 更新時に `updated_at` が設定される
+- clientHash 不一致時は更新されず、エラーメッセージが表示される
+- 論理削除済み投稿は編集できない
+- 本文空文字は更新できない
+- 本文 281 文字以上は更新できない
+- 既存の投稿作成、一覧、検索、詳細、いいね、削除機能が壊れていない
+
+制約:
+- AGENTS.md と .codex/instructions.md を参照すること。
+- このタスクのスコープ外のファイルは触らないこと。
+- テストを書かずに本体コードを書き始めないこと。
+- 失敗テストを通すために `@Disabled` を貼ることは絶対に禁止。
+- 完了後にどの 3 ファイル前後を変更したかを要約して報告すること。
+- Maven Central / GitHub / api.openai.com 以外へのネットワークアクセスはしない。
+- Thymeleaf では XSS 対策として `th:text` を維持し、`th:utext` は使わない。
+- JavaScript は追加しない。
+- 外部 CDN、外部画像、外部フォント、外部コンポーネントは使わない。
+
 
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+  実装内容:
+
+  - posts.updated_at 追加 migration を作成
+  - PostEditForm を新規作成し、PostForm と分離
+  - UpdatePostResult enum を追加し、UPDATED / NOT_FOUND / FORBIDDEN で更新結果を表現
+  - 本人投稿のみ詳細画面に編集リンクを表示
+  - GET /posts/{id}/edit と POST /posts/{id}/edit を追加
+  - 本文・背景色のみ編集可能にし、投稿者名は表示専用
+  - 更新成功時に updated_at を設定し、詳細画面へリダイレクト
+  - clientHash 不一致、削除済み、本文 validation エラーをテストで確認
+
+  主な変更ファイル:
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java
+  - src/main/java/com/example/tsubuyaki/service/PostService.java
+  - src/main/java/com/example/tsubuyaki/web/dto/PostEditForm.java
+  - src/main/java/com/example/tsubuyaki/service/UpdatePostResult.java
+  - src/main/resources/templates/posts/edit.html
+  - src/test/java/com/example/tsubuyaki/controller/PostEditFeatureTest.java
+
+  検証:
+
+  - Red: PostEditForm / UpdatePostResult 未実装で失敗確認
+  - Green: 追加テスト成功
+  - 全体: ./mvnw -B -Ph2 test 成功
+      - Tests run: 18, Failures: 0, Errors: 0, Skipped: 0
+
+  コミット:
+
+  - bae90d1 feat(post): 投稿編集機能を追加する
 
 **振り返り**:
+投稿の削除機能が実装出来た。
+ソースについても、当該箇所の実装、WEBアプリも動いていることが確認出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+また、Codexと壁打ちし、仕様の詳細化を実施した
 
 
-## プロンプト 15
+## プロンプト 16
 
 **フェーズ**:
 
