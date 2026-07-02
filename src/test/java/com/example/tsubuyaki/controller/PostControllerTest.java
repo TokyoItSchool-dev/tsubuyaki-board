@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
@@ -41,6 +42,9 @@ class PostControllerTest {
 
     @MockitoBean
     private PostRepository postRepository;
+
+    @MockitoBean
+    private PostLikeRepository postLikeRepository;
 
     @Test
     @DisplayName("投稿一覧_新着投稿があるとき_最新50件を新着順で表示する")
