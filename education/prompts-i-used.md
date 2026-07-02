@@ -58,36 +58,227 @@ CI検証は成功しているが、実際に画面表示の確認はできてい
 
 ## プロンプト 2
 
-**フェーズ**:
+**フェーズ**:M3対応
 
 **プロンプト本文**:
 
 ```
+投稿登録機能を作成する。
+    - 入力項目は PostForm の author, body を使う
+    - 投稿者 author は必須、30文字まで、空白のみはNG
+    - 本文 body は必須、280文字まで、空白のみはNG
+    - 登録後、投稿一覧画面で登録した投稿が見えること
 
+    以下の観点のテストを用意してから本機能の実装を行う。
+    - GET /posts/new で postForm が model に積まれ、posts/form.html を表示できること
+    - author が空文字または空白のみの場合、登録せず posts/form を再表示しエラーを表示すること
+    - author が31文字以上の場合、登録せず posts/form を再表示しエラーを表示すること
+    - body が空文字または空白のみの場合、登録せず posts/form を再表示しエラーを表示すること
+    - body が281文字以上の場合、登録せず posts/form を再表示しエラーを表示すること
+    - 入力が正常な場合、PostService が投稿者・本文・投稿日を保存すること
+    - 入力が正常な場合、POST /posts 後に /posts へリダイレクトすること
+    - 登録後、GET /posts で登録した投稿が一覧に表示されること
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+
+```
+M3 投稿登録機能を実装しました。
+
+  差分:
+
+  - 成功時は PostService.create(...) で保存し、redirect:/posts
+  - src/main/java/com/example/tsubuyaki/service/PostService.java:33 で createdAt = Instant.now() を設定して
+    保存
+
+      - PostServiceTest
+      - PostCreateFlowTest
+
+  検証:
+
+  - ./mvnw -B -Ph2 -Dtest=PostControllerTest,PostServiceTest,PostCreateFlowTest test 成功、16件
+  - ./mvnw -B -Ph2 verify 成功、22件
+  - Checkstyle 0、SpotBugs 0、JaCoCo OK
+```
 
 **振り返り**:
+
+ロジック的な間違いはなく、実際にローカル起動し動作を確認できた。
+PostCreateFlowTestは今回の研修では余分なケースと思ったので、
+指摘し、別のプロンプトで削除することもできた。
+
 
 ---
 
 ## プロンプト 3
 
-**フェーズ**:
+**フェーズ**:M4対応
 
 **プロンプト本文**:
 
 ```
+投稿詳細表示機能を作成する。
+    - GET /posts/{id} で投稿詳細を表示する
+    - ビューは posts/detail.html を新規作成する
+    - 一覧に戻るリンクを設ける
+    - 内容は、適度な文字数で折り返す
+    - XSS 対策として Thymeleaf では th:text を使う
 
+    以下の観点のテストを用意してから本機能の実装を行う。
+    - GET /posts/{id} で存在する投稿の詳細画面 posts/detail.html を表示できること
+    - model.post 属性に投稿を積めていること
+    - 投稿者, 内容, 投稿日 の順に表示できていること
+    - 存在しない id の場合に 404 を返すこと
+    - 一覧に戻るリンクがあり、/posts に遷移できること
+    - 内容が HTML として解釈されず、エスケープ表示されること
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 部分的に効いた
+
+```
+M4 投稿詳細表示機能を実装しました。
+
+  差分:
+
+  - GET /posts/{id} を PostController に追加
+  - PostService.findById(Long id) を追加
+  - 存在しない id は 404
+  - 一覧に戻るリンクを追加
+  - 本文は th:text でエスケープ表示
+
+  - ./mvnw -B -Ph2 -Dtest=PostControllerTest,PostServiceTest test 成功、22件
+  - ./mvnw -B -Ph2 verify 成功、28件
+  - Checkstyle 0、SpotBugs 0、JaCoCo OK
+```
 
 **振り返り**:
 
+一覧画面に「詳細」ボタンを作成するというプロンプトが漏れており、
+作成された詳細画面へ遷移する方法がない実装になっていた。
+機能としては明らかにおかしいが、AI自身はそこに気づけないというのは弱点だと思った。
+
 ---
 
-## プロンプト 4 以降
+## プロンプト 4
 
-3 件目以降も追加可能。書ければ書くほど良い。
+**フェーズ**:S1対応
+
+**プロンプト本文**:
+
+```
+いいね機能を作成する。
+        - 対象は投稿詳細画面の投稿
+        - POST /posts/{id}/likes でいいねをトグルする
+        - 同一 clientHash が初回に押した場合はいいねを追加する
+        - 同一 clientHash が再度押した場合はいいねを解除する
+        - clientHash は IP + User-Agent を SHA-256 でハッシュ化し、先頭8文字を使う
+        - 投稿詳細画面でいいね数と Like ボタンが見えること
+        - いいね操作後は /posts/{id} にリダイレクトすること
+
+        以下の観点のテストを用意してから本機能の実装を行う。
+        - POST /posts/{id}/likes で対象投稿にいいねを追加できること
+        - 同一 clientHash で再度 POST /posts/{id}/likes した場合、いいねを解除できること
+        - clientHash が IP + User-Agent から SHA-256 先頭8文字で生成されること
+        - 異なる clientHash からのいいねは別ユーザーのいいねとして加算されること
+        - 存在しない投稿 id に POST /posts/{id}/likes した場合、404 を返すこと
+        - 投稿詳細 GET /posts/{id} でいいね数が model に積まれること
+        - 投稿詳細画面でいいね数と Like ボタンが表示されること
+        - いいね操作後、/posts/{id} へリダイレクトすること
+        - いいね追加後、GET /posts/{id} でいいね数が増えて表示されること
+        - いいね解除後、GET /posts/{id} でいいね数が減って表示されること
+```
+
+**結果**: 部分的に効いた
+
+```
+対応しました。テスト実行中だった ./mvnw -B -Ph2 -Pcoverage-day2 ... verify は、指示どおり停止済みです。
+
+  実装内容:
+
+  - POST /posts/{id}/likes を追加
+  - 同一 clientHash のいいね追加/解除トグルを実装
+  - IP + User-Agent を SHA-256 化し、先頭8文字を clientHash として生成
+  - 詳細画面に いいね数 と Like ボタンを表示
+  - post_likes テーブル用 Flyway migration V2__post_likes.sql を追加
+  - Repository / Service / Controller / 結合テストを追加・更新
+  - PostNotFoundException.java
+  - V2__post_likes.sql
+  - PostLikeRepositoryTest.java
+  - ClientHashGeneratorTest.java
+  確認済み:
+
+  - S1対象テストは一度 Tests run: 34, Failures: 0, Errors: 0 まで通過
+
+  未完了:
+
+  - 最後の -Pcoverage-day2 の JaCoCo 70% gate は、実行途中で停止したため最終確認未完了です。
+  - git status は /home/codex/.gitconfig の Permission denied で確認できませんでした。
+```
+
+**振り返り**:
+
+本来ボタンではなく、トグルである要件だったが、指示誤りでボタンで実装された。
+この後、別途トグルで作成してほしい旨を指示するとその通りに実装してくれた。
+
+---
+
+## プロンプト 5
+
+**フェーズ**:S2対応
+
+**プロンプト本文**:
+
+```
+キーワード検索機能を作成する。
+    - GET /posts?q=xxx で投稿本文をキーワード検索する
+    - 検索対象は投稿本文とし、部分一致で検索する
+    - 検索後も入力したキーワードを検索ボックスに表示する
+    - SQL / JPQL の文字列連結は禁止し、Spring Data JPA のメソッド名クエリまたは bind 変数を使う
+    - sample 配下のテストは修正しない
+
+    以下の観点のテストを用意してから本機能の実装を行う。
+    - 検索キーワードを model.q に積めていること
+    - 検索後の画面に検索ボックスが表示され、入力値が保持されること
+    - q が未指定の場合は従来どおり最新50件を表示すること
+    - q が空文字または空白のみの場合も従来どおり最新50件を表示すること
+    - 検索結果が 0 件の場合、空メッセージを表示できること
+    - Repository で本文の部分一致検索ができること
+    - Service で q の有無に応じて最新一覧と検索結果を切り替えられること
+    - 最後に ./mvnw -B -Ph2 verify が成功すること
+```
+
+**結果**: 効いた
+
+```
+S2 キーワード検索を実装しました。
+
+  変更内容:
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java:29: GET /posts?q=... を受け取り、model.posts と
+    model.q を設定
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java:39: q 未指定・空白なら最新50件、指定ありなら本文検索へ
+    分岐
+
+  - src/main/java/com/example/tsubuyaki/repository/PostRepository.java:12: Spring Data JPA メソッド名クエリで本文部分一
+    致検索を追加
+
+  - src/main/resources/templates/posts/list.html: 検索ボックスを追加し、検索後の入力値を保持
+  - Controller / Service / Repository テストを追加・更新
+
+  sample 配下は修正していません。
+
+  検証:
+
+  - ./mvnw -B -Ph2 -Dtest=PostRepositoryTest,PostServiceTest,PostControllerTest test 成功
+  - ./mvnw -B -Ph2 verify 成功
+  - Checkstyle 違反 0、SpotBugs 警告 0、JaCoCo coverage check 成功
+
+  補足: 途中で既存の target/jacoco.exec が壊れていたため、生成物の JaCoCo 実行データだけ削除して作り直しました。
+```
+
+**振り返り**:
+
+問題なく想定通りに実装してくれた
+
+---
