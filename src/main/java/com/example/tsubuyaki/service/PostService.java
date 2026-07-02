@@ -26,6 +26,13 @@ public class PostService {
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
+    public List<Post> search(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return latest();
+        }
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword.strip());
+    }
+
     public Post findById(long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Post not found: " + id));

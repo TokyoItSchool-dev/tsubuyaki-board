@@ -99,6 +99,23 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿検索_q指定_検索結果と検索欄を表示する")
+    void 投稿検索_q指定_検索結果と検索欄を表示する() throws Exception {
+        Post post = new Post("alice", "AI研修のメモ", Instant.parse("2026-05-23T10:00:00Z"));
+        setField(post, "id", 1L);
+        given(postService.search("AI")).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", "AI"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("name=\"q\"", "value=\"AI\"", "AI研修のメモ");
+        then(postService).should().search("AI");
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在する投稿_投稿者投稿日時本文を表示する")
     void 投稿詳細_存在する投稿_投稿者投稿日時本文を表示する() throws Exception {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));

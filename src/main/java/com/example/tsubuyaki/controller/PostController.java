@@ -14,6 +14,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -37,10 +38,12 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts" })
-    public String list(Model model) {
-        List<Post> posts = postService.latest();
+    public String list(@RequestParam(required = false) String q, Model model) {
+        String keyword = normalizeKeyword(q);
+        List<Post> posts = keyword.isEmpty() ? postService.latest() : postService.search(keyword);
         model.addAttribute("posts", posts);
         model.addAttribute("likeCounts", likeCounts(posts));
+        model.addAttribute("q", keyword);
         return "posts/list";
     }
 
@@ -89,6 +92,13 @@ public class PostController {
             }
         }
         return likeCounts;
+    }
+
+    private String normalizeKeyword(String q) {
+        if (q == null) {
+            return "";
+        }
+        return q.strip();
     }
 
     private String clientHash(HttpServletRequest request) {

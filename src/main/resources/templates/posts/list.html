@@ -15,11 +15,14 @@
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
     <form class="toolbar" th:action="@{/posts}" method="get">
+        <input type="search" name="q" th:value="${q}" placeholder="本文を検索" aria-label="検索キーワード">
+        <button type="submit">検索</button>
         <button type="submit">更新</button>
     </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <p th:if="${#lists.isEmpty(posts) && #strings.isEmpty(q)}">まだ投稿はありません</p>
+        <p th:if="${#lists.isEmpty(posts) && !#strings.isEmpty(q)}">検索結果はありません</p>
         <div class="posts-list" th:if="${!#lists.isEmpty(posts)}">
             <a class="post-item-link" th:each="post : ${posts}" th:href="@{/posts/{id}(id=${post.id})}">
                 <article class="post-item">

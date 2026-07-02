@@ -36,4 +36,16 @@ class PostRepositoryTest {
         assertThat(posts.get(49).getAuthor()).isEqualTo("user1");
         assertThat(posts).extracting(Post::getAuthor).doesNotContain("user0");
     }
+
+    @Test
+    @DisplayName("投稿検索_本文にキーワードを含む投稿_新着順で返す")
+    void 投稿検索_本文にキーワードを含む投稿_新着順で返す() {
+        postRepository.save(new Post("alice", "AI研修のメモ", Instant.parse("2026-05-23T10:00:00Z")));
+        postRepository.save(new Post("bob", "雑談です", Instant.parse("2026-05-23T11:00:00Z")));
+        postRepository.save(new Post("carol", "今日のAI活用例", Instant.parse("2026-05-23T12:00:00Z")));
+
+        var posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("AI");
+
+        assertThat(posts).extracting(Post::getAuthor).containsExactly("carol", "alice");
+    }
 }

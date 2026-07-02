@@ -42,6 +42,30 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_search_Repositoryの本文検索結果を返す")
+    void 投稿検索_search_Repositoryの本文検索結果を返す() {
+        postService = new PostService(postRepository, clock);
+        List<Post> expected = List.of(new Post("alice", "AI研修", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("AI")).willReturn(expected);
+
+        List<Post> actual = postService.search("AI");
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("投稿検索_search_キーワードが空白の場合_新着50件を返す")
+    void 投稿検索_search_キーワードが空白の場合_新着50件を返す() {
+        postService = new PostService(postRepository, clock);
+        List<Post> expected = List.of(new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expected);
+
+        List<Post> actual = postService.search("  ");
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
     @DisplayName("投稿詳細_findById_Repositoryの投稿を返す")
     void 投稿詳細_findById_Repositoryの投稿を返す() {
         postService = new PostService(postRepository, clock);
