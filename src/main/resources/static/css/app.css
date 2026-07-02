@@ -31,6 +31,10 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.toolbar {
+    margin: 1rem 0;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -44,13 +48,89 @@ h1 {
     margin-right: 0.5rem;
 }
 
-.post__created-at {
+.post__avatar-color {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.post__avatar-color--red {
+    color: #dc2626;
+}
+
+.post__avatar-color--blue {
+    color: #2563eb;
+}
+
+.post__avatar-color--green {
+    color: #16a34a;
+}
+
+.post__avatar-color--yellow {
+    color: #ca8a04;
+}
+
+.post__avatar-color--purple {
+    color: #9333ea;
+}
+
+.post__dates,
+.post__created-at,
+.post__updated-at {
     color: var(--color-muted);
     font-size: 0.85rem;
+}
+
+.post__dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.tag-heading {
+    color: var(--color-muted);
+    font-weight: 600;
 }
 
 .post__body {
     margin-top: 0.5rem;
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0;
+}
+
+.post__likes {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.post__like-form {
+    margin: 0;
+}
+
+.post__like-count {
+    font-weight: 600;
+}
+
+.post__like-mark {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0.25rem;
+}
+
+.post__like-mark:hover,
+.post__like-mark:focus {
+    transform: translateY(-1px);
 }

@@ -8,8 +8,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
 /**
  * Service テストの雛形。TDD の見本として残す (削除禁止)。
@@ -26,10 +30,10 @@ class SamplePostServiceTest {
     private PostService postService;
 
     @Test
-    @DisplayName("Service_latest_未実装のとき_空リストを返す")
+    @DisplayName("Service_latest_投稿がないとき_空リストを返す")
     void latest_returnsEmpty_byDefault() {
-        // 現在の PostService.latest() は TODO 状態で空リストを返す。
-        // 受講生が実装したら、このテストは別シナリオに置き換える。
+        given(postRepository.findLatestIds(PageRequest.of(0, 50))).willReturn(Collections.emptyList());
+
         assertThat(postService.latest()).isEmpty();
     }
 }

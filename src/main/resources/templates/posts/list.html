@@ -12,18 +12,66 @@
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
+        <a th:href="@{/posts/deleted}">削除一覧</a>
+        |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <h2 th:if="${deletedMode == true}">削除済み一覧</h2>
+        <form class="toolbar" method="get" th:action="@{/posts}" th:if="${deletedMode != true}">
+            <input type="text" name="q" th:value="${q}">
+            <button type="submit">検索</button>
+        </form>
+        <p class="tag-heading" th:if="${tagName != null}" th:text="|タグ：${tagName}|">タグ：java</p>
+
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
             <header>
                 <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
+                <span class="post__avatar-color"
+                      th:classappend="| post__avatar-color--${post.avatarColor}|"
+                      th:text="|● ${post.avatarColor}|">● blue</span>
             </header>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <div class="post__dates">
+                <span>登録日:
+                    <time class="post__created-at"
+                          th:datetime="${post.createdAt}"
+                          th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                </span>
+                <span>更新日:
+                    <time class="post__updated-at"
+                          th:datetime="${post.updatedAt}"
+                          th:text="${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-05-24 09:00</time>
+                </span>
+            </div>
+            <p class="post__tags" th:if="${post.tags != null and !#lists.isEmpty(post.tags)}">
+                <a th:each="tag : ${post.tags}"
+                   th:href="@{/tags/{name}(name=${tag.name})}"
+                   th:text="|#${tag.name}|">#java</a>
+            </p>
+            <form class="post__like-form"
+                  method="post"
+                  th:if="${deletedMode != true}"
+                  th:action="@{/posts/{id}/likes(id=${post.id})}">
+                <input type="hidden"
+                       th:if="${_csrf != null}"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}">
+                <input type="hidden" name="redirectTo" value="/posts">
+                <button class="post__like-mark"
+                        type="submit"
+                        aria-label="いいねする"
+                        th:text="|👍 ${post.id != null and likeCounts != null and likeCounts[post.id] != null
+                            ? likeCounts[post.id] : 0}|"
+                        title="いいね">👍 0</button>
+            </form>
+            <p th:if="${deletedMode != true}">
+                <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+                |
+                <a th:href="@{/posts/{id}/edit(id=${post.id})}">編集</a>
+            </p>
         </article>
     </section>
 </main>

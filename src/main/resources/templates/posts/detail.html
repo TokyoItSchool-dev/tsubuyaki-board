@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <nav>
+        <a th:href="@{/posts}">一覧に戻る</a>
+        |
+        <a th:href="@{/posts/{id}/edit(id=${postId})}">編集</a>
+    </nav>
+
+    <article class="post">
+        <header>
+            <span class="post__author" th:text="${post.author}">投稿者</span>
+            <span class="post__avatar-color"
+                  th:classappend="| post__avatar-color--${post.avatarColor}|"
+                  th:text="|● ${post.avatarColor}|">● blue</span>
+        </header>
+        <p class="post__body" th:text="${post.body}">本文</p>
+        <time class="post__created-at"
+              th:datetime="${post.createdAt}"
+              th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <p class="post__tags" th:if="${tags != null and !#lists.isEmpty(tags)}">
+            <a th:each="tag : ${tags}"
+               th:href="@{/tags/{name}(name=${tag.name})}"
+               th:text="|#${tag.name}|">#java</a>
+        </p>
+        <div class="post__likes">
+            <form class="post__like-form"
+                  method="post"
+                  th:action="@{/posts/{id}/likes(id=${postId})}">
+                <input type="hidden"
+                       th:if="${_csrf != null}"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}">
+                <button class="post__like-mark"
+                        type="submit"
+                        aria-label="いいねする"
+                        th:text="|👍 ${likeCount}|"
+                        title="いいね">👍 0</button>
+            </form>
+        </div>
+        <form class="post__delete-form"
+              method="post"
+              th:action="@{/posts/{id}/delete(id=${postId})}">
+            <input type="hidden"
+                   th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+            <button type="submit">削除</button>
+        </form>
+    </article>
+</main>
+</body>
+</html>

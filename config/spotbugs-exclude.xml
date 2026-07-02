@@ -23,6 +23,15 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
+    <!-- Spring Bean のコンストラクタ注入は DI コンテナ管理の Bean 参照保持として許容 -->
+    <Match>
+        <Or>
+            <Class name="~.*\.controller\..*"/>
+            <Class name="~.*\.service\..*"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- Lombok 等で生成される equals/hashCode -->
     <Match>
         <Bug pattern="HE_EQUALS_USE_HASHCODE"/>

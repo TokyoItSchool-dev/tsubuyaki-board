@@ -5,15 +5,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
 @Table(name = "posts")
 public class Post {
+
+    public static final String DEFAULT_AVATAR_COLOR = "blue";
 
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
@@ -26,17 +31,38 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
+    @Column(name = "avatar_color", length = 20, nullable = false)
+    private String avatarColor;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(name = "likes_count", nullable = false)
+    private long likesCount;
+
+    @OneToMany(mappedBy = "post")
+    private List<PostTag> postTags = new ArrayList<>();
 
     protected Post() {
         // JPA
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, body, DEFAULT_AVATAR_COLOR, createdAt);
+    }
+
+    public Post(String author, String body, String avatarColor, Instant createdAt) {
         this.author = author;
         this.body = body;
+        this.avatarColor = avatarColor;
         this.createdAt = createdAt;
+        this.updatedAt = createdAt;
     }
 
     public Long getId() {
@@ -51,8 +77,49 @@ public class Post {
         return body;
     }
 
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public long getLikesCount() {
+        return likesCount;
+    }
+
+    public List<Tag> getTags() {
+        return postTags.stream()
+                .map(PostTag::getTag)
+                .toList();
+    }
+
+    public void update(String author, String body) {
+        update(author, body, DEFAULT_AVATAR_COLOR, Instant.now());
+    }
+
+    public void update(String author, String body, String avatarColor) {
+        update(author, body, avatarColor, Instant.now());
+    }
+
+    public void update(String author, String body, String avatarColor, Instant updatedAt) {
+        this.author = author;
+        this.body = body;
+        this.avatarColor = avatarColor;
+        this.updatedAt = updatedAt;
+    }
+
+    public void delete(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override
@@ -61,6 +128,9 @@ public class Post {
             return true;
         }
         if (!(o instanceof Post other)) {
+            return false;
+        }
+        if (id == null || other.id == null) {
             return false;
         }
         return Objects.equals(id, other.id);

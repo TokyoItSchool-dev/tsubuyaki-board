@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: 社内つぶやきボード API
+  version: 1.0.0
+paths:
+  /api/posts:
+    get:
+      summary: "投稿一覧 API"
+      responses:
+        "200":
+          description: "投稿一覧の JSON を返す"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+components:
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        author:
+          type: string
+        body:
+          type: string
+        avatarColor:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        likesCount:
+          type: integer
