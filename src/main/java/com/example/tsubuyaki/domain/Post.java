@@ -2,13 +2,17 @@ package com.example.tsubuyaki.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -33,6 +37,9 @@ public class Post {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @OneToMany(mappedBy = "post", fetch = FetchType.EAGER)
+    private List<PostTag> postTags = new ArrayList<>();
 
     protected Post() {
         // JPA
@@ -67,6 +74,20 @@ public class Post {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public List<Tag> getTags() {
+        return postTags.stream()
+                .map(PostTag::getTag)
+                .toList();
+    }
+
+    public void addTag(Tag tag) {
+        new PostTag(this, tag);
+    }
+
+    void registerPostTag(PostTag postTag) {
+        postTags.add(postTag);
     }
 
     @Override
