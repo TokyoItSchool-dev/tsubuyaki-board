@@ -2,6 +2,7 @@ package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.Tag;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,21 @@ class PostRepositoryTest {
         assertThat(posts.get(0).getAuthor()).isEqualTo("user-51");
         assertThat(posts.get(49).getAuthor()).isEqualTo("user-2");
         assertThat(posts).extracting(Post::getAuthor).doesNotContain("user-1");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_タグ付き投稿ID指定_tagsを初期化して返す")
+    void findAllWithTags_taggedPostId_initializesTags() {
+        Tag java = tagRepository.save(new Tag("java"));
+        Post post = new Post("tagged", "#java 本文", LocalDateTime.parse("2026-05-23T10:00:00"));
+        post.addTag(java);
+        Post saved = postRepository.save(post);
+
+        List<Post> posts = postRepository.findAllWithTags(List.of(saved.getId()));
+
+        assertThat(posts).hasSize(1);
+        assertThat(Hibernate.isInitialized(posts.get(0).getTags())).isTrue();
+        assertThat(posts.get(0).getTags()).extracting(Tag::getName).containsExactly("java");
     }
 
     @Test

@@ -13,9 +13,12 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,14 +41,14 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        return fetchTags(repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc());
     }
 
     public List<Post> search(String q) {
         if (q == null || q.trim().isEmpty()) {
             return latest();
         }
-        return repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(q.trim());
+        return fetchTags(repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(q.trim()));
     }
 
     public Optional<Post> findById(Long id) {
@@ -57,7 +60,7 @@ public class PostService {
         if (normalized.isEmpty()) {
             return List.of();
         }
-        return repository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc(normalized);
+        return fetchTags(repository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc(normalized));
     }
 
     public long countLikes(Long postId) {
@@ -103,6 +106,20 @@ public class PostService {
     private Tag findOrCreateTag(String name) {
         return tagRepository.findByName(name)
                 .orElseGet(() -> tagRepository.save(new Tag(name)));
+    }
+
+    private List<Post> fetchTags(List<Post> posts) {
+        if (posts.isEmpty()) {
+            return posts;
+        }
+        List<Long> ids = posts.stream()
+                .map(Post::getId)
+                .toList();
+        Map<Long, Post> postsWithTags = repository.findAllWithTags(ids).stream()
+                .collect(Collectors.toMap(Post::getId, Function.identity()));
+        return ids.stream()
+                .map(postsWithTags::get)
+                .toList();
     }
 
     private static Set<String> extractTagNames(String body) {
