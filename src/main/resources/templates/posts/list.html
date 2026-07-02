@@ -29,22 +29,24 @@
         <p class="empty-message" th:if="${#lists.isEmpty(posts) and !searched}">まだ投稿はありません</p>
         <p class="empty-message" th:if="${#lists.isEmpty(posts) and searched}">該当する投稿はありません</p>
         <article class="post post--clickable" th:each="post : ${posts}">
-            <a class="post__link" th:href="@{/posts/{id}(id=${post.id})}">
-                <div class="post__content">
-                    <div class="post__author-row">
-                        <span th:class="'avatar avatar--' + ${post.avatarColor}" aria-hidden="true"></span>
-                        <span class="post__author" th:text="${post.author}">投稿者</span>
-                    </div>
-                    <p class="post__body" th:text="${post.body}">本文</p>
-                    <p class="post__likes">
-                        <span th:text="'❤️ ' + (${post.id != null ? likeCounts[post.id] : 0})">❤️ 0</span>
-                        <span th:text="'💬 ' + (${post.id != null ? replyCounts[post.id] : 0})">💬 0</span>
-                    </p>
-                    <time class="post__created-at"
-                          th:datetime="${post.createdAt}"
-                          th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <div class="post__content">
+                <div class="post__author-row">
+                    <span th:class="'avatar avatar--' + ${post.avatarColor}" aria-hidden="true"></span>
+                    <span class="post__author" th:text="${post.author}">投稿者</span>
                 </div>
-            </a>
+                <p class="post__body"><th:block th:if="${post.id != null}"><th:block th:each="part : ${bodyPartsByPostId[post.id]}"><a class="tag-link" th:if="${part.tag}" th:href="@{/tags/{name}(name=${part.tagName})}" th:text="${part.text}">#tag</a><span th:unless="${part.tag}" th:text="${part.text}">本文</span></th:block></th:block><span th:if="${post.id == null}" th:text="${post.body}">本文</span></p>
+                <p class="post__likes">
+                    <span th:text="'❤️ ' + (${post.id != null ? likeCounts[post.id] : 0})">❤️ 0</span>
+                    <span th:text="'💬 ' + (${post.id != null ? replyCounts[post.id] : 0})">💬 0</span>
+                </p>
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </div>
+            <a class="post__link"
+               th:if="${post.id != null}"
+               th:href="@{/posts/{id}(id=${post.id})}"
+               th:aria-label="${post.author} + ' の投稿詳細を表示'"></a>
         </article>
     </section>
 </main>

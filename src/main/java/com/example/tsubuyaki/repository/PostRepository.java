@@ -12,5 +12,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     List<Post> findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(String keyword);
 
+    List<Post> findTop50ByTagsNameAndDeletedAtIsNullOrderByCreatedAtDesc(String name);
+
     Optional<Post> findByIdAndDeletedAtIsNull(Long id);
 }

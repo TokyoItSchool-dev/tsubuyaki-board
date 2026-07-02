@@ -3,9 +3,12 @@ package com.example.tsubuyaki.service;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
 import com.example.tsubuyaki.domain.PostReply;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.PostReplyRepository;
+import com.example.tsubuyaki.repository.TagRepository;
+import com.example.tsubuyaki.web.dto.BodyPart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +23,20 @@ public class PostService {
     private final PostRepository repository;
     private final PostLikeRepository likeRepository;
     private final PostReplyRepository replyRepository;
+    private final TagRepository tagRepository;
+    private final TagParser tagParser;
 
-    public PostService(PostRepository repository, PostLikeRepository likeRepository, PostReplyRepository replyRepository) {
+    public PostService(
+            PostRepository repository,
+            PostLikeRepository likeRepository,
+            PostReplyRepository replyRepository,
+            TagRepository tagRepository,
+            TagParser tagParser) {
         this.repository = repository;
         this.likeRepository = likeRepository;
         this.replyRepository = replyRepository;
+        this.tagRepository = tagRepository;
+        this.tagParser = tagParser;
     }
 
     public List<Post> latest() {
@@ -49,7 +61,15 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body, String avatarColor) {
-        return repository.save(new Post(author, body, Instant.now(), avatarColor));
+        Post post = new Post(author, body, Instant.now(), avatarColor);
+        List<String> tagNames = tagParser.extractNames(body);
+        if (tagNames == null) {
+            tagNames = List.of();
+        }
+        for (String tagName : tagNames) {
+            post.addTag(findOrCreateTag(tagName));
+        }
+        return repository.save(post);
     }
 
     public Optional<Post> findById(Long id) {
@@ -112,5 +132,18 @@ public class PostService {
 
     public long countReplies(Long postId) {
         return replyRepository.countByPostId(postId);
+    }
+
+    public List<Post> postsByTag(String name) {
+        return repository.findTop50ByTagsNameAndDeletedAtIsNullOrderByCreatedAtDesc(name);
+    }
+
+    public List<BodyPart> bodyParts(String body) {
+        return tagParser.bodyParts(body);
+    }
+
+    private Tag findOrCreateTag(String name) {
+        return tagRepository.findByName(name)
+                .orElseGet(() -> tagRepository.save(new Tag(name)));
     }
 }

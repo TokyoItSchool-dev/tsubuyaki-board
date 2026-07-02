@@ -58,6 +58,7 @@ h1 {
     border-radius: 8px;
     margin-bottom: 0.75rem;
     background: white;
+    position: relative;
 }
 
 .post--clickable {
@@ -72,8 +73,9 @@ h1 {
 .post__link:visited,
 .post__link:hover,
 .post__link:active {
-    display: block;
-    padding: 1rem;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     color: var(--color-text);
     text-decoration: none;
     cursor: pointer;
@@ -136,4 +138,9 @@ h1 {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
+}
+
+.tag-link {
+    position: relative;
+    z-index: 2;
 }

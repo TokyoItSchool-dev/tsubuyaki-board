@@ -6,6 +6,7 @@ import com.example.tsubuyaki.domain.PostReply;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.PostReplyRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,12 @@ class PostServiceTest {
 
     @Mock
     private PostReplyRepository postReplyRepository;
+
+    @Mock
+    private TagRepository tagRepository;
+
+    @Mock
+    private TagParser tagParser;
 
     @InjectMocks
     private PostService postService;

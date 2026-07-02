@@ -2,7 +2,10 @@ package com.example.tsubuyaki.sample;
 
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.PostReplyRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.service.TagParser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +31,15 @@ class SamplePostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private PostReplyRepository postReplyRepository;
+
+    @Mock
+    private TagRepository tagRepository;
+
+    @Mock
+    private TagParser tagParser;
 
     @InjectMocks
     private PostService postService;

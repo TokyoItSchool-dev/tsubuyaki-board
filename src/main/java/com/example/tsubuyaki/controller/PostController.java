@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.BodyPart;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -36,11 +37,18 @@ public class PostController {
     @GetMapping({ "/", "/posts", "/posts/" })
     public String list(@RequestParam(name = "q", required = false) String query, Model model) {
         List<Post> posts = postService.search(query);
-        model.addAttribute("posts", posts);
-        model.addAttribute("likeCounts", likeCounts(posts));
-        model.addAttribute("replyCounts", replyCounts(posts));
+        populateListModel(posts, model);
         model.addAttribute("q", query);
         model.addAttribute("searched", postService.hasSearchQuery(query));
+        return "posts/list";
+    }
+
+    @GetMapping("/tags/{name}")
+    public String postsByTag(@PathVariable String name, Model model) {
+        List<Post> posts = postService.postsByTag(name);
+        populateListModel(posts, model);
+        model.addAttribute("q", "#" + name);
+        model.addAttribute("searched", true);
         return "posts/list";
     }
 
@@ -136,14 +144,41 @@ public class PostController {
         return replyCounts;
     }
 
+    private void populateListModel(List<Post> posts, Model model) {
+        model.addAttribute("posts", posts);
+        model.addAttribute("likeCounts", likeCounts(posts));
+        model.addAttribute("replyCounts", replyCounts(posts));
+        model.addAttribute("bodyPartsByPostId", bodyPartsByPostId(posts));
+    }
+
+    private Map<Long, List<BodyPart>> bodyPartsByPostId(List<Post> posts) {
+        Map<Long, List<BodyPart>> bodyPartsByPostId = new LinkedHashMap<>();
+        for (Post post : posts) {
+            if (post.getId() != null) {
+                bodyPartsByPostId.put(post.getId(), bodyParts(post));
+            }
+        }
+        return bodyPartsByPostId;
+    }
+
     private void populateDetailModel(Long id, Model model) {
-        model.addAttribute("post", postService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        Post post = postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("post", post);
         model.addAttribute("postId", id);
+        model.addAttribute("bodyParts", bodyParts(post));
         model.addAttribute("likeCount", postService.countLikes(id));
         model.addAttribute("replies", postService.repliesForPost(id));
         if (!model.containsAttribute("replyForm")) {
             model.addAttribute("replyForm", new PostForm());
         }
+    }
+
+    private List<BodyPart> bodyParts(Post post) {
+        List<BodyPart> bodyParts = postService.bodyParts(post.getBody());
+        if (bodyParts == null || bodyParts.isEmpty()) {
+            return List.of(BodyPart.text(post.getBody()));
+        }
+        return bodyParts;
     }
 }
