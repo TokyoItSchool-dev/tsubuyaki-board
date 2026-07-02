@@ -13,41 +13,45 @@
         <a th:href="@{/posts}">一覧に戻る</a>
     </nav>
 
-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
-        <div>
-            <label for="author">投稿者</label>
-            <input type="text" id="author" th:field="*{author}">
+    <form class="post-form" th:action="@{/posts}" th:object="${postForm}" method="post">
+        <div class="post-form__field">
+            <label class="post-form__label" for="author">投稿者</label>
+            <input class="post-form__input" type="text" id="author" th:field="*{author}">
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
-        <fieldset>
-            <legend>アバター色</legend>
-            <label>
+        <fieldset class="post-form__fieldset">
+            <legend class="post-form__label">アバター色</legend>
+            <div class="post-form__choices">
+            <label class="post-form__choice">
                 <input type="radio" th:field="*{avatarColor}" value="">
                 指定なし
             </label>
-            <label>
+            <label class="post-form__choice">
                 <input type="radio" th:field="*{avatarColor}" value="blue">
                 青
             </label>
-            <label>
+            <label class="post-form__choice">
                 <input type="radio" th:field="*{avatarColor}" value="green">
                 緑
             </label>
-            <label>
+            <label class="post-form__choice">
                 <input type="radio" th:field="*{avatarColor}" value="pink">
                 ピンク
             </label>
+            </div>
         </fieldset>
-        <div>
-            <label for="body">本文</label>
-            <textarea id="body" th:field="*{body}" rows="4"></textarea>
+        <div class="post-form__field">
+            <label class="post-form__label" for="body">本文</label>
+            <textarea class="post-form__textarea" id="body" th:field="*{body}" rows="6"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
-        <div>
-            <label for="tagNames">タグ</label>
-            <input type="text" id="tagNames" th:field="*{tagNames}">
+        <div class="post-form__field">
+            <label class="post-form__label" for="tagNames">タグ</label>
+            <input class="post-form__input" type="text" id="tagNames" th:field="*{tagNames}">
         </div>
-        <button type="submit">投稿</button>
+        <div class="post-form__actions">
+            <button class="post-form__submit" type="submit">投稿</button>
+        </div>
     </form>
 </main>
 </body>
