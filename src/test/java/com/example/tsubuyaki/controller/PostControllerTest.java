@@ -33,8 +33,8 @@ class PostControllerTest {
     private static final String POSTS_PATH = "/posts";
     private static final String POSTS_VIEW = "posts/list.html";
     private static final String POSTS_ATTRIBUTE = "posts";
-    private static final String NEW_POST_PATH = "/posts/new";
-    private static final String POST_FORM_VIEW = "posts/form";
+    private static final String POST_FORM_PATH = "/posts/form";
+    private static final String POST_FORM_VIEW = "posts/form.html";
     private static final String POST_FORM_ATTRIBUTE = "postForm";
 
     @Autowired
@@ -76,9 +76,9 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿画面_GETリクエスト_空のPostFormをビューに渡す")
-    void 投稿画面_GETリクエスト_空のPostFormをビューに渡す() throws Exception {
-        mockMvc.perform(get(NEW_POST_PATH))
+    @DisplayName("新規投稿フォーム_GETリクエスト_空のPostFormをビューに渡す")
+    void 新規投稿フォーム_GETリクエスト_空のPostFormをビューに渡す() throws Exception {
+        mockMvc.perform(get(POST_FORM_PATH))
                 .andExpect(status().isOk())
                 .andExpect(view().name(POST_FORM_VIEW))
                 .andExpect(model().attribute(POST_FORM_ATTRIBUTE, instanceOf(PostForm.class)));
