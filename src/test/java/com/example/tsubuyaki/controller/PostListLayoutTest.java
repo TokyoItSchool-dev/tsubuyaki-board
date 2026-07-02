@@ -11,6 +11,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PostListLayoutTest {
 
+    private static final String[] POST_TEMPLATES = {
+            "templates/posts/list.html",
+            "templates/posts/detail.html",
+            "templates/posts/form.html",
+    };
+
     @Test
     @DisplayName("サイト装飾_草原イメージ_CSSだけで背景と文字色を装飾する")
     void サイト装飾_草原イメージ_CSSだけで背景と文字色を装飾する() throws IOException {
@@ -52,6 +58,64 @@ class PostListLayoutTest {
         assertThat(css).contains("overflow-wrap: anywhere");
         assertThat(css).contains("word-break: break-word");
         assertThat(css).contains("flex-wrap: wrap");
+    }
+
+    @Test
+    @DisplayName("サイト装飾_落ち葉演出_本文レイアウトに影響しない固定レイヤーを持つ")
+    void サイト装飾_落ち葉演出_本文レイアウトに影響しない固定レイヤーを持つ() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains(".falling-decoration");
+        assertThat(css).contains("position: fixed");
+        assertThat(css).contains("inset: 0");
+        assertThat(css).contains("pointer-events: none");
+        assertThat(css).contains("overflow: hidden");
+        assertThat(css).contains("main");
+        assertThat(css).contains("position: relative");
+        assertThat(css).contains("z-index: 1");
+    }
+
+    @Test
+    @DisplayName("サイト装飾_落ち葉演出_全画面で軽量JavaScriptをdefer読み込みする")
+    void サイト装飾_落ち葉演出_全画面で軽量JavaScriptをdefer読み込みする() throws IOException {
+        for (String template : POST_TEMPLATES) {
+            String html = new ClassPathResource(template)
+                    .getContentAsString(StandardCharsets.UTF_8);
+
+            assertThat(html).contains("<script defer th:src=\"@{/js/falling-leaves.js}\"></script>");
+        }
+    }
+
+    @Test
+    @DisplayName("サイト装飾_落ち葉演出_葉と稀な花を軽量に生成して後始末する")
+    void サイト装飾_落ち葉演出_葉と稀な花を軽量に生成して後始末する() throws IOException {
+        String javascript = new ClassPathResource("static/js/falling-leaves.js")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(javascript).contains("MAX_DECORATIONS = 14");
+        assertThat(javascript).contains("SPAWN_INTERVAL_MS = 1800");
+        assertThat(javascript).contains("FLOWER_CHANCE = 0.08");
+        assertThat(javascript).contains("falling-decoration__leaf");
+        assertThat(javascript).contains("falling-decoration__flower");
+        assertThat(javascript).contains("prefers-reduced-motion: reduce");
+        assertThat(javascript).contains("document.hidden");
+        assertThat(javascript).contains("animationend");
+        assertThat(javascript).contains("remove()");
+    }
+
+    @Test
+    @DisplayName("サイト装飾_素材_画像を使わずCSSとDOMだけで表現する")
+    void サイト装飾_素材_画像を使わずCSSとDOMだけで表現する() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+        String javascript = new ClassPathResource("static/js/falling-leaves.js")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).doesNotContain("url(");
+        assertThat(javascript).doesNotContain("new Image");
+        assertThat(javascript).doesNotContain("fetch(");
+        assertThat(javascript).doesNotContain(".src");
     }
 
     @Test

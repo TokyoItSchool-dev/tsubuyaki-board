@@ -24,12 +24,90 @@ body {
     color: var(--color-text);
     line-height: 1.6;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 main {
+    position: relative;
+    z-index: 1;
     max-width: 720px;
     margin: 2rem auto;
     padding: 0 1rem;
+}
+
+.falling-decoration {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.falling-decoration__item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    opacity: 0;
+    transform: translate3d(var(--fall-start-x), var(--fall-start-y), 0)
+        rotate(var(--fall-rotate-start));
+    animation: falling-decoration-drift var(--fall-duration) linear forwards;
+    will-change: transform, opacity;
+}
+
+.falling-decoration__leaf {
+    width: 0.72rem;
+    height: 0.38rem;
+    border-radius: 80% 0 80% 0;
+    background: linear-gradient(135deg, #7fbf49 0%, #3f8f37 100%);
+    box-shadow: 0 0 0 1px rgba(47, 111, 62, 0.16);
+}
+
+.falling-decoration__leaf::after {
+    position: absolute;
+    top: 47%;
+    left: 12%;
+    width: 74%;
+    height: 1px;
+    background: rgba(255, 254, 248, 0.45);
+    content: "";
+    transform: rotate(-24deg);
+}
+
+.falling-decoration__flower {
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: 50%;
+    background: #ffe8a8;
+    box-shadow:
+        0.28rem 0 #f7b7c8,
+        -0.28rem 0 #f7b7c8,
+        0 0.28rem #f5a7bd,
+        0 -0.28rem #ffd4df;
+}
+
+@keyframes falling-decoration-drift {
+    0% {
+        opacity: 0;
+        transform: translate3d(var(--fall-start-x), var(--fall-start-y), 0)
+            rotate(var(--fall-rotate-start));
+    }
+
+    12% {
+        opacity: 0.76;
+    }
+
+    100% {
+        opacity: 0.22;
+        transform: translate3d(var(--fall-end-x), var(--fall-end-y), 0)
+            rotate(var(--fall-rotate-end));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .falling-decoration {
+        display: none;
+    }
 }
 
 h1 {
