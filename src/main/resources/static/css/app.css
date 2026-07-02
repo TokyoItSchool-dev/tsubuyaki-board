@@ -264,7 +264,7 @@ textarea:focus {
     padding: 0.75rem 1.6rem;
 }
 
-main > section:first-of-type {
+main > article.post + section {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
@@ -278,13 +278,13 @@ main > section:first-of-type {
     box-shadow: var(--shadow-card);
 }
 
-main > section:first-of-type p {
+main > article.post + section p {
     margin: 0;
     color: var(--color-muted);
     font-weight: 700;
 }
 
-main > section:first-of-type form,
+main > article.post + section form,
 main > article + section + form {
     display: flex;
     justify-content: flex-end;
@@ -295,15 +295,15 @@ main > article + section + form {
     margin-bottom: 1rem;
 }
 
-main > section:first-of-type button,
+main > article.post + section button,
 main > article + section + form button {
     padding: 0.5rem 0.9rem;
     color: var(--color-accent);
     background: var(--color-accent-soft);
 }
 
-main > section:first-of-type button:hover,
-main > section:first-of-type button:focus,
+main > article.post + section button:hover,
+main > article.post + section button:focus,
 main > article + section + form button:hover,
 main > article + section + form button:focus {
     color: var(--color-surface);
