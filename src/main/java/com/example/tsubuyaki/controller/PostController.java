@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -32,9 +34,16 @@ public class PostController {
 
     @GetMapping({ "/", "/posts" })
     public String list(Model model, HttpServletRequest request,
-            @RequestParam(required = false) String clientHash) {
+            @RequestParam(required = false) String clientHash,
+            @RequestParam(name = "q", required = false) String query) {
+        String searchQuery = Optional.ofNullable(query).orElse("");
+        List<Post> posts = postService.search(searchQuery);
         model.addAttribute("clientHash", resolveClientHash(clientHash, request));
-        model.addAttribute("posts", postService.latest());
+        model.addAttribute("posts", posts);
+        model.addAttribute("query", searchQuery);
+        model.addAttribute("resultCount", posts.size());
+        model.addAttribute("noSearchResults", !searchQuery.isBlank() && posts.isEmpty());
+        model.addAttribute("showEmptyMessage", searchQuery.isBlank() && posts.isEmpty());
         return "posts/list";
     }
 

@@ -16,12 +16,21 @@
     </nav>
 
     <section>
+        <p class="search-empty-message" th:if="${noSearchResults}">検索結果が0件です。</p>
+        <form class="search-form" th:action="@{/posts}" method="get">
+            <input type="hidden" name="clientHash" th:value="${clientHash}">
+            <input type="text" name="q" th:value="${query}" aria-label="キーワード検索">
+            <button type="submit">検索</button>
+        </form>
+
         <form class="toolbar" th:action="@{/posts}" method="get">
             <input type="hidden" name="clientHash" th:value="${clientHash}">
+            <input type="hidden" name="q" th:value="${query}">
+            <span class="result-count" th:text="${resultCount + '件'}">0件</span>
             <button type="submit">更新</button>
         </form>
 
-        <p class="empty-message" th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <p class="empty-message" th:if="${showEmptyMessage}">まだ投稿はありません</p>
         <a class="post post--link" th:each="post : ${posts}"
            th:href="@{/posts/{id}(id=${post.id},clientHash=${clientHash})}">
             <p class="post__author" th:text="${post.author}">投稿者</p>

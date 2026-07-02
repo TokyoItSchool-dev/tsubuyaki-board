@@ -43,4 +43,17 @@ class PostRepositoryTest {
                 "body14", "body13", "body12", "body11", "body10", "body9", "body8", "body7", "body6",
                 "body5", "body4", "body3", "body2", "body1");
     }
+
+    @Test
+    @DisplayName("Repository_投稿検索_本文を前後あいまい検索し新着順で返す")
+    void findTop50ByBodyContainingOrderByCreatedAtDesc_returnsMatchingPostsInDescendingOrder() {
+        Instant base = Instant.parse("2026-06-26T09:00:00Z");
+        postRepository.save(new Post("alice", "朝会メモ", base));
+        postRepository.save(new Post("bob", "週次の朝会で共有", base.plusSeconds(1)));
+        postRepository.save(new Post("carol", "ランチ予定", base.plusSeconds(2)));
+
+        List<Post> results = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("朝会");
+
+        assertThat(results).extracting(Post::getBody).containsExactly("週次の朝会で共有", "朝会メモ");
+    }
 }

@@ -79,6 +79,70 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿検索_検索結果0件_検索結果0件メッセージを検索テキストボックスの上に表示する")
+    void list_whenSearchResultIsEmpty_showsNoSearchResultsMessageAboveSearchInput() throws Exception {
+        postRepository.save(new Post("alice", "朝会メモ", Instant.parse("2026-06-26T09:00:00Z")));
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", "存在しない"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(content().string(containsString("検索結果が0件です。")))
+                .andExpect(content().string(not(containsString("まだ投稿はありません"))))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html.indexOf("検索結果が0件です。")).isLessThan(html.indexOf("name=\"q\""));
+        assertThat(html).contains("value=\"存在しない\"");
+        assertThat(html).contains("0件");
+        assertThat(html).doesNotContain("朝会メモ");
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索テキスト未入力_初期表示と同じく新着50件を表示する")
+    void list_whenSearchQueryIsBlank_showsLatest50Posts() throws Exception {
+        Instant base = Instant.parse("2026-06-26T09:00:00Z");
+        List<Post> posts = new ArrayList<>();
+        for (int index = 0; index < 51; index++) {
+            posts.add(new Post("user" + index, "body" + index, base.plusSeconds(index)));
+        }
+        postRepository.saveAll(posts);
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", ""))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("body50")))
+                .andExpect(content().string(containsString("body1")))
+                .andExpect(content().string(not(containsString("body0"))))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("50件");
+        assertThat(html.indexOf("一覧</a>")).isLessThan(html.indexOf("name=\"q\""));
+        assertThat(html.indexOf("name=\"q\"")).isLessThan(html.indexOf("更新</button>"));
+        assertThat(html.indexOf("50件")).isLessThan(html.indexOf("更新</button>"));
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索語あり_本文を前後あいまい検索する")
+    void list_whenSearchQueryIsPresent_showsPostsContainingQueryInBody() throws Exception {
+        Instant base = Instant.parse("2026-06-26T09:00:00Z");
+        postRepository.save(new Post("alice", "朝会メモ", base));
+        postRepository.save(new Post("bob", "週次の朝会で共有", base.plusSeconds(1)));
+        postRepository.save(new Post("carol", "ランチ予定", base.plusSeconds(2)));
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", "朝会"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("朝会メモ")))
+                .andExpect(content().string(containsString("週次の朝会で共有")))
+                .andExpect(content().string(not(containsString("ランチ予定"))))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("2件");
+        assertThat(html).contains("value=\"朝会\"");
+        assertThat(html.indexOf("週次の朝会で共有")).isLessThan(html.indexOf("朝会メモ"));
+    }
+
+    @Test
     @DisplayName("投稿一覧_更新ボタン_押すとpostsへGETリクエストする")
     void list_hasRefreshButtonRequestingPosts() throws Exception {
         MvcResult result = mockMvc.perform(get("/posts"))
