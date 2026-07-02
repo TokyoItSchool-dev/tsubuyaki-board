@@ -100,4 +100,19 @@ class PostRegistrationControllerTest {
 
         assertThat(postRepository.findAll()).isEmpty();
     }
+
+    @Test
+    @DisplayName("投稿登録_avatarColorが用意された色以外_POST_postsでフォームを再表示する")
+    void 投稿登録_avatarColorが用意された色以外_POST_postsでフォームを再表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "本文です")
+                        .param("avatarColor", "evil"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "アバター色は用意された色から選択してください")));
+
+        assertThat(postRepository.findAll()).isEmpty();
+    }
 }

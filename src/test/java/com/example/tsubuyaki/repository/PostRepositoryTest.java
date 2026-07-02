@@ -2,7 +2,6 @@ package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.Tag;
-import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,7 +112,7 @@ class PostRepositoryTest {
         tagRepository.saveAll(List.of(new Tag("Java", active), new Tag("Java", savedDeleted)));
 
         List<Post> exact = tagRepository.findPostsByNameOrderByCreatedAtDesc("Java");
-        List<Post> like = tagRepository.findPostsByNameContainingOrderByCreatedAtDesc("ava");
+        List<Post> like = tagRepository.findPostsByNameLikeOrderByCreatedAtDesc("%ava%");
 
         assertThat(exact).extracting(Post::getBody)
                 .containsExactly("表示される #Java");

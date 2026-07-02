@@ -58,6 +58,18 @@ class PostFormTest {
     }
 
     @Test
+    @DisplayName("PostForm_avatarColorが用意された色以外_エラーになる")
+    void PostForm_avatarColorが用意された色以外_エラーになる() {
+        PostForm form = new PostForm();
+        form.setAuthor("alice");
+        form.setBody("本文です");
+        form.setAvatarColor("evil");
+
+        assertThat(messagesOf(validator.validate(form)))
+                .contains("アバター色は用意された色から選択してください");
+    }
+
+    @Test
     @DisplayName("PostForm_bodyが範囲外または空白のみ_エラーになる")
     void PostForm_bodyが範囲外または空白のみ_エラーになる() {
         PostForm blankBody = new PostForm();

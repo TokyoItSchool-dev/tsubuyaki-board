@@ -11,22 +11,27 @@ import com.example.tsubuyaki.repository.TagRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
 public class PostService {
 
-    private final PostRepository repository;
+    private final PostRepository postRepository;
     private final TagRepository tagRepository;
     private final TagParser tagParser;
+    private final Clock clock;
 
-    public PostService(PostRepository repository, TagRepository tagRepository, TagParser tagParser) {
-        this.repository = repository;
+    public PostService(PostRepository postRepository, TagRepository tagRepository, TagParser tagParser,
+            Clock clock) {
+        this.postRepository = postRepository;
         this.tagRepository = tagRepository;
         this.tagParser = tagParser;
+        this.clock = clock;
     }
 
     /**
@@ -38,7 +43,7 @@ public class PostService {
      * @return 最新順の投稿一覧
      */
     public List<Post> latest() {
-        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        return postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     /**
@@ -51,11 +56,11 @@ public class PostService {
      * @return 本文にキーワードを含む投稿一覧
      */
     public List<Post> search(String keyword) {
-        return repository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(keyword);
+        return postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(keyword);
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id)
+        return postRepository.findById(id)
                 .filter(post -> post.getDeletedAt() == null);
     }
 
@@ -82,7 +87,7 @@ public class PostService {
      * @return タグ名にキーワードを含む投稿一覧
      */
     public List<Post> searchByTag(String keyword) {
-        return tagRepository.findPostsByNameContainingOrderByCreatedAtDesc(keyword);
+        return tagRepository.findPostsByNameLikeOrderByCreatedAtDesc(toLikePattern(keyword));
     }
 
     /**
@@ -114,7 +119,7 @@ public class PostService {
      */
     @Transactional
     public Post create(String author, String body, String avatarColor) {
-        Post post = repository.save(new Post(author, body, LocalDateTime.now(), avatarColor));
+        Post post = postRepository.save(new Post(author, body, LocalDateTime.now(clock), avatarColor));
         tagRepository.saveAll(tagParser.extractTags(body).stream()
                 .map(tagName -> new Tag(tagName, post))
                 .toList());
@@ -131,8 +136,20 @@ public class PostService {
      */
     @Transactional
     public void delete(Long id) {
-        Post post = repository.findById(id)
-                .orElseThrow();
-        post.markDeleted(LocalDateTime.now());
+        Post post = postRepository.findById(id)
+                .filter(target -> target.getDeletedAt() == null)
+                .orElseThrow(() -> new NoSuchElementException("post not found: " + id));
+        post.markDeleted(LocalDateTime.now(clock));
+    }
+
+    private static String toLikePattern(String keyword) {
+        return "%" + escapeLike(keyword) + "%";
+    }
+
+    private static String escapeLike(String value) {
+        return value
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 }

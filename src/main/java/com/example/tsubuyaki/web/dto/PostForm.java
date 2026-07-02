@@ -4,6 +4,7 @@
 package com.example.tsubuyaki.web.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class PostForm {
@@ -16,6 +17,8 @@ public class PostForm {
     @Size(max = 280, message = "本文は 280 文字以内で入力してください")
     private String body;
 
+    @Pattern(regexp = "|red|orange|yellow|green|blue|purple|gray",
+            message = "アバター色は用意された色から選択してください")
     private String avatarColor;
 
     public PostForm() {

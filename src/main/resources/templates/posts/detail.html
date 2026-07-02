@@ -30,9 +30,10 @@
         <form th:action="@{/posts/{id}/likes(id=${postId})}" method="post">
             <input type="hidden" th:if="${_csrf != null}"
                    th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <button type="submit">like</button>
+            <button type="submit">いいね</button>
         </form>
-        <form class="delete-form" th:action="@{/posts/{id}/delete(id=${postId})}" method="post">
+        <form class="delete-form" th:action="@{/posts/{id}/delete(id=${postId})}" method="post"
+              onsubmit="return confirm('この投稿を削除しますか？');">
             <input type="hidden" th:if="${_csrf != null}"
                    th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <button type="submit">削除</button>

@@ -31,6 +31,7 @@
                 <option value="purple">紫</option>
                 <option value="gray">グレー</option>
             </select>
+            <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
         </div>
         <div>
             <label for="body">本文 (280 文字まで)</label>

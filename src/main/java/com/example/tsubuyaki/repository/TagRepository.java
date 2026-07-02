@@ -43,13 +43,9 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
      * 検索語を直接クエリ文字列へ埋め込まず、ワイルドカード付き pattern を
      * bind 変数として渡す。</p>
      *
-     * @param keyword タグ検索キーワード
-     * @return タグ名にキーワードを含む投稿一覧
+     * @param pattern ワイルドカードとエスケープ処理を適用済みの LIKE pattern
+     * @return タグ名に pattern が一致する投稿一覧
      */
-    default List<Post> findPostsByNameContainingOrderByCreatedAtDesc(String keyword) {
-        return findPostsByNameLikeOrderByCreatedAtDesc("%" + keyword + "%");
-    }
-
     @Query("select distinct t.post from Tag t "
             + "where t.post.deletedAt is null "
             + "and t.name like :pattern escape '\\' "

@@ -237,10 +237,11 @@ class PostControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("post--avatar-blue")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
                         "href=\"/css/app.css?v=logical-delete-1\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("like")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("いいね")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1/likes\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("削除")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1/delete\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("この投稿を削除しますか？")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"post\"")));
     }
 

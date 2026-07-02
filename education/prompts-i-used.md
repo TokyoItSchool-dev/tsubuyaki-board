@@ -222,5 +222,90 @@ Spring Bootの責務分離も見直し弱い箇所を修正。
 
 ---
 
+**フェーズ５**: ブラッシュアップ
+
+**プロンプト本文**:
+
+```
+
+高優先
+
+  - avatarColor の入力値を制限する
+    src/main/java/com/example/tsubuyaki/web/dto/PostForm.java:16 は任意文字列を受けられるため、直接 POST で
+    avatarColor=evil のような値が保存できます。表示側では post--avatar-${value} になるので、7色以外は拒否または無視する
+    のが安全です。
+
+  - 論理削除の二重削除を明確化する
+    src/main/java/com/example/tsubuyaki/service/PostService.java:135 は削除済み投稿にも再度 deletedAt を上書きできます。
+    仕様として「削除済みなら何もしない」「404にする」のどちらかに寄せると挙動が安定します。
+
+  - タグ検索 LIKE の % / _ エスケープ
+    src/main/java/com/example/tsubuyaki/repository/TagRepository.java:47 で %keyword% を作っていますが、検索語に % や _
+    が入るとワイルドカード扱いになります。ユーザー入力を LIKE パターンとして扱うなら escape 処理をサービス側に寄せると堅
+    いです。
+
+  中優先
+
+  - LocalDateTime.now() を Clock 注入にする
+    src/main/java/com/example/tsubuyaki/service/PostService.java:115 と src/main/java/com/example/tsubuyaki/service/
+    PostService.java:138 が現在時刻に直接依存しています。Clock を注入すると削除日時・作成日時のテストが厳密になります。
+
+    src/main/java/com/example/tsubuyaki/service/PostService.java:21 の repository は postRepository の方が読みやすいで
+    す。タグリポジトリと並ぶので、初見の理解が上がります。
+
+  - 削除ボタンに確認 UI を付ける
+
+  - 詳細画面の like 表記を日本語化する
+    src/main/resources/templates/posts/detail.html:32 は like のままです。既に「いいね 3」と表示しているので、ボタンも
+
+  - タグ検索の default メソッドにコメントを追加する
+    src/main/java/com/example/tsubuyaki/repository/TagRepository.java:50 の内部クエリ findPostsByNameLike... は、H2/
+    Oracle 対応で escape '\\' を入れている背景があります。短い Javadoc を足すと後から消されにくいです。
+
+  - CSS バージョン文字列を定数化できないか検討する
+    logical-delete-1 が src/main/resources/templates/posts/list.html:7、src/main/resources/templates/posts/
+    detail.html:7、form.html に重複しています。今の規模なら許容ですが、テンプレート共通 fragment 化すると変更漏れを防げ
+    ます。
+
+  - Post#equals の未永続 ID 扱いを検討する
+    src/main/java/com/example/tsubuyaki/domain/Post.java:96 は id == null 同士だと等価になり得ます。テストでは問題化して
+    いませんが、Entity の同一性としては id != null && Objects.equals(id, other.id) の方が安全です。```
+
+高優先と中優先を実装してください。実装後にCSS を変えたのに app.css のクエリバージョンが以前のままで、ブラウザが古い
+  CSS を使う可能性がある点を確認してつぶしておいてください
+
+```
+
+**結果**: 効いた
+
+• 高優先・中優先のブラッシュアップを実装しました。
+
+  主な対応:
+
+  - avatarColor を7色または空文字だけ許可する validation に変更
+  - 不正な avatarColor のフォームエラー表示を追加
+  - 削除済み投稿を再削除した場合は 404 扱いに変更
+  - タグ LIKE 検索で % / _ / \ をエスケープ
+  - LocalDateTime.now() を Clock 注入に変更し、作成日時・削除日時をテストで固定可能に変更
+  - PostService の repository を postRepository にリネーム
+  - 削除ボタンに確認ダイアログを追加
+  - 詳細画面の like ボタン表記を いいね に変更
+
+  CSS は今回変更していません。念のため確認し、app.css のクエリは全テンプレートで logical-delete-1 のまま揃っており、古い
+  search-row-1 / avatar-color-2 は残っていません。
+
+  確認済みです。
+
+  ./mvnw -B -Ph2
+  -Dtest=PostFormTest,PostServiceTest,PostRepositoryTest,PostControllerTest,PostRegistrationControllerTest test
+  ./mvnw -B clean -Ph2 verify
+
+  結果: BUILD SUCCESS、テスト51件成功、Checkstyle 0、SpotBugs 0、JaCoCo OK。
 
 
+```
+
+**振り返り**:
+
+アバターカラーに余計なものが入らないように制限を追加し、2重削除を抑制、削除ボタンに確認ダイアログを追加など細かく気になったところを修正。詳細画面の like ボタンの表記はEXERCISES.mdには Like ボタン表示とあるが数の表示が日本語なので日本語に統一した。
+今回は修正点をAIに精査させたが次は、人に見てもらい、感じた違和感を修正していきたい
