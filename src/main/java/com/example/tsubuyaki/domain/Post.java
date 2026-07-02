@@ -16,6 +16,8 @@ import java.util.Objects;
 public class Post {
 
     public static final String DEFAULT_AUTHOR_COLOR = "#6b7280";
+    public static final int NOT_DELETED = 0;
+    public static final int DELETED = 1;
 
     // Oracle/H2 の posts_seq シーケンスを使って投稿IDを採番する。
     @Id
@@ -38,6 +40,9 @@ public class Post {
     // Oracle の TIMESTAMP(6) はタイムゾーンを持たないため、LocalDateTime として保存する。
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at", nullable = false)
+    private Integer deletedAt = NOT_DELETED;
 
     protected Post() {
         // JPA がエンティティを復元するための引数なしコンストラクタ。
@@ -72,6 +77,14 @@ public class Post {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public Integer getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void markDeleted() {
+        this.deletedAt = DELETED;
     }
 
     @Override

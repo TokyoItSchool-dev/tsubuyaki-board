@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -103,5 +106,25 @@ class PostControllerIntegrationTest {
                 .andExpect(content().string(containsString("alice")))
                 .andExpect(content().string(containsString("一覧に表示される本文")))
                 .andExpect(content().string(not(containsString("Whitelabel Error Page"))));
+    }
+    @Test
+    @DisplayName("投稿削除_詳細画面から削除すると一覧へ戻り削除済み詳細は404になる")
+    void 投稿削除_詳細画面から削除すると一覧へ戻り削除済み詳細は404になる() throws Exception {
+        Post post = postRepository.save(new Post("alice", "削除対象の本文",
+                LocalDateTime.of(2026, 5, 23, 10, 0)));
+
+        mockMvc.perform(post("/posts/{id}/delete", post.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts"));
+
+        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(deletedPost.getDeletedAt()).isEqualTo(Post.DELETED);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("削除対象の本文"))));
+
+        mockMvc.perform(get("/posts/{id}", post.getId()))
+                .andExpect(status().isNotFound());
     }
 }

@@ -27,7 +27,7 @@ public class PostLikeService {
     // 同一clientHashが未いいねなら追加、いいね済みなら削除する。
     @Transactional
     public boolean toggleLike(Long postId, String clientHash) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndDeletedAt(postId, Post.NOT_DELETED)
                 .orElseThrow(() -> new PostNotFoundException(postId));
 
         return postLikeRepository.findByPostIdAndClientHash(postId, clientHash)

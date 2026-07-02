@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.sample;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.service.PostSearchService;
 import com.example.tsubuyaki.service.TagService;
@@ -39,7 +40,8 @@ class SamplePostServiceTest {
     @Test
     @DisplayName("Service_latest_Repositoryが空のとき_空リストを返す")
     void latest_returnsEmpty_whenRepositoryIsEmpty() {
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
+        given(postRepository.findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED))
+                .willReturn(Collections.emptyList());
 
         assertThat(postService.latest()).isEmpty();
     }

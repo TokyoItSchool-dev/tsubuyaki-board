@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -38,12 +39,13 @@ class PostServiceTest {
     void 投稿一覧_latest_Repositoryから新着50件を取得する() {
         List<Post> expectedPosts = List.of(
                 PostTestFactory.post("alice", "hello"));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(expectedPosts);
+        given(postRepository.findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED))
+                .willReturn(expectedPosts);
 
         List<Post> actualPosts = postService.latest();
 
         assertThat(actualPosts).isSameAs(expectedPosts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED);
     }
 
     @Test
@@ -77,11 +79,32 @@ class PostServiceTest {
     @DisplayName("投稿詳細_findById_Repositoryから指定IDの投稿を取得する")
     void 投稿詳細_findById_Repositoryから指定IDの投稿を取得する() {
         Post expectedPost = PostTestFactory.post("alice", "詳細本文");
-        given(postRepository.findById(42L)).willReturn(Optional.of(expectedPost));
+        given(postRepository.findByIdAndDeletedAt(42L, Post.NOT_DELETED)).willReturn(Optional.of(expectedPost));
 
         Optional<Post> actualPost = postService.findById(42L);
 
         assertThat(actualPost).containsSame(expectedPost);
-        verify(postRepository).findById(42L);
+        verify(postRepository).findByIdAndDeletedAt(42L, Post.NOT_DELETED);
+    }
+
+    @Test
+    @DisplayName("投稿削除_delete_削除フラグを1にして保存する")
+    void 投稿削除_delete_削除フラグを1にして保存する() {
+        Post post = PostTestFactory.postWithId(42L, "alice", "削除する本文");
+        given(postRepository.findByIdAndDeletedAt(42L, Post.NOT_DELETED)).willReturn(Optional.of(post));
+
+        postService.delete(42L);
+
+        assertThat(post.getDeletedAt()).isEqualTo(Post.DELETED);
+        verify(postRepository).save(post);
+    }
+
+    @Test
+    @DisplayName("投稿削除_delete_削除済み投稿はPostNotFoundExceptionを投げる")
+    void 投稿削除_delete_削除済み投稿はPostNotFoundExceptionを投げる() {
+        given(postRepository.findByIdAndDeletedAt(42L, Post.NOT_DELETED)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.delete(42L))
+                .isInstanceOf(PostNotFoundException.class);
     }
 }

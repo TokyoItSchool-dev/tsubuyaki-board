@@ -196,7 +196,9 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("詳細画面に表示する本文")))
                 .andExpect(content().string(containsString("2026-05-23 10:00")))
                 .andExpect(content().string(containsString("いいね <span>5</span>")))
-                .andExpect(content().string(containsString("action=\"/posts/42/likes\"")));
+                .andExpect(content().string(containsString("action=\"/posts/42/likes\"")))
+                .andExpect(content().string(containsString("action=\"/posts/42/delete\"")))
+                .andExpect(content().string(containsString("class=\"delete-button\"")));
     }
 
     @Test
@@ -208,6 +210,25 @@ class PostControllerTest {
         // 存在しない投稿IDでは詳細画面を表示せず、404 Not Found を返すことを確認する。
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿詳細_削除フラグ1_Serviceが空を返す場合404NotFoundを返す")
+    void 投稿詳細_削除フラグ1_Serviceが空を返す場合404NotFoundを返す() throws Exception {
+        given(postService.findById(42L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_postsIdDelete_Serviceで論理削除して一覧へリダイレクトする")
+    void 投稿削除_POST_postsIdDelete_Serviceで論理削除して一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/42/delete"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(42L);
     }
 
     @Test

@@ -42,7 +42,7 @@ class PostLikeServiceTest {
     @DisplayName("いいね_初回押下_いいねを追加する")
     void いいね_初回押下_いいねを追加する() {
         Post post = postWithId(42L);
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAt(42L, Post.NOT_DELETED)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234")).willReturn(Optional.empty());
 
         boolean liked = postLikeService.toggleLike(42L, "abcd1234");
@@ -59,7 +59,7 @@ class PostLikeServiceTest {
     void いいね_同一clientHashで再押下_いいねを解除する() {
         Post post = postWithId(42L);
         PostLike existingLike = new PostLike(post, "abcd1234", LocalDateTime.of(2026, 5, 23, 10, 0));
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAt(42L, Post.NOT_DELETED)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234"))
                 .willReturn(Optional.of(existingLike));
 
@@ -74,7 +74,7 @@ class PostLikeServiceTest {
     @DisplayName("いいね_異なるclientHash_別ユーザーとして追加する")
     void いいね_異なるclientHash_別ユーザーとして追加する() {
         Post post = postWithId(42L);
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAt(42L, Post.NOT_DELETED)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "bbbb2222")).willReturn(Optional.empty());
 
         postLikeService.toggleLike(42L, "bbbb2222");
@@ -87,7 +87,7 @@ class PostLikeServiceTest {
     @Test
     @DisplayName("いいね_存在しない投稿ID_PostNotFoundExceptionを投げる")
     void いいね_存在しない投稿ID_PostNotFoundExceptionを投げる() {
-        given(postRepository.findById(999L)).willReturn(Optional.empty());
+        given(postRepository.findByIdAndDeletedAt(999L, Post.NOT_DELETED)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> postLikeService.toggleLike(999L, "abcd1234"))
                 .isInstanceOf(PostNotFoundException.class);

@@ -26,14 +26,15 @@ public class PostSearchService {
 
     public List<Post> search(String q) {
         if (q == null || q.isBlank()) {
-            return postRepository.findTop50ByOrderByCreatedAtDesc();
+            return postRepository.findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED);
         }
 
         String keyword = q.trim();
         return mergeByNewest(
-                postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc(keyword),
-                postRepository.findByTagNameOrderByCreatedAtDesc(
-                        normalizeTagName(keyword), PageRequest.of(0, MAX_RESULTS)));
+                postRepository.findTop50ByDeletedAtAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(
+                        Post.NOT_DELETED, keyword),
+                postRepository.findByTagNameAndPostDeletedAtOrderByCreatedAtDesc(
+                        normalizeTagName(keyword), Post.NOT_DELETED, PageRequest.of(0, MAX_RESULTS)));
     }
 
     private String normalizeTagName(String keyword) {

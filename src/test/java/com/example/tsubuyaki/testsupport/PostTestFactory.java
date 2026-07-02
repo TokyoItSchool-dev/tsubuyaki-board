@@ -40,4 +40,10 @@ public final class PostTestFactory {
         ReflectionTestUtils.setField(post, "id", id);
         return post;
     }
+
+    public static Post deletedPostWithId(Long id, String author, String body) {
+        Post post = postWithId(id, author, body);
+        post.markDeleted();
+        return post;
+    }
 }

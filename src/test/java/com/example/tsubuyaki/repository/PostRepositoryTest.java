@@ -42,7 +42,7 @@ class PostRepositoryTest {
         postRepository.saveAll(posts);
 
         // createdAt 降順で最新50件だけを取得する。
-        List<Post> latestPosts = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> latestPosts = postRepository.findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED);
 
         // 取得件数が50件で、最も古い body0 が除外されていることを順序込みで確認する。
         assertThat(latestPosts).hasSize(50);
@@ -68,7 +68,8 @@ class PostRepositoryTest {
         postRepository.save(new Post("carol", "KEYWORDを含む新しい本文", LocalDateTime.of(2026, 5, 23, 10, 2)));
 
         // 大文字小文字を区別せず本文LIKE検索し、createdAt降順で取得する。
-        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("keyword");
+        List<Post> posts = postRepository.findTop50ByDeletedAtAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(
+                Post.NOT_DELETED, "keyword");
 
         // 本文に一致する投稿だけが新着順で返ることを確認する。
         assertThat(posts).extracting(Post::getBody)
@@ -82,7 +83,8 @@ class PostRepositoryTest {
         postRepository.save(new Post("alice", "通常の本文", LocalDateTime.of(2026, 5, 23, 10, 0)));
 
         // 一致しないキーワードで検索する。
-        List<Post> posts = postRepository.findTop50ByBodyContainingIgnoreCaseOrderByCreatedAtDesc("missing");
+        List<Post> posts = postRepository.findTop50ByDeletedAtAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(
+                Post.NOT_DELETED, "missing");
 
         // 一致しない場合は空の一覧を返すことを確認する。
         assertThat(posts).isEmpty();
@@ -103,7 +105,8 @@ class PostRepositoryTest {
         tagRepository.save(new Tag(newPost, "spring"));
 
         // #spring 検索時はタグ名 spring に一致する投稿だけを createdAt 降順で取得する。
-        List<Post> posts = postRepository.findByTagNameOrderByCreatedAtDesc("spring", PageRequest.of(0, 50));
+        List<Post> posts = postRepository.findByTagNameAndPostDeletedAtOrderByCreatedAtDesc(
+                "spring", Post.NOT_DELETED, PageRequest.of(0, 50));
 
         assertThat(posts).extracting(Post::getBody)
                 .containsExactly("新しいタグ投稿", "古いタグ投稿");
@@ -119,5 +122,46 @@ class PostRepositoryTest {
         // 保存した投稿を取得し、投稿者カラーがDBに保持されていることを確認する。
         Post foundPost = postRepository.findById(savedPost.getId()).orElseThrow();
         assertThat(foundPost.getAuthorColor()).isEqualTo("#ef4444");
+    }
+    @Test
+    @DisplayName("投稿一覧_削除フラグ0_正常に表示対象として取得できる")
+    void 投稿一覧_削除フラグ0_正常に表示対象として取得できる() {
+        Post activePost = postRepository.save(
+                new Post("alice", "表示される本文", LocalDateTime.of(2026, 5, 23, 10, 0)));
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED);
+
+        assertThat(posts).contains(activePost);
+    }
+
+    @Test
+    @DisplayName("投稿一覧_削除フラグ1_表示対象から除外される")
+    void 投稿一覧_削除フラグ1_表示対象から除外される() {
+        Post deletedPost = new Post("alice", "削除済み本文", LocalDateTime.of(2026, 5, 23, 10, 0));
+        deletedPost.markDeleted();
+        postRepository.save(deletedPost);
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED);
+
+        assertThat(posts).doesNotContain(deletedPost);
+    }
+
+    @Test
+    @DisplayName("投稿検索_削除フラグ1_本文検索とタグ検索から除外される")
+    void 投稿検索_削除フラグ1_本文検索とタグ検索から除外される() {
+        Post deletedPost = new Post("alice", "keyword #spring",
+                LocalDateTime.of(2026, 5, 23, 10, 0));
+        deletedPost.markDeleted();
+        Post savedPost = postRepository.save(deletedPost);
+        tagRepository.save(new Tag(savedPost, "spring"));
+
+        List<Post> bodyPosts = postRepository
+                .findTop50ByDeletedAtAndBodyContainingIgnoreCaseOrderByCreatedAtDesc(
+                        Post.NOT_DELETED, "keyword");
+        List<Post> tagPosts = postRepository.findByTagNameAndPostDeletedAtOrderByCreatedAtDesc(
+                "spring", Post.NOT_DELETED, PageRequest.of(0, 50));
+
+        assertThat(bodyPosts).doesNotContain(savedPost);
+        assertThat(tagPosts).doesNotContain(savedPost);
     }
 }

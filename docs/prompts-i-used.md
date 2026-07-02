@@ -1,4 +1,5 @@
 // 効かなかった
+
 ## Prompt: 投稿作成機能を調整する。
 
 * ビュー: posts/form.html
@@ -37,6 +38,7 @@
 
 
 // 効いた
+
 ## Prompt: すべてのコードに何を実行しているのかについて適切なコメントを付けてください
 
 
@@ -58,7 +60,9 @@
 
 
 // 効いた
+
 ## Prompt: 修正をお願いします。
+
 java.sql.SQLException: ORA-1876: {0}はどのタイム・ゾーンでもありません
 
 Whitelabel Error Page
@@ -100,6 +104,7 @@ There was an unexpected error (type=Internal Server Error, status=500).
 
 
 // 効いた
+
 ## Prompt: 投稿詳細機能を作成する。
 
 * ビュー: posts/detail.htmlを新たに作成する
@@ -146,6 +151,7 @@ There was an unexpected error (type=Internal Server Error, status=500).
 
 
 // 効いた
+
 ## Prompt: いいね機能を作成する（設計フェーズ）
 
 * エンドポイント: POST /posts/{id}/likes を使用する
@@ -198,6 +204,7 @@ There was an unexpected error (type=Internal Server Error, status=500).
 
 
 // 効いた
+
 ## Prompt: キーワード検索機能を作成する
 
 * エンドポイント: GET /posts を使用する
@@ -249,6 +256,7 @@ There was an unexpected error (type=Internal Server Error, status=500).
 
 
 // 効いた
+
 ## Prompt: 投稿者名フィールドの拡張を行う
 
 * 投稿作成に、投稿者の好きな色を設定させる項目を追加する
@@ -307,6 +315,7 @@ There was an unexpected error (type=Internal Server Error, status=500).
 
 
 // 効いた
+
 ## Prompt: 投稿にタグ機能を実装する
 
 * 本文中の#tagをパースして、Tagテーブルに保存する
@@ -334,4 +343,58 @@ There was an unexpected error (type=Internal Server Error, status=500).
 
 * どこを拡張するのかを伝えた
 * 何をタグというのかを伝えた
+
+
+
+// 効いた
+
+\## Prompt: 投稿の削除機能を実装する
+
+\- 論理削除で行う
+
+\- 詳細画面に投稿削除のボタンを設ける
+
+　- ボタンは赤色でライトモード、ダークモードに対応
+
+　- 投稿削除ボタンを押すと削除フラグが1になる
+
+\- deleted\_atという名前で削除フラグを設ける
+
+\- 削除フラグが0の場合は消えていないものとし、扱いに変更はない
+
+\- 削除フラグが1の場合
+
+　- 投稿一覧にその投稿が表示されないようにする
+
+　- URLから直打ちしたとしても、その投稿詳細が表示されない
+
+\- 既存の機能を利用し、最低限の変更で実装する
+
+\- リファクタリングの考え方を持ち、処理機能が集中しすぎることが予想されるのであれば、必要に応じてファイルを作成してもよい
+
+
+
+テストは以下を実施する
+
+\- 削除フラグが0の時、正常に表示される
+
+\- 削除フラグが1の時、表示されない
+
+\- モードに応じて見やすい色になる
+
+\- 投稿削除ボタンを押すと削除フラグが1になる
+
+
+
+\### Result
+
+* 論理削除機能が追加された
+* 詳細画面で投稿が削除できるようになった
+* ライトモード/ダークモードに対応した
+
+
+
+\### Why it worked
+
+* 分岐処理について明記し、想定外の挙動を防いだ
 

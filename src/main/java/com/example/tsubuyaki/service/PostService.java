@@ -24,7 +24,7 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtOrderByCreatedAtDesc(Post.NOT_DELETED);
     }
 
     public List<Post> search(String q) {
@@ -32,7 +32,7 @@ public class PostService {
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findByIdAndDeletedAt(id, Post.NOT_DELETED);
     }
 
     @Transactional
@@ -40,5 +40,13 @@ public class PostService {
         Post savedPost = repository.save(post);
         tagService.saveTagsFor(savedPost);
         return savedPost;
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Post post = repository.findByIdAndDeletedAt(id, Post.NOT_DELETED)
+                .orElseThrow(() -> new PostNotFoundException(id));
+        post.markDeleted();
+        repository.save(post);
     }
 }
