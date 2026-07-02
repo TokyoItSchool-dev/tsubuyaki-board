@@ -10,12 +10,16 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -55,7 +59,19 @@ class PostControllerDetailTest {
                 .andExpect(content().string(containsString("3 likes")))
                 .andExpect(content().string(containsString("Like")))
                 .andExpect(content().string(containsString("action=\"/posts/1/likes\"")))
-                .andExpect(content().string(containsString("method=\"post\"")));
+                .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(not(containsString("class=\"post__link\""))))
+                .andExpect(content().string(not(containsString("href=\"/posts/1\""))));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_共通カードにリンク用の装飾を残さない")
+    void detail_cardStyle_doesNotUseClickablePostStyle() throws Exception {
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+
+        assertThat(styleBlock(css, ".post {")).doesNotContain("cursor");
+        assertThat(css).doesNotContain(".post:hover");
+        assertThat(css).contains(".post--clickable");
     }
 
     @Test
@@ -106,5 +122,11 @@ class PostControllerDetailTest {
             hex.append(String.format("%02x", b));
         }
         return hex.substring(0, 8);
+    }
+
+    private static String styleBlock(String css, String selector) {
+        int start = css.indexOf(selector);
+        int end = css.indexOf('}', start);
+        return css.substring(start, end + 1);
     }
 }

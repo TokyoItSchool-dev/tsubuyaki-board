@@ -87,7 +87,7 @@ class PostControllerListTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertThat(html).contains("class=\"post\"", "class=\"post__link\"", "href=\"/posts/1\"");
+        assertThat(html).contains("class=\"post post--clickable\"", "class=\"post__link\"", "href=\"/posts/1\"");
         assertThat(html).contains("post__content", "post__author-row", "avatar--red", "post__body", "post__created-at");
     }
 
