@@ -5,15 +5,23 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "posts")
 public class Post {
+
+    public static final String DEFAULT_AVATAR_COLOR = "gray";
 
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
@@ -29,14 +37,33 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(name = "avatar_color", length = 20, nullable = false)
+    private String avatarColor;
+
+    @ManyToMany
+    @JoinTable(
+            name = "post_tags",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new LinkedHashSet<>();
+
     protected Post() {
         // JPA
     }
 
     public Post(String author, String body, Instant createdAt) {
+        this(author, body, createdAt, DEFAULT_AVATAR_COLOR);
+    }
+
+    public Post(String author, String body, Instant createdAt, String avatarColor) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
+        this.avatarColor = normalizeAvatarColor(avatarColor);
     }
 
     public Long getId() {
@@ -53,6 +80,33 @@ public class Post {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public Set<Tag> getTags() {
+        return Collections.unmodifiableSet(tags);
+    }
+
+    public void addTag(Tag tag) {
+        tags.add(Objects.requireNonNull(tag, "tag must not be null"));
+    }
+
+    public void markDeleted(Instant deletedAt) {
+        this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must not be null");
+    }
+
+    private static String normalizeAvatarColor(String avatarColor) {
+        if (avatarColor == null || avatarColor.isBlank()) {
+            return DEFAULT_AVATAR_COLOR;
+        }
+        return avatarColor;
     }
 
     @Override
