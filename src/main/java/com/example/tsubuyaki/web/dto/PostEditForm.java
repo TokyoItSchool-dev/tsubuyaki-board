@@ -5,11 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public class PostForm {
-
-    @NotBlank(message = "投稿者名を入力してください")
-    @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
-    private String author;
+public class PostEditForm {
 
     @NotBlank(message = "本文を入力してください")
     @Size(max = 280, message = "本文は 280 文字以内で入力してください")
@@ -20,15 +16,16 @@ public class PostForm {
             message = "背景色は選択肢から選んでください")
     private String backgroundColor = PostBackgroundColor.DEFAULT;
 
-    public PostForm() {
+    public PostEditForm() {
     }
 
-    public String getAuthor() {
-        return author;
+    public PostEditForm(String body, String backgroundColor) {
+        this.body = body;
+        this.backgroundColor = backgroundColor;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
+    public static PostEditForm from(PostView post) {
+        return new PostEditForm(post.getBody(), post.getBackgroundColor());
     }
 
     public String getBody() {

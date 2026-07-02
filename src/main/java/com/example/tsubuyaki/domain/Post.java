@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -27,16 +27,39 @@ public class Post {
     private String body;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
+
+    @Column(name = "background_color", length = 7)
+    private String backgroundColor;
+
+    @Column(name = "client_hash", length = 8)
+    private String clientHash;
+
+    @Column(name = "deleted_at", nullable = false)
+    private int deletedAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     protected Post() {
         // JPA
     }
 
-    public Post(String author, String body, Instant createdAt) {
+    public Post(String author, String body, LocalDateTime createdAt) {
+        this(author, body, createdAt, PostBackgroundColor.DEFAULT);
+    }
+
+    public Post(String author, String body, LocalDateTime createdAt, String backgroundColor) {
+        this(author, body, createdAt, backgroundColor, null);
+    }
+
+    public Post(String author, String body, LocalDateTime createdAt, String backgroundColor, String clientHash) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
+        this.backgroundColor = backgroundColor;
+        this.clientHash = clientHash;
+        this.deletedAt = 0;
     }
 
     public Long getId() {
@@ -51,8 +74,42 @@ public class Post {
         return body;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getBackgroundColor() {
+        return PostBackgroundColor.normalize(backgroundColor);
+    }
+
+    public String getClientHash() {
+        return clientHash;
+    }
+
+    public int getDeletedAt() {
+        return deletedAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public boolean canDelete(String currentClientHash) {
+        return canModify(currentClientHash);
+    }
+
+    public boolean canModify(String currentClientHash) {
+        return clientHash != null && clientHash.equals(currentClientHash);
+    }
+
+    public void markDeleted() {
+        this.deletedAt = 1;
+    }
+
+    public void updateBodyAndBackgroundColor(String body, String backgroundColor, LocalDateTime updatedAt) {
+        this.body = body;
+        this.backgroundColor = backgroundColor;
+        this.updatedAt = updatedAt;
     }
 
     @Override

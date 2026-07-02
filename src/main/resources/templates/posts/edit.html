@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>新規投稿 - 社内つぶやきボード</title>
+    <title>投稿編集 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <header class="app-header">
         <div>
             <h1>社内つぶやきボード</h1>
-            <p class="app-header__lead">短い共有を投稿できます。</p>
+            <p class="app-header__lead">投稿内容を編集できます。</p>
         </div>
         <nav class="app-nav" aria-label="投稿メニュー">
             <a class="app-nav__link" th:href="@{/posts}">一覧</a>
@@ -19,22 +19,20 @@
         </nav>
     </header>
 
-    <section class="page-section" aria-labelledby="form-heading">
+    <section class="page-section" aria-labelledby="edit-heading">
         <div class="page-title">
-            <h2 id="form-heading">新規投稿</h2>
-            <a class="button button--ghost" th:href="@{/posts}">一覧に戻る</a>
+            <h2 id="edit-heading">投稿編集</h2>
+            <a class="button button--ghost" th:href="@{/posts/{id}(id=${post.id})}">詳細に戻る</a>
         </div>
 
-        <form class="post-form" th:action="@{/posts}" th:object="${postForm}" method="post">
-            <div class="post-form__field">
-                <label class="required-label" for="author">投稿者</label>
-                <p id="author-help" class="form-help">投稿者名は必須・30文字以内です。</p>
-                <input type="text" id="author" th:field="*{author}" maxlength="30" required
-                       th:attr="aria-describedby=${#fields.hasErrors('author') ? 'author-help author-error' : 'author-help'},
-                                aria-invalid=${#fields.hasErrors('author') ? 'true' : null}">
-                <p id="author-error" class="error" th:if="${#fields.hasErrors('author')}"
-                   th:errors="*{author}">エラー</p>
-            </div>
+        <p class="error" th:if="${editError != null}" th:text="${editError}">エラー</p>
+
+        <section class="post-edit-summary">
+            <p>投稿者: <span th:text="${post.author}">投稿者</span></p>
+        </section>
+
+        <form class="post-form" th:action="@{/posts/{id}/edit(id=${post.id})}"
+              th:object="${postEditForm}" method="post">
             <div class="post-form__field">
                 <label class="required-label" for="body">本文</label>
                 <p id="body-help" class="form-help">本文は必須・280文字以内です。</p>
@@ -46,13 +44,14 @@
             </div>
             <fieldset class="color-palette">
                 <legend>背景色</legend>
-                <label class="color-palette__item" th:each="color : ${postForm.backgroundColors}">
+                <label class="color-palette__item" th:each="color : ${postEditForm.backgroundColors}">
                     <input class="color-palette__input" type="radio" th:field="*{backgroundColor}" th:value="${color}">
                     <span class="color-palette__swatch" th:style="|background-color: ${color};|"></span>
                 </label>
             </fieldset>
             <div class="form-actions">
-                <button class="button button--primary" type="submit">投稿</button>
+                <button class="button button--primary" type="submit">更新する</button>
+                <a class="button button--ghost" th:href="@{/posts/{id}(id=${post.id})}">キャンセル</a>
             </div>
         </form>
     </section>

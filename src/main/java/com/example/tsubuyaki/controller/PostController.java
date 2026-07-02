@@ -1,13 +1,37 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.service.ClientHashGenerator;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.service.UpdatePostResult;
+import com.example.tsubuyaki.web.dto.PostEditForm;
 import com.example.tsubuyaki.web.dto.PostForm;
+import com.example.tsubuyaki.web.dto.PostView;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.Optional;
+
+import static org.springframework.http.HttpStatus.GONE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Controller
 public class PostController {
+
+    private static final String RETURN_TO_LIST = "list";
+    private static final String RETURN_TO_DETAIL = "detail";
+    private static final int MAX_QUERY_LENGTH = 280;
+    private static final String DELETE_ERROR_MESSAGE = "この投稿は削除できません。";
+    private static final String EDIT_ERROR_MESSAGE = "この投稿は編集できません。";
 
     private final PostService postService;
 
@@ -16,8 +40,13 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+        String normalizedQuery = normalizeQuery(query);
+        boolean searched = !normalizedQuery.isEmpty();
+
+        model.addAttribute("posts", searched ? postService.searchByBody(normalizedQuery) : postService.latest());
+        model.addAttribute("query", normalizedQuery);
+        model.addAttribute("searched", searched);
         return "posts/list";
     }
 
@@ -27,7 +56,158 @@ public class PostController {
         return "posts/form";
     }
 
-    // 演習中に追加するエンドポイント:
-    //   @PostMapping("/posts")           // 投稿登録
-    //   @GetMapping("/posts/{id}")       // 詳細
+    @PostMapping("/posts")
+    public String create(
+            @Valid @ModelAttribute("postForm") PostForm postForm,
+            BindingResult bindingResult,
+            HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            return "posts/form";
+        }
+        postService.create(
+                postForm.getAuthor(),
+                postForm.getBody(),
+                postForm.getBackgroundColor(),
+                clientHash(request));
+        return "redirect:/posts";
+    }
+
+    @GetMapping("/posts/{id}")
+    public String detail(@PathVariable Long id, HttpServletRequest request, Model model) {
+        return showDetail(id, clientHash(request), model, null);
+    }
+
+    @GetMapping("/posts/{id}/edit")
+    public String editForm(@PathVariable Long id, HttpServletRequest request, Model model) {
+        String clientHash = clientHash(request);
+        Optional<PostView> editablePost = postService.findEditableById(id, clientHash);
+        if (editablePost.isPresent()) {
+            model.addAttribute("post", editablePost.get());
+            model.addAttribute("postEditForm", PostEditForm.from(editablePost.get()));
+            return "posts/edit";
+        }
+
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isEmpty()) {
+            return showDetail(id, clientHash, model, null);
+        }
+        model.addAttribute("post", post.get());
+        model.addAttribute("detailError", EDIT_ERROR_MESSAGE);
+        return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/edit")
+    public String edit(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("postEditForm") PostEditForm postEditForm,
+            BindingResult bindingResult,
+            HttpServletRequest request,
+            Model model) {
+        String clientHash = clientHash(request);
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isEmpty()) {
+            return showDetail(id, clientHash, model, null);
+        }
+        model.addAttribute("post", post.get());
+        if (bindingResult.hasErrors()) {
+            return "posts/edit";
+        }
+
+        UpdatePostResult result = postService.update(
+                id,
+                postEditForm.getBody(),
+                postEditForm.getBackgroundColor(),
+                clientHash);
+        return switch (result) {
+            case UPDATED -> "redirect:/posts/" + id;
+            case FORBIDDEN -> {
+                model.addAttribute("editError", EDIT_ERROR_MESSAGE);
+                yield "posts/edit";
+            }
+            case NOT_FOUND -> showDetail(id, clientHash, model, null);
+        };
+    }
+
+    @GetMapping("/posts/{id}/delete-confirm")
+    public String deleteConfirm(@PathVariable Long id, HttpServletRequest request, Model model) {
+        String clientHash = clientHash(request);
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isEmpty()) {
+            return showDetail(id, clientHash, model, null);
+        }
+        if (!post.get().isCanDelete()) {
+            model.addAttribute("post", post.get());
+            model.addAttribute("detailError", DELETE_ERROR_MESSAGE);
+            return "posts/detail";
+        }
+        model.addAttribute("post", post.get());
+        return "posts/delete-confirm";
+    }
+
+    @PostMapping("/posts/{id}/del")
+    public String delete(@PathVariable Long id, HttpServletRequest request, Model model) {
+        String clientHash = clientHash(request);
+        if (postService.delete(id, clientHash)) {
+            return "redirect:/posts";
+        }
+        return showDetail(id, clientHash, model, DELETE_ERROR_MESSAGE);
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = RETURN_TO_DETAIL) String returnTo,
+            @RequestParam(name = "q", required = false) String query,
+            HttpServletRequest request) {
+        if (!postService.toggleLike(id, clientHash(request))) {
+            throw new ResponseStatusException(NOT_FOUND);
+        }
+        return likeRedirectUrl(id, returnTo, query);
+    }
+
+    private String likeRedirectUrl(Long id, String returnTo, String query) {
+        if (RETURN_TO_LIST.equals(returnTo)) {
+            String normalizedQuery = normalizeQuery(query);
+            if (normalizedQuery.isEmpty()) {
+                return "redirect:/posts";
+            }
+            String listUrl = UriComponentsBuilder.fromPath("/posts")
+                    .queryParam("q", normalizedQuery)
+                    .build()
+                    .encode()
+                    .toUriString();
+            return "redirect:" + listUrl;
+        }
+        return "redirect:/posts/" + id;
+    }
+
+    private String showDetail(Long id, String clientHash, Model model, String errorMessage) {
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isPresent()) {
+            model.addAttribute("post", post.get());
+            if (errorMessage != null) {
+                model.addAttribute("detailError", errorMessage);
+            }
+            return "posts/detail";
+        }
+        if (postService.existsDeletedById(id)) {
+            throw new ResponseStatusException(GONE);
+        }
+        throw new ResponseStatusException(NOT_FOUND);
+    }
+
+    private String normalizeQuery(String query) {
+        if (query == null) {
+            return "";
+        }
+        String trimmedQuery = query.trim();
+        if (trimmedQuery.length() <= MAX_QUERY_LENGTH) {
+            return trimmedQuery;
+        }
+        return trimmedQuery.substring(0, MAX_QUERY_LENGTH);
+    }
+
+    private String clientHash(HttpServletRequest request) {
+        return ClientHashGenerator.from(request);
+    }
 }
