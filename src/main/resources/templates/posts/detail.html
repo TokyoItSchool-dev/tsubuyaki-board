@@ -21,6 +21,21 @@
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <div class="post__likes">
+            <span th:text="|いいね ${likeCount}|">いいね 0</span>
+            <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                <button class="like-toggle"
+                        th:classappend="${liked} ? ' like-toggle--on'"
+                        type="submit"
+                        aria-label="Likeを切り替える"
+                        th:attr="aria-pressed=${liked}">
+                    <span class="like-toggle__track" aria-hidden="true">
+                        <span class="like-toggle__thumb"></span>
+                    </span>
+                    <span class="like-toggle__text">Like</span>
+                </button>
+            </form>
+        </div>
     </article>
 </main>
 </body>

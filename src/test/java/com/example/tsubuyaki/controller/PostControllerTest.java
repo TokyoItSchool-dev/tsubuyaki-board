@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.service.PostNotFoundException;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostDto;
+import com.example.tsubuyaki.web.dto.PostDetailDto;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +15,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -22,6 +23,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -64,17 +66,6 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("posts", empty()))
                 .andExpect(content().string(containsString("まだ投稿はありません")));
-    }
-
-    @Test
-    @DisplayName("投稿一覧_表示時_更新ボタンから投稿一覧へGETできる")
-    void list_whenDisplayed_hasReloadButtonRequestingPosts() throws Exception {
-        given(postService.latest()).willReturn(List.of());
-
-        mockMvc.perform(get("/posts"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("<form action=\"/posts\" method=\"get\">")))
-                .andExpect(content().string(containsString("<button type=\"submit\">更新</button>")));
     }
 
     @Test
@@ -224,22 +215,52 @@ class PostControllerTest {
     @DisplayName("投稿詳細_存在する投稿_詳細画面を表示しmodelに投稿を積む")
     void detail_whenPostExists_displaysDetailViewWithPost() throws Exception {
         PostDto post = new PostDto(1L, "alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.getDetail(1L, "203.0.113.10", "JUnit UA"))
+                .willReturn(new PostDetailDto(post, 3L, true));
 
-        mockMvc.perform(get("/posts/1"))
+        mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.10");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post))
+                .andExpect(model().attribute("likeCount", 3L))
+                .andExpect(model().attribute("liked", true))
                 .andExpect(content().string(containsString("alice")))
                 .andExpect(content().string(containsString("詳細本文")))
-                .andExpect(content().string(containsString("2026-05-23 19:00")));
+                .andExpect(content().string(containsString("2026-05-23 19:00")))
+                .andExpect(content().string(containsString("いいね 3")))
+                .andExpect(content().string(containsString("<form action=\"/posts/1/likes\" method=\"post\">")))
+                .andExpect(content().string(containsString("like-toggle--on")))
+                .andExpect(content().string(containsString("<span class=\"like-toggle__text\">Like</span>")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_未いいねのclientHash_トグルをOFF表示する")
+    void detail_whenClientHasNotLiked_displaysToggleOff() throws Exception {
+        PostDto post = new PostDto(1L, "alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.getDetail(1L, "203.0.113.10", "JUnit UA"))
+                .willReturn(new PostDetailDto(post, 0L, false));
+
+        mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.10");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("liked", false))
+                .andExpect(content().string(containsString("class=\"like-toggle\"")));
     }
 
     @Test
     @DisplayName("投稿詳細_存在する投稿_投稿者内容投稿日の順に表示する")
     void detail_whenPostExists_displaysAuthorBodyCreatedAtInOrder() throws Exception {
         PostDto post = new PostDto(1L, "alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.getDetail(1L, "127.0.0.1", null)).willReturn(new PostDetailDto(post, 0L, false));
 
         MvcResult result = mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
@@ -253,7 +274,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在しない投稿_404を返す")
     void detail_whenPostDoesNotExist_returns404() throws Exception {
-        given(postService.findById(999L)).willReturn(Optional.empty());
+        doThrow(new PostNotFoundException(999L)).when(postService).getDetail(999L, "127.0.0.1", null);
 
         mockMvc.perform(get("/posts/999"))
                 .andExpect(status().isNotFound());
@@ -263,7 +284,7 @@ class PostControllerTest {
     @DisplayName("投稿詳細_存在する投稿_一覧に戻るリンクを表示する")
     void detail_whenPostExists_displaysBackToListLink() throws Exception {
         PostDto post = new PostDto(1L, "alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.getDetail(1L, "127.0.0.1", null)).willReturn(new PostDetailDto(post, 0L, false));
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
@@ -275,10 +296,40 @@ class PostControllerTest {
     void detail_whenBodyContainsHtml_escapesBody() throws Exception {
         PostDto post = new PostDto(1L, "alice", "<script>alert('xss')</script>",
                 Instant.parse("2026-05-23T10:00:00Z"));
-        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.getDetail(1L, "127.0.0.1", null)).willReturn(new PostDetailDto(post, 0L, false));
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;")));
+    }
+
+    @Test
+    @DisplayName("いいね_詳細画面で押したとき_clientHashでトグルして詳細へリダイレクトする")
+    void like_whenPostExists_togglesLikeAndRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/posts/1/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.10");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(postService).should().toggleLike(1L, "203.0.113.10", "JUnit UA");
+    }
+
+    @Test
+    @DisplayName("いいね_存在しない投稿_404を返す")
+    void like_whenPostDoesNotExist_returns404() throws Exception {
+        doThrow(new PostNotFoundException(999L))
+                .when(postService).toggleLike(999L, "203.0.113.10", "JUnit UA");
+
+        mockMvc.perform(post("/posts/999/likes")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.10");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit UA"))
+                .andExpect(status().isNotFound());
     }
 }

@@ -1,8 +1,10 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.service.PostNotFoundException;
 import com.example.tsubuyaki.service.PostService;
-import com.example.tsubuyaki.web.dto.PostDto;
+import com.example.tsubuyaki.web.dto.PostDetailDto;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -47,10 +49,26 @@ public class PostController {
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        PostDto post = postService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        model.addAttribute("post", post);
-        return "posts/detail";
+    public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
+        try {
+            PostDetailDto detail = postService.getDetail(
+                    id, request.getRemoteAddr(), request.getHeader("User-Agent"));
+            model.addAttribute("post", detail.post());
+            model.addAttribute("likeCount", detail.likeCount());
+            model.addAttribute("liked", detail.liked());
+            return "posts/detail";
+        } catch (PostNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        try {
+            postService.toggleLike(id, request.getRemoteAddr(), request.getHeader("User-Agent"));
+            return "redirect:/posts/" + id;
+        } catch (PostNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
     }
 }
