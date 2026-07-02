@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,5 +129,60 @@ class PostListFeatureTest {
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("query", "該当なし"))
                 .andExpect(content().string(containsString("条件に一致する結果が見つかりませんでした。")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_モダンUI_中央タイムラインと投稿導線と投稿カードを読みやすく表示する")
+    void 投稿一覧_モダンUI_中央タイムラインと投稿導線と投稿カードを読みやすく表示する() throws Exception {
+        postRepository.deleteAll();
+
+        String emptyHtml = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(emptyHtml).contains("class=\"empty-state\"", "まだ投稿はありません。");
+
+        postRepository.save(new Post(
+                "modern-user",
+                "モダンUIの本文",
+                LocalDateTime.of(2026, 5, 26, 8, 45)));
+        postRepository.flush();
+
+        String html = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains(
+                "href=\"/css/app.css\"",
+                "class=\"app-shell\"",
+                "class=\"app-header\"",
+                "class=\"timeline-layout\"",
+                "class=\"composer-card\"",
+                "class=\"timeline-feed\"",
+                "class=\"post post-card\"");
+        assertThat(html).containsSubsequence("composer-card", "新規投稿", "timeline-feed", "modern-user", "モダンUIの本文");
+
+        String css = new ClassPathResource("static/css/app.css").getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains(
+                "--surface:",
+                "--shadow-card:",
+                ".app-shell {",
+                "max-width: 720px;",
+                ".app-header {",
+                ".timeline-layout {",
+                ".composer-card {",
+                ".timeline-feed {",
+                ".post-card {",
+                "border-radius: 8px;",
+                "@media (max-width: 640px)",
+                "min(100% - 32px, 720px)",
+                ":focus-visible");
     }
 }

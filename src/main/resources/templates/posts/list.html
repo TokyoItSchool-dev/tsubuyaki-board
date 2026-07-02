@@ -7,44 +7,61 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<main>
-    <h1>社内つぶやきボード</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧</a>
-        |
-        <a th:href="@{/posts/new}">新規投稿</a>
-    </nav>
-    <form class="post-list__refresh" method="get" th:action="@{/posts}">
-        <button type="submit">更新</button>
-    </form>
-    <form class="post-search" method="get" th:action="@{/posts}" data-empty-action="/posts"
-          onsubmit="if (this.q.value.trim() === '') { this.q.disabled = true; }">
-        <input class="post-search__input" type="search" name="q" th:value="${query}" placeholder="本文を検索">
-        <button class="post-search__button" type="submit">検索</button>
-    </form>
+<main class="app-shell">
+    <header class="app-header">
+        <div>
+            <h1>社内つぶやきボード</h1>
+            <p class="app-header__lead">短い共有を、読みやすいタイムラインで確認できます。</p>
+        </div>
+        <nav class="app-nav" aria-label="投稿メニュー">
+            <a class="app-nav__link" th:href="@{/posts}">一覧</a>
+            <a class="app-nav__link app-nav__link--primary" th:href="@{/posts/new}">新規投稿</a>
+        </nav>
+    </header>
 
-    <section>
-        <p th:if="${#lists.isEmpty(posts) and !searched}">まだ投稿はありません。</p>
-        <p th:if="${#lists.isEmpty(posts) and searched}">条件に一致する結果が見つかりませんでした。</p>
-        <article class="post" th:each="post : ${posts}" th:style="|background-color: ${post.backgroundColor};|">
-            <header>
-                <a class="post__author" th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.author}">投稿者</a>
-            </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
-            <time class="post__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-            <div class="post__actions">
-                <span class="post__like-count" th:text="|いいね ${post.likeCount}|">いいね 0</span>
-                <form class="post__like-form" method="post" th:action="@{/posts/{id}/likes(id=${post.id})}">
-                    <input type="hidden" name="returnTo" value="list">
-                    <input type="hidden" th:if="${_csrf != null}"
-                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                    <button class="post__like-button" type="submit">いいね！</button>
-                </form>
+    <div class="timeline-layout">
+        <section class="composer-card" aria-label="投稿操作">
+            <div>
+                <h2 class="composer-card__title">いま共有したいことを書く</h2>
+                <p class="composer-card__body">気づきや進捗を短く投稿できます。</p>
             </div>
-        </article>
-    </section>
+            <a class="button button--primary" th:href="@{/posts/new}">新規投稿</a>
+        </section>
+
+        <section class="timeline-toolbar" aria-label="投稿一覧の操作">
+            <form class="post-list__refresh" method="get" th:action="@{/posts}">
+                <button class="button button--secondary" type="submit">更新</button>
+            </form>
+            <form class="post-search" method="get" th:action="@{/posts}" data-empty-action="/posts"
+                  onsubmit="if (this.q.value.trim() === '') { this.q.disabled = true; }">
+                <input class="post-search__input" type="search" name="q" th:value="${query}" placeholder="本文を検索">
+                <button class="post-search__button button button--secondary" type="submit">検索</button>
+            </form>
+        </section>
+
+        <section class="timeline-feed" aria-label="投稿一覧">
+            <p class="empty-state" th:if="${#lists.isEmpty(posts) and !searched}">まだ投稿はありません。</p>
+            <p class="empty-state" th:if="${#lists.isEmpty(posts) and searched}">条件に一致する結果が見つかりませんでした。</p>
+            <article class="post post-card" th:each="post : ${posts}" th:style="|background-color: ${post.backgroundColor};|">
+                <header class="post__header">
+                    <a class="post__author" th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.author}">投稿者</a>
+                </header>
+                <p class="post__body" th:text="${post.body}">本文</p>
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                <div class="post__actions">
+                    <span class="post__like-count" th:text="|いいね ${post.likeCount}|">いいね 0</span>
+                    <form class="post__like-form" method="post" th:action="@{/posts/{id}/likes(id=${post.id})}">
+                        <input type="hidden" name="returnTo" value="list">
+                        <input type="hidden" th:if="${_csrf != null}"
+                               th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button class="post__like-button" type="submit">いいね！</button>
+                    </form>
+                </div>
+            </article>
+        </section>
+    </div>
 </main>
 </body>
 </html>
