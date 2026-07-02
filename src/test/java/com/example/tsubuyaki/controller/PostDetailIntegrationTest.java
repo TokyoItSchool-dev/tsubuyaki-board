@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,14 +36,21 @@ class PostDetailIntegrationTest {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private PostLikeRepository postLikeRepository;
+
     @BeforeEach
     void setUp() {
+        // 外部キー制約を守るため、投稿より先にいいねデータを削除する。
+        postLikeRepository.deleteAll();
         // 詳細取得テストの前提を固定するため、各テスト開始時に投稿データを空にする。
         postRepository.deleteAll();
     }
 
     @AfterEach
     void tearDown() {
+        // 後続テストへいいねデータが残らないよう、投稿より先に削除する。
+        postLikeRepository.deleteAll();
         // 後続テストへ投稿データが残らないよう、テスト終了時にも投稿データを削除する。
         postRepository.deleteAll();
     }
@@ -54,10 +63,16 @@ class PostDetailIntegrationTest {
                 "alice",
                 "M4の投稿詳細を実装します",
                 LocalDateTime.parse("2026-06-01T09:30:00")));
+        // 詳細画面に表示するいいね数を検証するため、対象投稿にいいねを1件保存する。
+        postLikeRepository.save(new PostLike(
+                savedPost,
+                "abcd1234",
+                LocalDateTime.parse("2026-06-01T10:00:00")));
 
         mockMvc.perform(get("/posts/{id}", savedPost.getId()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("likeCount", 1L))
                 .andExpect(model().attribute("post", allOf(
                         instanceOf(Post.class),
                         hasProperty("id", is(savedPost.getId())),
@@ -68,6 +83,10 @@ class PostDetailIntegrationTest {
                 .andExpect(content().string(containsString("alice")))
                 .andExpect(content().string(containsString("M4の投稿詳細を実装します")))
                 .andExpect(content().string(containsString("2026-06-01 09:30")))
+                .andExpect(content().string(containsString("いいね")))
+                .andExpect(content().string(containsString("action=\"/posts/" + savedPost.getId() + "/likes\"")))
+                .andExpect(content().string(containsString("name=\"_csrf\"")))
+                .andExpect(content().string(containsString("Like")))
                 .andExpect(content().string(containsString("href=\"/posts\"")));
     }
 

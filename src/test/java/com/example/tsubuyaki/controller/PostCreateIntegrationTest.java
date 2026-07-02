@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -48,6 +49,7 @@ class PostCreateIntegrationTest {
     @DisplayName("投稿登録_有効な入力_保存して投稿一覧へリダイレクトする")
     void 投稿登録_有効な入力_保存して投稿一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
+                        .with(csrf())
                         .param("author", "a")
                         .param("body", "b"))
                 .andExpect(status().isFound())
@@ -67,6 +69,7 @@ class PostCreateIntegrationTest {
     @DisplayName("投稿登録_入力エラー_フォームを再表示し保存しない")
     void 投稿登録_入力エラー_フォームを再表示し保存しない(String author, String body, String field) throws Exception {
         mockMvc.perform(post("/posts")
+                        .with(csrf())
                         .param("author", author)
                         .param("body", body))
                 .andExpect(status().isOk())

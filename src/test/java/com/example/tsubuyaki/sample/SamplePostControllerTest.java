@@ -1,10 +1,13 @@
 package com.example.tsubuyaki.sample;
 
 import com.example.tsubuyaki.controller.PostController;
+import com.example.tsubuyaki.service.ClientHashGenerator;
+import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>@WebMvcTest で Spring の MVC スライスのみ起動し、Service はモック化する。</p>
  */
 @WebMvcTest(PostController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class SamplePostControllerTest {
 
     @Autowired
@@ -30,6 +34,12 @@ class SamplePostControllerTest {
 
     @MockitoBean
     private PostService postService;
+
+    @MockitoBean
+    private PostLikeService postLikeService;
+
+    @MockitoBean
+    private ClientHashGenerator clientHashGenerator;
 
     @Test
     @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")

@@ -28,6 +28,17 @@
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
         </footer>
     </article>
+
+    <section class="likes">
+        <!-- ControllerがModelへ格納したlikeCountをHTMLエスケープして現在のいいね数として表示する。 -->
+        <p>いいね <span th:text="${likeCount}">0</span> 件</p>
+        <!-- 現在の投稿idへいいねトグルPOSTを送り、成功後は同じ詳細画面へ戻る。 -->
+        <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+            <!-- Spring SecurityのCSRFトークンをPOSTフォームへ明示的に含める。 -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit">Like</button>
+        </form>
+    </section>
 </main>
 </body>
 </html>

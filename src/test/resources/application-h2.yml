@@ -1,11 +1,14 @@
 # =========================================================================
 # テスト用 H2 プロファイル
 # main の application-h2.yml はローカル起動用 seed を読む。
-# テストでは DB を空から始めるため、Flyway location は V1 のみに固定する。
+# テストでは DB を空から始めるため、Flyway location は通常マイグレーションのみに固定する。
 # =========================================================================
 spring:
   datasource:
-    url: jdbc:h2:mem:tsubuyaki;MODE=Oracle;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=true
+    # テストでは接続プールを使わず、fork JVM終了時のHikari shutdown待ちを避ける。
+    type: org.springframework.jdbc.datasource.SimpleDriverDataSource
+    # Spring のテストコンテキストごとにDB名を変え、複数DataSourceの終了待ち競合を避ける。
+    url: jdbc:h2:mem:tsubuyaki-${random.uuid};MODE=Oracle;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=true
     username: sa
     password:
     driver-class-name: org.h2.Driver

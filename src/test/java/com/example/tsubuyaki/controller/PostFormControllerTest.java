@@ -1,10 +1,13 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.service.ClientHashGenerator;
+import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(PostController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class PostFormControllerTest {
 
     @Autowired
@@ -28,6 +32,12 @@ class PostFormControllerTest {
 
     @MockitoBean
     private PostService postService;
+
+    @MockitoBean
+    private PostLikeService postLikeService;
+
+    @MockitoBean
+    private ClientHashGenerator clientHashGenerator;
 
     @Test
     @DisplayName("投稿作成フォーム_GET_posts_new_フォーム画面と空Formを返す")
