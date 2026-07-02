@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,21 +37,22 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿一覧_latest_Repositoryから新着50件を取得する")
     void 投稿一覧_latest_Repositoryから新着50件を取得する() {
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(Collections.emptyList());
 
         postService.latest();
 
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
     @DisplayName("投稿検索_search_本文キーワードでRepositoryを検索する")
     void 投稿検索_search_本文キーワードでRepositoryを検索する() {
-        given(postRepository.findByBodyContainingOrderByCreatedAtDesc("検索")).willReturn(Collections.emptyList());
+        given(postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索"))
+                .willReturn(Collections.emptyList());
 
         postService.search("検索");
 
-        verify(postRepository).findByBodyContainingOrderByCreatedAtDesc("検索");
+        verify(postRepository).findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索");
     }
 
     @Test
@@ -111,5 +113,16 @@ class PostServiceTest {
 
         verify(tagRepository).findPostsByNameContainingOrderByCreatedAtDesc("ava");
         verifyNoInteractions(tagParser);
+    }
+
+    @Test
+    @DisplayName("投稿削除_delete_投稿のdeletedAtを設定する")
+    void 投稿削除_delete_投稿のdeletedAtを設定する() {
+        Post post = new Post("alice", "削除対象です", java.time.LocalDateTime.parse("2026-05-23T10:00:00"));
+        given(postRepository.findById(1L)).willReturn(java.util.Optional.of(post));
+
+        postService.delete(1L);
+
+        assertThat(post.getDeletedAt()).isNotNull();
     }
 }

@@ -38,7 +38,7 @@ public class PostService {
      * @return 最新順の投稿一覧
      */
     public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     /**
@@ -51,11 +51,12 @@ public class PostService {
      * @return 本文にキーワードを含む投稿一覧
      */
     public List<Post> search(String keyword) {
-        return repository.findByBodyContainingOrderByCreatedAtDesc(keyword);
+        return repository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(keyword);
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findById(id)
+                .filter(post -> post.getDeletedAt() == null);
     }
 
     /**
@@ -118,5 +119,20 @@ public class PostService {
                 .map(tagName -> new Tag(tagName, post))
                 .toList());
         return post;
+    }
+
+    /**
+     * 投稿を論理削除する。
+     *
+     * <p>物理削除はせず、対象投稿の {@code deletedAt} に現在時刻を設定する。
+     * 以後の一覧、本文検索、タグ検索、詳細表示では未削除投稿だけを対象にする。</p>
+     *
+     * @param id 投稿 ID
+     */
+    @Transactional
+    public void delete(Long id) {
+        Post post = repository.findById(id)
+                .orElseThrow();
+        post.markDeleted(LocalDateTime.now());
     }
 }

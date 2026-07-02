@@ -183,7 +183,7 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("post--avatar-blue")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "href=\"/css/app.css?v=search-row-1\"")));
+                        "href=\"/css/app.css?v=logical-delete-1\"")));
     }
 
     @Test
@@ -236,9 +236,11 @@ class PostControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("blue")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("post--avatar-blue")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "href=\"/css/app.css?v=search-row-1\"")))
+                        "href=\"/css/app.css?v=logical-delete-1\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("like")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1/likes\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("削除")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1/delete\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"post\"")));
     }
 
@@ -269,5 +271,15 @@ class PostControllerTest {
 
         verify(clientHashService).generate(ipAddress, userAgent);
         verify(postLikeService).toggleLike(1L, "abc12345");
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_posts_id_delete_論理削除して一覧へ戻る")
+    void 投稿削除_POST_posts_id_delete_論理削除して一覧へ戻る() throws Exception {
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(1L);
     }
 }

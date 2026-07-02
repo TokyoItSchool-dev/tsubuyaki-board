@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.repository;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
+import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,9 @@ class PostRepositoryTest {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private TagRepository tagRepository;
+
     @Test
     @DisplayName("投稿一覧_51件以上ある場合_新着50件だけを返す")
     void 投稿一覧_51件以上ある場合_新着50件だけを返す() {
@@ -32,7 +37,7 @@ class PostRepositoryTest {
         }
         postRepository.saveAll(posts);
 
-        List<Post> actual = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> actual = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(actual).hasSize(50);
         assertThat(actual).extracting(Post::getBody)
@@ -58,9 +63,61 @@ class PostRepositoryTest {
         postRepository.save(new Post("carol", "検索とは関係ない投稿です",
                 LocalDateTime.parse("2026-05-23T10:02:00")));
 
-        List<Post> actual = postRepository.findByBodyContainingOrderByCreatedAtDesc("検索");
+        List<Post> actual = postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索");
 
         assertThat(actual).extracting(Post::getBody)
                 .containsExactly("検索とは関係ない投稿です", "Spring Boot の検索実装です");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_deletedAt設定済みの投稿を返さない")
+    void 投稿一覧_deletedAt設定済みの投稿を返さない() {
+        Post active = new Post("alice", "表示される投稿です",
+                LocalDateTime.parse("2026-05-23T10:00:00"));
+        Post deleted = new Post("bob", "削除済み投稿です",
+                LocalDateTime.parse("2026-05-23T10:01:00"));
+        deleted.markDeleted(LocalDateTime.parse("2026-05-23T10:02:00"));
+        postRepository.saveAll(List.of(active, deleted));
+
+        List<Post> actual = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(actual).extracting(Post::getBody)
+                .containsExactly("表示される投稿です");
+    }
+
+    @Test
+    @DisplayName("投稿検索_deletedAt設定済みの投稿を返さない")
+    void 投稿検索_deletedAt設定済みの投稿を返さない() {
+        Post active = new Post("alice", "検索に表示される投稿です",
+                LocalDateTime.parse("2026-05-23T10:00:00"));
+        Post deleted = new Post("bob", "検索に出したくない投稿です",
+                LocalDateTime.parse("2026-05-23T10:01:00"));
+        deleted.markDeleted(LocalDateTime.parse("2026-05-23T10:02:00"));
+        postRepository.saveAll(List.of(active, deleted));
+
+        List<Post> actual = postRepository.findByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索");
+
+        assertThat(actual).extracting(Post::getBody)
+                .containsExactly("検索に表示される投稿です");
+    }
+
+    @Test
+    @DisplayName("タグ検索_deletedAt設定済みの投稿を返さない")
+    void タグ検索_deletedAt設定済みの投稿を返さない() {
+        Post active = postRepository.save(new Post("alice", "表示される #Java",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        Post deleted = new Post("bob", "削除済み #Java",
+                LocalDateTime.parse("2026-05-23T10:01:00"));
+        deleted.markDeleted(LocalDateTime.parse("2026-05-23T10:02:00"));
+        Post savedDeleted = postRepository.save(deleted);
+        tagRepository.saveAll(List.of(new Tag("Java", active), new Tag("Java", savedDeleted)));
+
+        List<Post> exact = tagRepository.findPostsByNameOrderByCreatedAtDesc("Java");
+        List<Post> like = tagRepository.findPostsByNameContainingOrderByCreatedAtDesc("ava");
+
+        assertThat(exact).extracting(Post::getBody)
+                .containsExactly("表示される #Java");
+        assertThat(like).extracting(Post::getBody)
+                .containsExactly("表示される #Java");
     }
 }

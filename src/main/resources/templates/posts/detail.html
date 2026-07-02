@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>投稿詳細 - 社内つぶやきボード</title>
-    <link rel="stylesheet" th:href="@{/css/app.css(v='search-row-1')}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='logical-delete-1')}">
 </head>
 <body>
 <main>
@@ -31,6 +31,11 @@
             <input type="hidden" th:if="${_csrf != null}"
                    th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <button type="submit">like</button>
+        </form>
+        <form class="delete-form" th:action="@{/posts/{id}/delete(id=${postId})}" method="post">
+            <input type="hidden" th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit">削除</button>
         </form>
     </article>
 </main>

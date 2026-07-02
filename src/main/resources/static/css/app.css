@@ -133,3 +133,13 @@ button {
     overflow-wrap: anywhere;
     word-break: break-word;
 }
+
+.delete-form {
+    margin-top: 0.75rem;
+}
+
+.delete-form button {
+    border: 1px solid #fecaca;
+    background-color: #fee2e2;
+    color: #991b1b;
+}

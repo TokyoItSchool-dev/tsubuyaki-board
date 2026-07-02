@@ -1,5 +1,6 @@
 /*
- * 投稿本文、投稿者名、任意のアバター色、作成日時を保持する投稿エンティティ。
+ * 投稿本文、投稿者名、任意のアバター色、作成日時、論理削除日時を保持する
+ * 投稿エンティティ。
  */
 package com.example.tsubuyaki.domain;
 
@@ -35,6 +36,9 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     protected Post() {
         // JPA
     }
@@ -68,6 +72,22 @@ public class Post {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    /**
+     * 投稿を論理削除済みにする。
+     *
+     * <p>投稿データ自体は残し、一覧や検索では {@code deletedAt} が
+     * 入っている投稿を表示対象から外す。</p>
+     *
+     * @param deletedAt 削除日時
+     */
+    public void markDeleted(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     /**

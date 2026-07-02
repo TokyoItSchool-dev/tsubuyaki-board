@@ -13,6 +13,12 @@
         <Bug pattern="DM_EXIT,UC_USELESS_OBJECT"/>
     </Match>
 
+    <!-- Spring MVC Controller のコンストラクタ注入は DI コンテナ管理の参照を保持する -->
+    <Match>
+        <Class name="com.example.tsubuyaki.controller.PostController"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- JPA Entity / DTO は内部配列の expose をスタイル上許容 -->
     <Match>
         <Or>

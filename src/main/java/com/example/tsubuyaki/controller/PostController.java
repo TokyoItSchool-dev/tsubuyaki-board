@@ -1,6 +1,6 @@
 /*
- * 投稿画面の表示、本文検索、タグ検索、投稿作成、いいね操作を受け付ける
- * Spring MVC コントローラ。
+ * 投稿画面の表示、本文検索、タグ検索、投稿作成、論理削除、いいね操作を
+ * 受け付ける Spring MVC コントローラ。
  */
 package com.example.tsubuyaki.controller;
 
@@ -146,6 +146,25 @@ public class PostController {
         }
 
         postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor());
+        return "redirect:/posts";
+    }
+
+    /**
+     * 投稿を論理削除する。
+     *
+     * <p>投稿データは物理削除せず、サービス層で削除日時だけを設定する。
+     * 削除後は一覧画面へ戻る。</p>
+     *
+     * @param id 投稿 ID
+     * @return 投稿一覧へのリダイレクト
+     */
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        try {
+            postService.delete(id);
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
         return "redirect:/posts";
     }
 
