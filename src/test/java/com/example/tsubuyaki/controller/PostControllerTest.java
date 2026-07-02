@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -187,6 +188,17 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
                 .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"post\"[^>]*>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿UI_CSS_フォーム部品とリンクの視認性を整える")
+    void 投稿UI_CSS_フォーム部品とリンクの視認性を整える() throws Exception {
+        mockMvc.perform(get("/css/app.css"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(".post-form__field select")))
+                .andExpect(content().string(containsString("color: var(--color-accent);")))
+                .andExpect(content().string(containsString("flex-wrap: wrap;")))
+                .andExpect(content().string(containsString(".new-post-form button,\n.toolbar button")));
     }
 
     @Test
