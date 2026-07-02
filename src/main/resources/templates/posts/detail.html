@@ -32,6 +32,55 @@
             </form>
         </div>
     </article>
+
+    <section class="replies">
+        <h2>返信</h2>
+        <p class="empty-message" th:if="${#lists.isEmpty(replies)}">返信はまだありません</p>
+        <article class="reply" th:each="reply : ${replies}">
+            <div class="post__author-row">
+                <span th:class="'avatar avatar--' + ${reply.avatarColor}" aria-hidden="true"></span>
+                <span class="post__author" th:text="${reply.author}">返信者</span>
+            </div>
+            <p class="post__body" th:text="${reply.body}">返信本文</p>
+            <time class="post__created-at"
+                  th:datetime="${reply.createdAt}"
+                  th:text="${#temporals.format(reply.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:10</time>
+            <form th:if="${reply.id != null}"
+                  th:action="@{/posts/{postId}/replies/{replyId}/delete(postId=${postId},replyId=${reply.id})}"
+                  method="post">
+                <button type="submit">削除</button>
+            </form>
+        </article>
+    </section>
+
+    <section class="reply-form">
+        <h2>返信を書く</h2>
+        <form th:action="@{/posts/{id}/replies(id=${postId})}" th:object="${replyForm}" method="post">
+            <div>
+                <label for="replyAuthor">名前</label>
+                <input type="text" id="replyAuthor" th:field="*{author}" maxlength="30" required>
+                <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
+            </div>
+            <div>
+                <label for="replyBody">本文</label>
+                <textarea id="replyBody" th:field="*{body}" maxlength="280" rows="4" required></textarea>
+                <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
+            </div>
+            <div>
+                <label for="replyAvatarColor">色</label>
+                <select id="replyAvatarColor" th:field="*{avatarColor}">
+                    <option value="">未選択 (グレー)</option>
+                    <option value="red">赤</option>
+                    <option value="blue">青</option>
+                    <option value="green">緑</option>
+                    <option value="yellow">黄</option>
+                    <option value="gray">グレー</option>
+                </select>
+                <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
+            </div>
+            <button type="submit">返信する</button>
+        </form>
+    </section>
 </main>
 </body>
 </html>

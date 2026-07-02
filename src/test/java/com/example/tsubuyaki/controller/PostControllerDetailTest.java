@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostReply;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,8 +46,13 @@ class PostControllerDetailTest {
     @DisplayName("投稿詳細_存在するID_detail画面を表示し対象投稿を渡す")
     void detail_whenPostExists_returnsDetailViewWithPost() throws Exception {
         Post post = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "blue");
+        List<PostReply> replies = List.of(
+                new PostReply(post, "yamada", "ありがとうございます！", Instant.parse("2026-05-23T10:10:00Z"), "red"),
+                new PostReply(post, "sato", "参考になりました！", Instant.parse("2026-05-23T10:20:00Z"), "green")
+        );
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.repliesForPost(1L)).willReturn(replies);
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
@@ -57,6 +64,13 @@ class PostControllerDetailTest {
                 .andExpect(content().string(containsString("朝の共有です")))
                 .andExpect(content().string(containsString("2026-05-23 19:00")))
                 .andExpect(content().string(containsString("3 likes")))
+                .andExpect(content().string(containsString("返信")))
+                .andExpect(content().string(containsString("yamada")))
+                .andExpect(content().string(containsString("ありがとうございます！")))
+                .andExpect(content().string(containsString("avatar--red")))
+                .andExpect(content().string(containsString("sato")))
+                .andExpect(content().string(containsString("参考になりました！")))
+                .andExpect(content().string(containsString("avatar--green")))
                 .andExpect(content().string(containsString("Like")))
                 .andExpect(content().string(containsString("action=\"/posts/1/likes\"")))
                 .andExpect(content().string(containsString("method=\"post\"")))
@@ -64,6 +78,19 @@ class PostControllerDetailTest {
                 .andExpect(content().string(containsString("action=\"/posts/1/delete\"")))
                 .andExpect(content().string(not(containsString("class=\"post__link\""))))
                 .andExpect(content().string(not(containsString("href=\"/posts/1\""))));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_返信0件_返信はまだありませんを表示する")
+    void detail_whenNoReplies_showsEmptyReplyMessage() throws Exception {
+        Post post = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "blue");
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(0L);
+        given(postService.repliesForPost(1L)).willReturn(List.of());
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("返信はまだありません")));
     }
 
     @Test
@@ -135,6 +162,50 @@ class PostControllerDetailTest {
 
         mockMvc.perform(post("/posts/999/delete"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("返信投稿_POST_投稿成功後に投稿詳細へリダイレクトする")
+    void createReply_whenValid_redirectsToDetail() throws Exception {
+        given(postService.createReply(1L, "yamada", "ありがとうございます！", "blue")).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/replies")
+                        .param("author", "yamada")
+                        .param("body", "ありがとうございます！")
+                        .param("avatarColor", "blue"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).createReply(1L, "yamada", "ありがとうございます！", "blue");
+    }
+
+    @Test
+    @DisplayName("返信投稿_POST_入力エラー時は詳細画面を再表示する")
+    void createReply_whenInvalid_redisplaysDetailWithErrors() throws Exception {
+        Post post = new Post("alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "blue");
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+        given(postService.countLikes(1L)).willReturn(0L);
+        given(postService.repliesForPost(1L)).willReturn(List.of());
+
+        mockMvc.perform(post("/posts/1/replies")
+                        .param("author", " ")
+                        .param("body", " ")
+                        .param("avatarColor", "purple"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attributeHasFieldErrors("replyForm", "author", "body", "avatarColor"));
+    }
+
+    @Test
+    @DisplayName("返信削除_POST_削除後に投稿詳細へリダイレクトする")
+    void deleteReply_whenReplyExists_redirectsToDetail() throws Exception {
+        given(postService.deleteReply(1L, 2L)).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/replies/2/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(postService).deleteReply(1L, 2L);
     }
 
     private static String clientHash(String remoteAddr, String userAgent) throws NoSuchAlgorithmException {

@@ -36,7 +36,10 @@
                         <span class="post__author" th:text="${post.author}">投稿者</span>
                     </div>
                     <p class="post__body" th:text="${post.body}">本文</p>
-                    <p class="post__likes" th:text="'❤️ ' + (${post.id != null ? likeCounts[post.id] : 0})">❤️ 0</p>
+                    <p class="post__likes">
+                        <span th:text="'❤️ ' + (${post.id != null ? likeCounts[post.id] : 0})">❤️ 0</span>
+                        <span th:text="'💬 ' + (${post.id != null ? replyCounts[post.id] : 0})">💬 0</span>
+                    </p>
                     <time class="post__created-at"
                           th:datetime="${post.createdAt}"
                           th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>

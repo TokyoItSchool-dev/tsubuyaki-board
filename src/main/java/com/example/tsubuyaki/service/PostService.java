@@ -2,8 +2,10 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.domain.PostReply;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.PostReplyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +19,12 @@ public class PostService {
 
     private final PostRepository repository;
     private final PostLikeRepository likeRepository;
+    private final PostReplyRepository replyRepository;
 
-    public PostService(PostRepository repository, PostLikeRepository likeRepository) {
+    public PostService(PostRepository repository, PostLikeRepository likeRepository, PostReplyRepository replyRepository) {
         this.repository = repository;
         this.likeRepository = likeRepository;
+        this.replyRepository = replyRepository;
     }
 
     public List<Post> latest() {
@@ -80,5 +84,33 @@ public class PostService {
 
     public long countLikes(Long postId) {
         return likeRepository.countByPostId(postId);
+    }
+
+    public List<PostReply> repliesForPost(Long postId) {
+        return replyRepository.findByPostIdOrderByCreatedAtAsc(postId);
+    }
+
+    @Transactional
+    public boolean createReply(Long postId, String author, String body, String avatarColor) {
+        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(postId);
+        if (post.isEmpty()) {
+            return false;
+        }
+        replyRepository.save(new PostReply(post.get(), author, body, avatarColor));
+        return true;
+    }
+
+    @Transactional
+    public boolean deleteReply(Long postId, Long replyId) {
+        Optional<PostReply> reply = replyRepository.findByIdAndPostId(replyId, postId);
+        if (reply.isEmpty()) {
+            return false;
+        }
+        replyRepository.delete(reply.get());
+        return true;
+    }
+
+    public long countReplies(Long postId) {
+        return replyRepository.countByPostId(postId);
     }
 }

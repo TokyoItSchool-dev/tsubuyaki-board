@@ -2,8 +2,10 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.domain.PostReply;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.PostReplyRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +33,9 @@ class PostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private PostReplyRepository postReplyRepository;
 
     @InjectMocks
     private PostService postService;
@@ -231,5 +236,77 @@ class PostServiceTest {
 
         assertThat(count).isEqualTo(3L);
         verify(postLikeRepository).countByPostId(1L);
+    }
+
+    @Test
+    @DisplayName("返信一覧_repliesForPost_Repositoryから投稿IDで返信を取得する")
+    void repliesForPost_returnsRepliesFromRepository() {
+        List<PostReply> expectedReplies = List.of(
+                new PostReply(
+                        new Post("alice", "投稿本文", Instant.parse("2026-07-02T10:00:00Z")),
+                        "yamada",
+                        "ありがとうございます！",
+                        Instant.parse("2026-07-02T10:01:00Z"),
+                        "blue"
+                )
+        );
+        given(postReplyRepository.findByPostIdOrderByCreatedAtAsc(1L)).willReturn(expectedReplies);
+
+        List<PostReply> replies = postService.repliesForPost(1L);
+
+        assertThat(replies).isSameAs(expectedReplies);
+        verify(postReplyRepository).findByPostIdOrderByCreatedAtAsc(1L);
+    }
+
+    @Test
+    @DisplayName("返信投稿_createReply_投稿が存在すると返信を保存してtrueを返す")
+    void createReply_whenPostExists_savesReplyAndReturnsTrue() {
+        Post post = new Post("alice", "投稿本文", Instant.parse("2026-07-02T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+
+        boolean created = postService.createReply(1L, "yamada", "ありがとうございます！", "blue");
+
+        assertThat(created).isTrue();
+        verify(postReplyRepository).save(argThat(reply ->
+                reply.getPost() == post
+                        && "yamada".equals(reply.getAuthor())
+                        && "ありがとうございます！".equals(reply.getBody())
+                        && "blue".equals(reply.getAvatarColor())));
+    }
+
+    @Test
+    @DisplayName("返信投稿_createReply_アバター色未選択ならデフォルト色を保存する")
+    void createReply_whenAvatarColorNotSelected_savesDefaultColor() {
+        Post post = new Post("alice", "投稿本文", Instant.parse("2026-07-02T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+
+        boolean created = postService.createReply(1L, "yamada", "ありがとうございます！", null);
+
+        assertThat(created).isTrue();
+        verify(postReplyRepository).save(argThat(reply -> "gray".equals(reply.getAvatarColor())));
+    }
+
+    @Test
+    @DisplayName("返信削除_deleteReply_対象投稿の返信のみ削除してtrueを返す")
+    void deleteReply_whenReplyExists_deletesReplyAndReturnsTrue() {
+        Post post = new Post("alice", "投稿本文", Instant.parse("2026-07-02T10:00:00Z"));
+        PostReply reply = new PostReply(post, "yamada", "ありがとうございます！", Instant.parse("2026-07-02T10:01:00Z"), "blue");
+        given(postReplyRepository.findByIdAndPostId(2L, 1L)).willReturn(Optional.of(reply));
+
+        boolean deleted = postService.deleteReply(1L, 2L);
+
+        assertThat(deleted).isTrue();
+        verify(postReplyRepository).delete(reply);
+    }
+
+    @Test
+    @DisplayName("返信数_countReplies_Repositoryから投稿IDで件数を取得する")
+    void countReplies_returnsCountFromRepository() {
+        given(postReplyRepository.countByPostId(1L)).willReturn(5L);
+
+        long count = postService.countReplies(1L);
+
+        assertThat(count).isEqualTo(5L);
+        verify(postReplyRepository).countByPostId(1L);
     }
 }

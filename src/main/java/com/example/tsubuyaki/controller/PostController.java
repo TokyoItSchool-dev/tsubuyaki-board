@@ -38,6 +38,7 @@ public class PostController {
         List<Post> posts = postService.search(query);
         model.addAttribute("posts", posts);
         model.addAttribute("likeCounts", likeCounts(posts));
+        model.addAttribute("replyCounts", replyCounts(posts));
         model.addAttribute("q", query);
         model.addAttribute("searched", postService.hasSearchQuery(query));
         return "posts/list";
@@ -60,10 +61,7 @@ public class PostController {
 
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("post", postService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
-        model.addAttribute("postId", id);
-        model.addAttribute("likeCount", postService.countLikes(id));
+        populateDetailModel(id, model);
         return "posts/detail";
     }
 
@@ -81,6 +79,30 @@ public class PostController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         return "redirect:/posts";
+    }
+
+    @PostMapping("/posts/{id}/replies")
+    public String createReply(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("replyForm") PostForm replyForm,
+            BindingResult bindingResult,
+            Model model) {
+        if (bindingResult.hasErrors()) {
+            populateDetailModel(id, model);
+            return "posts/detail";
+        }
+        if (!postService.createReply(id, replyForm.getAuthor(), replyForm.getBody(), replyForm.avatarColorOrDefault())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("/posts/{postId}/replies/{replyId}/delete")
+    public String deleteReply(@PathVariable Long postId, @PathVariable Long replyId) {
+        if (!postService.deleteReply(postId, replyId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return "redirect:/posts/" + postId;
     }
 
     private static String clientHash(HttpServletRequest request) {
@@ -102,5 +124,26 @@ public class PostController {
             }
         }
         return likeCounts;
+    }
+
+    private Map<Long, Long> replyCounts(List<Post> posts) {
+        Map<Long, Long> replyCounts = new LinkedHashMap<>();
+        for (Post post : posts) {
+            if (post.getId() != null) {
+                replyCounts.put(post.getId(), postService.countReplies(post.getId()));
+            }
+        }
+        return replyCounts;
+    }
+
+    private void populateDetailModel(Long id, Model model) {
+        model.addAttribute("post", postService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("postId", id);
+        model.addAttribute("likeCount", postService.countLikes(id));
+        model.addAttribute("replies", postService.repliesForPost(id));
+        if (!model.containsAttribute("replyForm")) {
+            model.addAttribute("replyForm", new PostForm());
+        }
     }
 }

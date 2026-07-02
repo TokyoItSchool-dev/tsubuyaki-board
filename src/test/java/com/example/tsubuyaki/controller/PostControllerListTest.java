@@ -132,18 +132,21 @@ class PostControllerListTest {
         Post post = postWithId(1L, "alice", "朝の共有です", Instant.parse("2026-05-23T10:00:00Z"), "red");
         given(postService.search(null)).willReturn(List.of(post));
         given(postService.countLikes(1L)).willReturn(12L);
+        given(postService.countReplies(1L)).willReturn(5L);
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("likeCounts", Map.of(1L, 12L)))
+                .andExpect(model().attribute("replyCounts", Map.of(1L, 5L)))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        assertThat(html).contains("class=\"post__likes\"", "❤️ 12");
+        assertThat(html).contains("class=\"post__likes\"", "❤️ 12", "💬 5");
         assertThat(html).doesNotContain("Like");
         assertThat(html.indexOf("朝の共有です")).isLessThan(html.indexOf("❤️ 12"));
-        assertThat(html.indexOf("❤️ 12")).isLessThan(html.indexOf("2026-05-23 19:00"));
+        assertThat(html.indexOf("❤️ 12")).isLessThan(html.indexOf("💬 5"));
+        assertThat(html.indexOf("💬 5")).isLessThan(html.indexOf("2026-05-23 19:00"));
     }
 
     private static Post postWithId(Long id, String author, String body, Instant createdAt, String avatarColor) {
