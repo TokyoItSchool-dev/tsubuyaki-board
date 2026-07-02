@@ -190,7 +190,13 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
-                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"post\"[^>]*>.*")));
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<form[^>]*class=\"back-to-list-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*一覧へ戻る\\s*</button>\\s*</form>.*")))
+                .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"post\"[^>]*>.*")))
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<div[^>]*class=\"post-form__actions\"[^>]*>\\s*"
+                                + "<button[^>]*type=\"submit\"[^>]*>\\s*投稿\\s*</button>\\s*</div>.*")));
     }
 
     @Test

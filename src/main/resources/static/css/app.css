@@ -211,6 +211,18 @@ textarea:focus-visible {
     min-height: 7rem;
 }
 
+.post-form__actions {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.post-form__actions button {
+    grid-column: 2;
+    justify-self: start;
+    min-width: 5.5rem;
+}
+
 .error {
     grid-column: 2;
     margin: 0;
@@ -237,6 +249,14 @@ textarea:focus-visible {
     .post-form__field {
         grid-template-columns: 1fr;
         gap: 0.25rem;
+    }
+
+    .post-form__actions {
+        grid-template-columns: 1fr;
+    }
+
+    .post-form__actions button {
+        grid-column: 1;
     }
 
     .post-form__field label {
