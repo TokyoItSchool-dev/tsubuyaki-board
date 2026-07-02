@@ -328,22 +328,6 @@ textarea:focus {
     margin-top: 1rem;
 }
 
-.post__reply-authors {
-    display: grid;
-    gap: 0.25rem;
-    margin: -0.25rem 0 0.75rem;
-    padding-left: 1.75rem;
-    color: #315327;
-    font-weight: 700;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-}
-
-.post__reply-author {
-    margin: 0;
-    padding-left: min(calc(var(--reply-depth, 0) * 1.25rem), 4rem);
-}
-
 .reply-panel {
     margin-top: 1rem;
 }

@@ -190,8 +190,8 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿詳細_返信があるとき_リプライフォームと返信ツリーを表示する")
-    void 投稿詳細_返信があるとき_リプライフォームと返信ツリーを表示する() throws Exception {
+    @DisplayName("投稿詳細_返信があるとき_元投稿には矢印を付けず返信ツリーだけに矢印付きユーザー名を表示する")
+    void 投稿詳細_返信があるとき_元投稿には矢印を付けず返信ツリーだけに矢印付きユーザー名を表示する() throws Exception {
         Post post = new Post("alice", "詳細を表示する投稿", Instant.parse("2026-05-23T10:00:00Z"));
         setId(post, 1L);
         Reply rootReply = new Reply(post, null, "bob", "親返信です", Instant.parse("2026-05-23T10:01:00Z"));
@@ -209,20 +209,23 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("name=\"author\"")))
                 .andExpect(content().string(containsString("name=\"body\"")))
                 .andExpect(content().string(containsString("maxlength=\"1000\"")))
-                .andExpect(content().string(containsString("class=\"post__reply-authors\"")))
                 .andExpect(content().string(containsString("↳bob")))
                 .andExpect(content().string(containsString("↳carol")))
+                .andExpect(content().string(not(containsString("↳alice"))))
                 .andExpect(content().string(containsString("親返信です")))
                 .andExpect(content().string(containsString("返信への返信です")))
                 .andExpect(content().string(containsString("name=\"parentReplyId\" value=\"10\"")))
                 .andExpect(content().string(containsString("name=\"read\"")))
+                .andExpect(content().string(not(containsString("class=\"post__reply-authors\""))))
                 .andExpect(content().string(not(containsString("<button type=\"submit\">更新</button>"))))
                 .andReturn()
                 .getResponse()
                 .getContentAsString(StandardCharsets.UTF_8);
 
-        assertThat(html.indexOf("class=\"post__author\"")).isLessThan(html.indexOf("class=\"post__reply-authors\""));
-        assertThat(html.indexOf("class=\"post__reply-authors\"")).isLessThan(html.indexOf("class=\"post__body\""));
+        assertThat(html.indexOf("alice")).isLessThan(html.indexOf("詳細を表示する投稿"));
+        assertThat(html.indexOf("class=\"post__body\"")).isLessThan(html.indexOf("class=\"reply-tree\""));
+        assertThat(html.indexOf("↳bob")).isLessThan(html.indexOf("親返信です"));
+        assertThat(html.indexOf("↳carol")).isLessThan(html.indexOf("返信への返信です"));
     }
 
     @Test

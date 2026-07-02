@@ -20,12 +20,6 @@
                   aria-hidden="true"></span>
             <span th:text="${post.author}">投稿者</span>
         </p>
-        <div class="post__reply-authors" th:if="${!#lists.isEmpty(replies)}">
-            <p class="post__reply-author"
-               th:each="replyItem : ${replies}"
-               th:style="|--reply-depth: ${replyItem.depth}|"
-               th:text="|↳${replyItem.reply.author}|">↳返信者</p>
-        </div>
         <p class="post__body" th:text="${post.body}">本文</p>
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
