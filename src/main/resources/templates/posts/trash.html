@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ごみ箱 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main id="top">
+    <header class="page-header">
+        <div>
+            <p class="page-header__eyebrow">Trash</p>
+            <h1>ごみ箱</h1>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <a class="nav__link" th:href="@{/posts}">一覧</a>
+        <a class="nav__link" th:href="@{/posts/new}">新規投稿</a>
+    </nav>
+
+    <div class="toolbar">
+        <form th:action="@{/posts/trash/empty}" method="post">
+            <button class="button-danger" type="submit">ごみ箱を空にする</button>
+        </form>
+    </div>
+
+    <section class="posts">
+        <p class="empty-message" th:if="${#lists.isEmpty(posts)}">ごみ箱は空です。</p>
+        <article class="post" th:each="post : ${posts}">
+            <div class="post__id" th:text="|ID ${post.id}|">ID 1</div>
+            <div class="post__author" th:text="${post.author}">投稿者</div>
+            <p class="post__body post__body--full" th:text="${post.body}">本文</p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <div class="post-actions">
+                <form th:action="@{/posts/{id}/restore(id=${post.id})}" method="post">
+                    <button type="submit">一覧へ戻す</button>
+                </form>
+            </div>
+        </article>
+    </section>
+
+    <a class="back-to-top" href="#top" aria-label="TOPへ戻る">TOP</a>
+</main>
+<p id="trashEmptyMessage" th:if="${trashEmptyMessage != null}" th:text="${trashEmptyMessage}" hidden>
+    すでにごみ箱は空です
+</p>
+<script th:if="${trashEmptyMessage != null}">
+    const message = document.getElementById("trashEmptyMessage");
+    alert(message.textContent);
+</script>
+</body>
+</html>

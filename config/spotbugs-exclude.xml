@@ -23,6 +23,13 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
+    <!-- Spring Repository はコンストラクタ注入で保持するため防御コピー対象ではない -->
+    <Match>
+        <Class name="com.example.tsubuyaki.service.PostService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- Lombok 等で生成される equals/hashCode -->
     <Match>
         <Bug pattern="HE_EQUALS_USE_HASHCODE"/>

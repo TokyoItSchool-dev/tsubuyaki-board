@@ -16,8 +16,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class H2SeedMigrationTest {
 
     @Test
-    @DisplayName("H2シーダー_起動時_投稿10件を投入し次IDが11になる")
-    void H2シーダー_起動時_投稿10件を投入し次Idが11になる() throws SQLException {
+    @DisplayName("H2シーダー_起動時_投稿102件を投入し次IDが103になる")
+    void H2シーダー_起動時_投稿102件を投入し次Idが103になる() throws SQLException {
         String url = "jdbc:h2:mem:seed_" + UUID.randomUUID().toString().replace("-", "")
                 + ";MODE=Oracle;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=true";
 
@@ -28,9 +28,10 @@ class H2SeedMigrationTest {
                 .migrate();
 
         try (Connection connection = DriverManager.getConnection(url, "sa", "");
-             Statement statement = connection.createStatement()) {
-            assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts")).isEqualTo(10);
-            assertThat(singleLong(statement, "SELECT NEXT VALUE FOR posts_seq")).isEqualTo(11);
+            Statement statement = connection.createStatement()) {
+            assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts")).isEqualTo(102);
+            assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts WHERE CHAR_LENGTH(body) > 100")).isEqualTo(3);
+            assertThat(singleLong(statement, "SELECT NEXT VALUE FOR posts_seq")).isEqualTo(103);
         }
     }
 

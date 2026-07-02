@@ -8,24 +8,74 @@
 </head>
 <body>
 <main>
-    <h1>新規投稿</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
+    <h1 th:text="${formTitle}">新規投稿</h1>
+    <nav class="nav">
+        <a class="nav__link" th:href="@{/posts}">一覧に戻る</a>
+        <a class="nav__link" th:if="${postId != null}" th:href="@{/posts/{id}(id=${postId})}">詳細に戻る</a>
     </nav>
 
-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
-        <div>
+    <form class="post-form" th:action="@{${formAction}}" th:object="${postForm}" method="post" enctype="multipart/form-data">
+        <div class="form-field">
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
-        <div>
+        <div class="form-field">
             <label for="body">本文 (280 文字まで)</label>
-            <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
+            <textarea id="body"
+                      th:field="*{body}"
+                      maxlength="280"
+                      rows="4"
+                      required
+                      data-forbidden-pattern="&lt;script"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
-        <button type="submit">投稿</button>
+        <div class="form-field avatar-field">
+            <label for="avatarColor">アバター色</label>
+            <input type="color"
+                   id="avatarColor"
+                   name="avatarColor"
+                   th:value="*{avatarColor} ?: '#2563eb'"
+                   aria-describedby="avatarHelp">
+            <p id="avatarHelp" class="form-help">画像を選ぶ場合は、色は送信されません。</p>
+            <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
+        </div>
+        <div class="form-field avatar-field">
+            <label for="avatarImage">アバター画像</label>
+            <input type="file" id="avatarImage" name="avatarImage" accept="image/*">
+        </div>
+        <button id="postSubmit" type="submit" disabled th:text="${submitLabel}">投稿</button>
     </form>
+    <script>
+        (() => {
+            const author = document.getElementById("author");
+            const body = document.getElementById("body");
+            const avatarColor = document.getElementById("avatarColor");
+            const avatarImage = document.getElementById("avatarImage");
+            const submit = document.getElementById("postSubmit");
+            const scriptTagPattern = /<\s*\/?\s*script\b/i;
+            const hasAvatarImage = () => avatarImage && avatarImage.files.length > 0;
+            const refreshSubmitState = () => {
+                if (avatarColor && avatarImage) {
+                    avatarColor.disabled = hasAvatarImage();
+                }
+                submit.disabled = !author.value.trim()
+                    || !body.value.trim()
+                    || scriptTagPattern.test(body.value)
+                    || (!hasAvatarImage() && (!avatarColor || !avatarColor.value));
+            };
+
+            author.addEventListener("input", refreshSubmitState);
+            body.addEventListener("input", refreshSubmitState);
+            if (avatarColor) {
+                avatarColor.addEventListener("input", refreshSubmitState);
+            }
+            if (avatarImage) {
+                avatarImage.addEventListener("change", refreshSubmitState);
+            }
+            refreshSubmitState();
+        })();
+    </script>
 </main>
 </body>
 </html>
