@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.HexFormat;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -28,6 +29,11 @@ public class PostController {
 
     public PostController(PostService postService) {
         this.postService = postService;
+    }
+
+    @ModelAttribute("avatarColors")
+    public List<String> avatarColors() {
+        return List.of("blue", "green", "red", "pink", "yellow", "purple");
     }
 
     @GetMapping({ "/", "/posts" })
@@ -60,7 +66,7 @@ public class PostController {
             return "posts/form";
         }
 
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor());
         return "redirect:/posts";
     }
 

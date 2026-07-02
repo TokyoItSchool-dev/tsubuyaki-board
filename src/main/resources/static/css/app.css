@@ -51,6 +51,46 @@ h1 {
     background: white;
 }
 
+.post header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.post__avatar {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid white;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.post__avatar--blue {
+    background: #2563eb;
+}
+
+.post__avatar--green {
+    background: #16a34a;
+}
+
+.post__avatar--red {
+    background: #dc2626;
+}
+
+.post__avatar--pink {
+    background: #db2777;
+}
+
+.post__avatar--yellow {
+    background: #ca8a04;
+}
+
+.post__avatar--purple {
+    background: #7c3aed;
+}
+
 .post__author {
     font-weight: 600;
     margin-right: 0.5rem;

@@ -46,15 +46,15 @@ class PostRepositoryTest {
     @Test
     @DisplayName("Repository_投稿登録_投稿を保存できる")
     void 投稿登録_投稿を保存できる() {
-        Post post = new Post("alice", "M3 の投稿", Instant.parse("2026-06-26T10:00:00Z"));
+        Post post = new Post("alice", "M3 の投稿", "green", Instant.parse("2026-06-26T10:00:00Z"));
 
         Post savedPost = postRepository.saveAndFlush(post);
 
         assertThat(savedPost.getId()).isNotNull();
         assertThat(postRepository.findById(savedPost.getId()))
                 .get()
-                .extracting(Post::getAuthor, Post::getBody, Post::getCreatedAt)
-                .containsExactly("alice", "M3 の投稿", Instant.parse("2026-06-26T10:00:00Z"));
+                .extracting(Post::getAuthor, Post::getBody, Post::getAvatarColor, Post::getCreatedAt)
+                .containsExactly("alice", "M3 の投稿", "green", Instant.parse("2026-06-26T10:00:00Z"));
     }
 
     @Test

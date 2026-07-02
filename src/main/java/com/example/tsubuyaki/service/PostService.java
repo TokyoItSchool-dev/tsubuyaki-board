@@ -61,7 +61,12 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body) {
-        Post post = new Post(author.trim(), body.trim(), Instant.now());
+        return create(author, body, Post.DEFAULT_AVATAR_COLOR);
+    }
+
+    @Transactional
+    public Post create(String author, String body, String avatarColor) {
+        Post post = new Post(author.trim(), body.trim(), avatarColor, Instant.now());
         return repository.save(post);
     }
 

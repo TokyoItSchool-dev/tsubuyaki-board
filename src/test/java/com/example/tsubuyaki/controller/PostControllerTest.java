@@ -44,7 +44,7 @@ class PostControllerTest {
     @DisplayName("Controller_投稿一覧_GET_posts_投稿一覧をmodelに渡す")
     void 投稿一覧_GET_posts_投稿一覧をmodelに渡す() throws Exception {
         List<Post> posts = List.of(
-                new Post("alice", "新しい投稿", Instant.parse("2026-06-26T10:00:00Z")));
+                new Post("alice", "新しい投稿", "green", Instant.parse("2026-06-26T10:00:00Z")));
         given(postService.latest()).willReturn(posts);
 
         mockMvc.perform(get("/posts"))
@@ -53,6 +53,8 @@ class PostControllerTest {
                 .andExpect(model().attribute("posts", posts))
                 .andExpect(model().attribute("q", ""))
                 .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("post__avatar--green")))
+                .andExpect(content().string(containsString("アバター色 green")))
                 .andExpect(content().string(containsString("新しい投稿")));
     }
 
@@ -106,6 +108,8 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(model().attributeExists("avatarColors"))
+                .andExpect(content().string(containsString("name=\"avatarColor\"")))
                 .andExpect(content().string(containsString("新規投稿")));
     }
 
@@ -114,11 +118,27 @@ class PostControllerTest {
     void 投稿作成_正常な入力_投稿を保存して一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "M3 の投稿"))
+                        .param("body", "M3 の投稿")
+                        .param("avatarColor", "green"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "M3 の投稿");
+        verify(postService).create("alice", "M3 の投稿", "green");
+    }
+
+    @Test
+    @DisplayName("Controller_投稿作成_アバター色が許可外_保存せずフォームを再表示する")
+    void 投稿作成_アバター色が許可外_保存せずフォームを再表示する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "M3 の投稿")
+                        .param("avatarColor", "black"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "avatarColor"))
+                .andExpect(content().string(containsString("アバター色を選択してください")));
+
+        verify(postService, never()).create("alice", "M3 の投稿", "black");
     }
 
     @Test
@@ -157,7 +177,7 @@ class PostControllerTest {
     @Test
     @DisplayName("Controller_投稿詳細_存在するid_投稿をmodelに渡す")
     void 投稿詳細_存在するid_投稿をmodelに渡す() throws Exception {
-        Post post = new Post("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        Post post = new Post("alice", "M4 の詳細投稿", "purple", Instant.parse("2026-06-26T11:00:00Z"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postService.countLikes(1L)).willReturn(2L);
 
@@ -168,6 +188,8 @@ class PostControllerTest {
                 .andExpect(model().attribute("likeCount", 2L))
                 .andExpect(content().string(containsString("いいね 2")))
                 .andExpect(content().string(containsString("Like")))
+                .andExpect(content().string(containsString("post__avatar--purple")))
+                .andExpect(content().string(containsString("アバター色 purple")))
                 .andExpect(content().string(containsString("M4 の詳細投稿")));
     }
 

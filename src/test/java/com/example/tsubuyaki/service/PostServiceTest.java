@@ -76,15 +76,16 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("Service_create_投稿者と本文_作成日時を付けて保存する")
-    void create_投稿者と本文_作成日時を付けて保存する() {
+    @DisplayName("Service_create_投稿者と本文とアバター色_作成日時を付けて保存する")
+    void create_投稿者と本文とアバター色_作成日時を付けて保存する() {
         given(postRepository.save(any(Post.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
-        Post savedPost = postService.create("alice", "M3 の投稿");
+        Post savedPost = postService.create("alice", "M3 の投稿", "green");
 
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("M3 の投稿");
+        assertThat(savedPost.getAvatarColor()).isEqualTo("green");
         assertThat(savedPost.getCreatedAt()).isNotNull();
         verify(postRepository).save(savedPost);
     }

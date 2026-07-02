@@ -17,9 +17,14 @@
 
     <article class="post">
         <header>
-            <span class="post__author" th:text="${post.author}">投稿者</span>
-            <span class="post__created-at"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
+            <span class="post__avatar"
+                  th:classappend="|post__avatar--${post.avatarColor}|"
+                  th:attr="aria-label=|アバター色 ${post.avatarColor}|"></span>
+            <span>
+                <span class="post__author" th:text="${post.author}">投稿者</span>
+                <span class="post__created-at"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
+            </span>
         </header>
         <p class="post__body" th:text="${post.body}">本文</p>
         <footer class="post__actions">
