@@ -25,13 +25,14 @@
         <p th:if="${#lists.isEmpty(posts) && !#strings.isEmpty(q)}">検索結果はありません</p>
         <div class="posts-list" th:if="${!#lists.isEmpty(posts)}">
             <a class="post-item-link" th:each="post : ${posts}" th:href="@{/posts/{id}(id=${post.id})}">
-                <article class="post-item">
+                <article class="post-item" th:style="|background-color: #${post.color}|">
                     <header class="post-item__header">
                         <span class="post-item__author" th:text="${post.author}">投稿者</span>
                         <time class="post-item__created-at"
                               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
                     </header>
-                    <p class="post-item__body" th:text="${post.body}">本文</p>
+                    <p class="post-item__body" th:if="${post.id == null}" th:text="${post.body}">本文</p>
+                    <p class="post-item__body" th:if="${post.id != null}"><span th:each="segment : ${bodySegmentsByPostId.get(post.id)}" th:class="${segment.tag} ? 'post-tag-inline' : null" th:text="${segment.text}">本文</span></p>
                     <p class="post-item__likes"
                        th:text="|いいね ${likeCounts.get(post.id) ?: 0}|">いいね 0</p>
                 </article>

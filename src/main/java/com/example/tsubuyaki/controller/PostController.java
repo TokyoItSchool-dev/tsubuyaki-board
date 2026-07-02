@@ -3,6 +3,8 @@ package com.example.tsubuyaki.controller;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.service.TagService;
+import com.example.tsubuyaki.service.TagTextSegment;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -31,27 +33,39 @@ public class PostController {
 
     private final PostService postService;
     private final PostLikeService postLikeService;
+    private final TagService tagService;
 
-    public PostController(PostService postService, PostLikeService postLikeService) {
+    public PostController(PostService postService, PostLikeService postLikeService, TagService tagService) {
         this.postService = postService;
         this.postLikeService = postLikeService;
+        this.tagService = tagService;
     }
 
     @GetMapping({ "/", "/posts" })
     public String list(@RequestParam(required = false) String q, Model model) {
         String keyword = normalizeKeyword(q);
         List<Post> posts = keyword.isEmpty() ? postService.latest() : postService.search(keyword);
-        model.addAttribute("posts", posts);
-        model.addAttribute("likeCounts", likeCounts(posts));
+        addPostListAttributes(model, posts);
         model.addAttribute("q", keyword);
         return "posts/list";
     }
 
+    @GetMapping("/tags/{name}")
+    public String tagList(@PathVariable String name, Model model) {
+        List<Post> posts = postService.findByIdsInOrder(tagService.postIdsByPathName(name));
+        addPostListAttributes(model, posts);
+        model.addAttribute("q", "");
+        return "posts/list";
+    }
+
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable long id, Model model) {
+    public String detail(@PathVariable long id, Model model, HttpServletRequest request) {
         try {
-            model.addAttribute("post", postService.findById(id));
+            Post post = postService.findById(id);
+            model.addAttribute("post", post);
             model.addAttribute("likeCount", postLikeService.countByPostId(id));
+            model.addAttribute("bodySegments", bodySegments(post));
+            model.addAttribute("canDelete", post.getClientHash().equals(clientHash(request)));
         } catch (NoSuchElementException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "投稿が見つかりません。", e);
         }
@@ -70,18 +84,32 @@ public class PostController {
         return "redirect:/posts/" + id;
     }
 
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable long id, HttpServletRequest request) {
+        if (!postService.delete(id, clientHash(request))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "投稿を削除できません。");
+        }
+        return "redirect:/posts";
+    }
+
     @PostMapping("/posts")
-    public String create(@Valid PostForm postForm, BindingResult bindingResult) {
+    public String create(@Valid PostForm postForm, BindingResult bindingResult, HttpServletRequest request) {
         if (bindingResult.hasErrors()) {
             return "posts/form";
         }
         try {
-            postService.create(postForm.getAuthor(), postForm.getBody());
+            postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getColor(), clientHash(request));
         } catch (DataAccessException e) {
             bindingResult.reject("post.create.failed", "投稿の登録に失敗しました。時間をおいて再度お試しください。");
             return "posts/form";
         }
         return "redirect:/posts";
+    }
+
+    private void addPostListAttributes(Model model, List<Post> posts) {
+        model.addAttribute("posts", posts);
+        model.addAttribute("likeCounts", likeCounts(posts));
+        model.addAttribute("bodySegmentsByPostId", bodySegmentsByPostId(posts));
     }
 
     private Map<Long, Long> likeCounts(List<Post> posts) {
@@ -92,6 +120,24 @@ public class PostController {
             }
         }
         return likeCounts;
+    }
+
+    private Map<Long, List<TagTextSegment>> bodySegmentsByPostId(List<Post> posts) {
+        Map<Long, List<TagTextSegment>> segmentsByPostId = new LinkedHashMap<>();
+        for (Post post : posts) {
+            if (post.getId() != null) {
+                segmentsByPostId.put(post.getId(), bodySegments(post));
+            }
+        }
+        return segmentsByPostId;
+    }
+
+    private List<TagTextSegment> bodySegments(Post post) {
+        List<TagTextSegment> segments = tagService.bodySegments(post.getBody());
+        if (segments == null || segments.isEmpty()) {
+            return List.of(new TagTextSegment(post.getBody(), false));
+        }
+        return segments;
     }
 
     private String normalizeKeyword(String q) {

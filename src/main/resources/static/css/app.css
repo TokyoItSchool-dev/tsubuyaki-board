@@ -37,10 +37,11 @@ h1 {
 
 .post {
     padding: 1rem;
-    border: 1px solid var(--color-border);
+    border: 1px solid #111;
     border-radius: 8px;
     margin-bottom: 0.75rem;
     background: white;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
 }
 
 .post__author {
@@ -57,12 +58,12 @@ h1 {
     margin-top: 0.5rem;
     white-space: pre-wrap;
     word-break: break-word;
+    text-align: left;
+    vertical-align: top;
 }
 
 .posts-list {
     width: 100%;
-    background: white;
-    border-top: 1px solid var(--color-border);
 }
 
 .post-item-link {
@@ -78,7 +79,10 @@ h1 {
 
 .post-item {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--color-border);
+    border: 1px solid #111;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
 }
 
 .post-item__header {
@@ -109,11 +113,18 @@ h1 {
     margin: 0.75rem 0 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+    text-align: left;
+    vertical-align: top;
 }
 
 .post-item__likes {
     margin: 0.5rem 0 0;
     color: var(--color-muted);
+}
+
+.post-tag-inline {
+    color: var(--color-accent);
+    font-weight: 600;
 }
 
 .post-detail {
