@@ -36,16 +36,66 @@ h1 {
 }
 
 .post {
-    padding: 1rem;
+    padding: 1rem 1.125rem;
     border: 1px solid var(--color-border);
     border-radius: 8px;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.875rem;
     background: white;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 6%);
+}
+
+.post--list {
+    transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.post--list:hover {
+    box-shadow: 0 8px 20px rgb(15 23 42 / 10%);
+    transform: translateY(-2px);
+}
+
+.post__link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.post__author-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.post__avatar {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.post__avatar--red {
+    background: #dc2626;
+}
+
+.post__avatar--blue {
+    background: #2563eb;
+}
+
+.post__avatar--green {
+    background: #16a34a;
+}
+
+.post__avatar--yellow {
+    background: #eab308;
+}
+
+.post__avatar--purple {
+    background: #9333ea;
 }
 
 .post__author {
-    font-weight: 600;
-    margin-right: 0.5rem;
+    font-size: 0.98rem;
+    font-weight: 700;
 }
 
 .post__created-at {
@@ -54,8 +104,85 @@ h1 {
 }
 
 .post__body {
-    margin-top: 0.5rem;
+    margin: 0.55rem 0 0;
+    font-size: 0.98rem;
+    line-height: 1.7;
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
+}
+
+.post__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.post__footer-meta,
+.post__footer-actions {
+    display: flex;
+    align-items: center;
+}
+
+.post__list-like-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.post__like-heart {
+    color: #dc2626;
+}
+
+.post__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.post__actions-meta,
+.post__actions-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.post__actions-buttons {
+    gap: 0.5rem;
+}
+
+.post__like-form,
+.post__delete-form {
+    margin: 0;
+}
+
+.post__like-button,
+.post__delete-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid var(--color-border);
+    background: white;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    min-height: 2rem;
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.post__like-number {
+    color: var(--color-muted);
+}
+
+.post__like-button:hover,
+.post__delete-button:hover {
+    border-color: #cbd5e1;
+    background: #f9fafb;
 }

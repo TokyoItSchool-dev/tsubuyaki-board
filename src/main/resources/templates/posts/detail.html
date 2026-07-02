@@ -14,18 +14,29 @@
     </nav>
 
     <article class="post">
-        <div class="post__author" th:text="${post.author}">投稿者</div>
+        <div class="post__author-line">
+            <span class="post__avatar" th:classappend="|post__avatar--${post.avatarColor}|"></span>
+            <span class="post__author" th:text="${post.author}">投稿者</span>
+        </div>
         <p class="post__body" th:text="${post.body}">本文</p>
-        <time class="post__created-at"
-              th:datetime="${post.createdAt}"
-              th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-        <div class="post__likes" th:text="|いいね ${likeCount}|">いいね 0</div>
-        <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
-            <button type="submit">Like</button>
-        </form>
-        <form class="post__delete-form" th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
-            <button type="submit">削除</button>
-        </form>
+        <div class="post__actions">
+            <div class="post__actions-meta">
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${@postTimeFormatter.format(post.createdAt)}">たった今</time>
+            </div>
+            <div class="post__actions-buttons">
+                <form class="post__like-form post__actions-like" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                    <button class="post__like-button" type="submit">
+                        <span class="post__like-heart" th:text="${liked ? '♥' : '♡'}">♡</span>
+                        <span class="post__like-number" th:text="${likeCount}">0</span>
+                    </button>
+                </form>
+                <form class="post__delete-form post__actions-delete" th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+                    <button class="post__delete-button" type="submit">🗑 削除</button>
+                </form>
+            </div>
+        </div>
     </article>
 </main>
 </body>

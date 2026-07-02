@@ -25,12 +25,27 @@
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
-        <article class="post" th:each="post : ${posts}">
-            <div class="post__author" th:text="${post.author}">投稿者</div>
-            <p class="post__body" th:text="${post.body}">本文</p>
-            <time class="post__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <article class="post post--list" th:each="post : ${posts}">
+            <a class="post__link" th:href="@{/posts/{id}(id=${post.id})}">
+                <div class="post__author-line">
+                    <span class="post__avatar" th:classappend="|post__avatar--${post.avatarColor}|"></span>
+                    <span class="post__author" th:text="${post.author}">投稿者</span>
+                </div>
+                <p class="post__body" th:text="${post.body}">本文</p>
+                <div class="post__footer">
+                    <div class="post__footer-meta">
+                        <time class="post__created-at"
+                              th:datetime="${post.createdAt}"
+                              th:text="${@postTimeFormatter.format(post.createdAt)}">たった今</time>
+                    </div>
+                    <div class="post__footer-actions">
+                        <span class="post__list-like-count">
+                            <span class="post__like-heart">♥</span>
+                            <span class="post__like-number" th:text="${likeCounts.get(post.id) ?: 0}">0</span>
+                        </span>
+                    </div>
+                </div>
+            </a>
         </article>
     </section>
 </main>

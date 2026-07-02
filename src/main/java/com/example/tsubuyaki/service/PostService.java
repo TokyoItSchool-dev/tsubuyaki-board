@@ -43,6 +43,10 @@ public class PostService {
         return postLikeRepository.countByPostId(postId);
     }
 
+    public boolean isLiked(Long postId, String clientHash) {
+        return postLikeRepository.existsByPostIdAndClientHash(postId, clientHash);
+    }
+
     @Transactional
     public Post createPost(String author, String body) {
         return createPost(author, body, Post.DEFAULT_AVATAR_COLOR);

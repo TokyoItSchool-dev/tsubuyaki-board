@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.controller;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class PostController {
@@ -43,12 +46,12 @@ public class PostController {
     public String list(@RequestParam(name = "q", required = false) String keyword, Model model) {
         if (StringUtils.hasText(keyword)) {
             String trimmedKeyword = keyword.trim();
-            model.addAttribute("posts", postService.searchPosts(trimmedKeyword));
+            addPosts(model, postService.searchPosts(trimmedKeyword));
             model.addAttribute("keyword", trimmedKeyword);
             return "posts/list";
         }
 
-        model.addAttribute("posts", postService.findLatestPosts());
+        addPosts(model, postService.findLatestPosts());
         model.addAttribute("keyword", "");
         return "posts/list";
     }
@@ -61,10 +64,11 @@ public class PostController {
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
         model.addAttribute("post", postService.findPost(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         model.addAttribute("likeCount", postService.countLikes(id));
+        model.addAttribute("liked", postService.isLiked(id, clientHash(request)));
         return "posts/detail";
     }
 
@@ -110,6 +114,15 @@ public class PostController {
 
     private void addAvatarColors(Model model) {
         model.addAttribute("avatarColors", AVATAR_COLORS);
+    }
+
+    private void addPosts(Model model, List<Post> posts) {
+        Map<Long, Long> likeCounts = new LinkedHashMap<>();
+        for (Post post : posts) {
+            likeCounts.put(post.getId(), postService.countLikes(post.getId()));
+        }
+        model.addAttribute("posts", posts);
+        model.addAttribute("likeCounts", likeCounts);
     }
 
     public record AvatarColorOption(String value, String label) {

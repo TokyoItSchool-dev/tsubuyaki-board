@@ -2,29 +2,41 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.PostTimeFormatter;
 import com.example.tsubuyaki.web.dto.PostForm;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,13 +46,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(PostController.class)
+@Import(PostTimeFormatter.class)
 class PostControllerTest {
+
+    private static final ZoneId TEST_ZONE = ZoneId.of("Asia/Tokyo");
+
+    private static final ZonedDateTime TEST_NOW = ZonedDateTime.of(2026, 5, 24, 15, 30, 0, 0, TEST_ZONE);
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
     private PostService postService;
+
+    @MockitoBean
+    private Clock clock;
+
+    @BeforeEach
+    void setUpClock() {
+        lenient().when(clock.instant()).thenReturn(TEST_NOW.toInstant());
+        lenient().when(clock.getZone()).thenReturn(TEST_ZONE);
+    }
 
     @Test
     @DisplayName("投稿一覧_0件の場合_まだ投稿はありませんを表示する")
@@ -106,7 +132,174 @@ class PostControllerTest {
                 .andReturn();
 
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-        assertThat(html).containsSubsequence("alice", "本文です", "2026-05-23");
+        assertThat(html).containsSubsequence("alice", "本文です", "昨日");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_各投稿に詳細画面へのリンクを表示する")
+    void 投稿一覧_投稿があるとき_各投稿に詳細画面へのリンクを表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(List.of(
+                postWithId(1L),
+                postWithId(2L)
+        ));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("href=\"/posts/1\"")
+                .contains("href=\"/posts/2\"");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿カードにホバー時のスタイルを適用し詳細画面への遷移を維持する")
+    void 投稿一覧_投稿カードにホバー時のスタイルを適用し詳細画面への遷移を維持する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(List.of(postWithId(1L)));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attributeExists("posts"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("class=\"post post--list\"")
+                .contains("class=\"post__link\"")
+                .contains("href=\"/posts/1\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".post--list:hover")
+                .doesNotContain(".post:hover")
+                .contains("box-shadow")
+                .contains("transform")
+                .contains("transition");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_avatarColorに応じたアバター色表示要素を表示する")
+    void 投稿一覧_投稿があるとき_avatarColorに応じたアバター色表示要素を表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(List.of(
+                postWithIdAndAvatarColor(1L, "purple")
+        ));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("post__avatar")
+                .contains("post__avatar--purple");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_各投稿の右下にハート形式のいいね数を表示する")
+    void 投稿一覧_投稿があるとき_各投稿の右下にハート形式のいいね数を表示する() throws Exception {
+        List<Post> posts = List.of(postWithId(1L), postWithId(2L));
+        given(postService.findLatestPosts()).willReturn(posts);
+        given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.countLikes(2L)).willReturn(0L);
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attributeExists("likeCounts"))
+                .andReturn();
+
+        @SuppressWarnings("unchecked")
+        Map<Long, Long> likeCounts = (Map<Long, Long>) result.getModelAndView().getModel().get("likeCounts");
+        assertThat(likeCounts).containsEntry(1L, 3L).containsEntry(2L, 0L);
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("post__list-like-count")
+                .contains("post__like-heart\">♥")
+                .contains("post__like-number\">3")
+                .contains("post__like-number\">0")
+                .doesNotContain("action=\"/posts/1/likes\"")
+                .doesNotContain("action=\"/posts/2/likes\"");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿カード下部に投稿日といいね数を左右同じ高さで表示し既存機能を維持する")
+    void 投稿一覧_投稿カード下部に投稿日といいね数を左右同じ高さで表示し既存機能を維持する() throws Exception {
+        List<Post> posts = List.of(postWithId(1L));
+        given(postService.findLatestPosts()).willReturn(posts);
+        given(postService.countLikes(1L)).willReturn(3L);
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attributeExists("likeCounts"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .containsSubsequence(
+                        "class=\"post__footer\"",
+                        "class=\"post__footer-meta\"",
+                        "class=\"post__created-at\"",
+                        "昨日",
+                        "class=\"post__footer-actions\"",
+                        "class=\"post__list-like-count\"",
+                        "post__like-heart\">♥",
+                        "post__like-number\">3")
+                .contains("href=\"/posts/1\"")
+                .doesNotContain("action=\"/posts/1/likes\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".post__footer")
+                .contains("justify-content: space-between")
+                .contains("align-items: center")
+                .contains(".post__footer-actions")
+                .contains("display: flex");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿日時をTwitter風のルールで表示する")
+    void 投稿一覧_投稿日時をTwitter風のルールで表示する() throws Exception {
+        ZonedDateTime olderPostTime = TEST_NOW.minusDays(2).withHour(9).withMinute(5);
+        List<Post> posts = List.of(
+                postWithIdAndCreatedAt(1L, TEST_NOW.minusSeconds(30).toInstant()),
+                postWithIdAndCreatedAt(2L, TEST_NOW.minusMinutes(5).toInstant()),
+                postWithIdAndCreatedAt(3L, TEST_NOW.minusHours(2).toInstant()),
+                postWithIdAndCreatedAt(4L, TEST_NOW.minusDays(1).toInstant()),
+                postWithIdAndCreatedAt(5L, olderPostTime.toInstant())
+        );
+        given(postService.findLatestPosts()).willReturn(posts);
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("たった今")
+                .contains("5分前")
+                .contains("2時間前")
+                .contains("昨日")
+                .contains(olderPostTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿をクリックした場合_GET_posts_idで詳細ビューを表示する")
+    void 投稿一覧_投稿をクリックした場合_GET_posts_idで詳細ビューを表示する() throws Exception {
+        Post post = postWithId(1L);
+        given(postService.findPost(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", sameInstance(post)));
     }
 
     @Test
@@ -235,28 +428,173 @@ class PostControllerTest {
 
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(html)
-                .containsSubsequence("alice", "詳細本文", "2026-05-23")
+                .containsSubsequence("alice", "詳細本文", "昨日")
                 .contains("href=\"/posts\"");
     }
 
     @Test
-    @DisplayName("投稿詳細_存在するidの場合_いいね数とLikeボタンを表示する")
-    void 投稿詳細_存在するidの場合_いいね数とLikeボタンを表示する() throws Exception {
-        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
-        given(postService.countLikes(1L)).willReturn(3L);
+    @DisplayName("投稿詳細_投稿日時をTwitter風のルールで表示する")
+    void 投稿詳細_投稿日時をTwitter風のルールで表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(
+                new Post("alice", "詳細本文", TEST_NOW.minus(Duration.ofMinutes(5)).toInstant())
+        ));
 
         MvcResult result = mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("5分前");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいねしていない場合_ハート付きLikeボタンと右側にいいね数を表示する")
+    void 投稿詳細_いいねしていない場合_ハート付きLikeボタンと右側にいいね数を表示する() throws Exception {
+        String remoteAddress = "203.0.113.10";
+        String userAgent = "JUnit Browser";
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.isLiked(1L, clientHash(remoteAddress, userAgent))).willReturn(false);
+
+        MvcResult result = mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .header("User-Agent", userAgent))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("likeCount", 3L))
+                .andExpect(model().attribute("liked", false))
                 .andReturn();
 
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(html)
-                .contains("いいね 3")
                 .contains("action=\"/posts/1/likes\"")
                 .contains("method=\"post\"")
-                .contains(">Like<");
+                .contains("post__like-heart\">♡")
+                .contains("post__like-number\">3");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいねしている場合_塗りつぶしハートと右側にいいね数を表示する")
+    void 投稿詳細_いいねしている場合_塗りつぶしハートと右側にいいね数を表示する() throws Exception {
+        String remoteAddress = "203.0.113.10";
+        String userAgent = "JUnit Browser";
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.isLiked(1L, clientHash(remoteAddress, userAgent))).willReturn(true);
+
+        MvcResult result = mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .header("User-Agent", userAgent))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("likeCount", 3L))
+                .andExpect(model().attribute("liked", true))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("action=\"/posts/1/likes\"")
+                .contains("method=\"post\"")
+                .contains("post__like-heart\">♥")
+                .contains("post__like-number\">3");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidの場合_アクションエリアの左側にいいね数_右側に削除ボタンを表示する")
+    void 投稿詳細_存在するidの場合_アクションエリアの左側にいいね数_右側に削除ボタンを表示する() throws Exception {
+        String remoteAddress = "203.0.113.10";
+        String userAgent = "JUnit Browser";
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.isLiked(1L, clientHash(remoteAddress, userAgent))).willReturn(true);
+
+        MvcResult result = mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .header("User-Agent", userAgent))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("post__actions")
+                .contains("post__actions-like")
+                .contains("post__actions-delete")
+                .contains("post__delete-button")
+                .containsSubsequence(
+                        "post__actions-like",
+                        "post__like-heart\">♥",
+                        "post__like-number\">3",
+                        "post__actions-delete",
+                        "🗑 削除");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidの場合_左下に日時_右下にいいねボタンと削除ボタンを横並びで表示する")
+    void 投稿詳細_存在するidの場合_左下に日時_右下にいいねボタンと削除ボタンを横並びで表示する() throws Exception {
+        String remoteAddress = "203.0.113.10";
+        String userAgent = "JUnit Browser";
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.isLiked(1L, clientHash(remoteAddress, userAgent))).willReturn(true);
+
+        MvcResult result = mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .header("User-Agent", userAgent))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .containsSubsequence(
+                        "post__actions",
+                        "post__actions-meta",
+                        "post__created-at",
+                        "昨日",
+                        "post__actions-buttons",
+                        "post__actions-like",
+                        "post__actions-delete")
+                .contains("action=\"/posts/1/likes\"")
+                .contains("action=\"/posts/1/delete\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".post__actions")
+                .contains("justify-content: space-between")
+                .contains("align-items: center")
+                .contains(".post__actions-buttons")
+                .contains("display: flex")
+                .contains("gap:");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するidの場合_avatarColorに応じたアバター色表示要素を表示する")
+    void 投稿詳細_存在するidの場合_avatarColorに応じたアバター色表示要素を表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithIdAndAvatarColor(1L, "red")));
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("post__avatar")
+                .contains("post__avatar--red");
     }
 
     @Test
@@ -273,7 +611,7 @@ class PostControllerTest {
         assertThat(html)
                 .contains("action=\"/posts/1/delete\"")
                 .contains("method=\"post\"")
-                .contains(">削除<");
+                .contains(">🗑 削除<");
     }
 
     @Test
@@ -425,6 +763,18 @@ class PostControllerTest {
 
     private Post postWithId(Long id) {
         Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
+    }
+
+    private Post postWithIdAndCreatedAt(Long id, Instant createdAt) {
+        Post post = new Post("alice", "詳細本文", createdAt);
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
+    }
+
+    private Post postWithIdAndAvatarColor(Long id, String avatarColor) {
+        Post post = new Post("alice", "詳細本文", avatarColor, Instant.parse("2026-05-23T10:00:00Z"));
         ReflectionTestUtils.setField(post, "id", id);
         return post;
     }
