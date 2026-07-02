@@ -134,19 +134,20 @@ class PostControllerTest {
     @DisplayName("タグ別一覧_GET_tags_name_関連投稿をposts_listへ渡す")
     void タグ別一覧_GetTagsName_関連投稿をPostsListへ渡す() throws Exception {
         Post post = new Post("alice", "hello #研修", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.listByTag("研修")).willReturn(List.of(post));
+        given(postService.listByTag("研修", "latest")).willReturn(List.of(post));
 
         mockMvc.perform(get("/tags/研修"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", List.of(post)))
-                .andExpect(model().attribute("tagName", "研修"));
+                .andExpect(model().attribute("tagName", "研修"))
+                .andExpect(model().attribute("sort", "latest"));
     }
 
     @Test
     @DisplayName("タグ別一覧_存在しないタグ_空一覧を表示する")
     void タグ別一覧_存在しないタグ_空一覧を表示する() throws Exception {
-        given(postService.listByTag("unknown")).willReturn(Collections.emptyList());
+        given(postService.listByTag("unknown", "latest")).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/tags/unknown"))
                 .andExpect(status().isOk())
@@ -154,6 +155,102 @@ class PostControllerTest {
                 .andExpect(model().attribute("posts", Collections.emptyList()))
                 .andExpect(model().attribute("tagName", "unknown"))
                 .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_sort未指定_latestでServiceを呼ぶ")
+    void タグ別一覧_sort未指定_latestでServiceを呼ぶ() throws Exception {
+        given(postService.listByTag("研修", "latest")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/研修"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("sort", "latest"));
+
+        then(postService).should().listByTag("研修", "latest");
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_sort_latest_latestでServiceを呼ぶ")
+    void タグ別一覧_sort_latest_latestでServiceを呼ぶ() throws Exception {
+        given(postService.listByTag("研修", "latest")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/研修").param("sort", "latest"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("sort", "latest"));
+
+        then(postService).should().listByTag("研修", "latest");
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_sort_popular_popularでServiceを呼ぶ")
+    void タグ別一覧_sort_popular_popularでServiceを呼ぶ() throws Exception {
+        given(postService.listByTag("研修", "popular")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/研修").param("sort", "popular"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("sort", "popular"));
+
+        then(postService).should().listByTag("研修", "popular");
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_sort不正_latestとして扱う")
+    void タグ別一覧_sort不正_latestとして扱う() throws Exception {
+        given(postService.listByTag("研修", "latest")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/研修").param("sort", "oldest"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("sort", "latest"));
+
+        then(postService).should().listByTag("研修", "latest");
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_タイトルと見出しにタグ名を表示する")
+    void タグ別一覧_タイトルと見出しにタグ名を表示する() throws Exception {
+        given(postService.listByTag("研修", "latest")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/研修"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>#研修 - 社内つぶやきボード</title>")))
+                .andExpect(content().string(containsString("<h1>#研修</h1>")));
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_並び替えリンクを表示する")
+    void タグ別一覧_並び替えリンクを表示する() throws Exception {
+        given(postService.listByTag("spring", "popular")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/spring").param("sort", "popular"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<a href=\"/tags/spring?sort=latest\"")))
+                .andExpect(content().string(containsString(">最新ポスト</a>")))
+                .andExpect(content().string(containsString("<a href=\"/tags/spring?sort=popular\"")))
+                .andExpect(content().string(containsString(">人気ポスト</a>")));
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_検索フォームと更新ボタンを表示しない")
+    void タグ別一覧_検索フォームと更新ボタンを表示しない() throws Exception {
+        given(postService.listByTag("spring", "latest")).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/tags/spring"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("class=\"search-form\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("class=\"refresh-form\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("本文を検索"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString(">更新</button>"))));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_通常表示_タグ並び替えリンクを表示しない")
+    void 投稿一覧_通常表示_タグ並び替えリンクを表示しない() throws Exception {
+        given(postService.latest()).willReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("最新ポスト"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("人気ポスト"))));
     }
 
     @Test
@@ -313,6 +410,18 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("<p class=\"post__body\">hello #spring world</p>")))
                 .andExpect(content().string(matchesPattern("(?s).*<div class=\"post__tags\">\\s*"
                         + "<a[^>]+href=\"/tags/spring\"[^>]*>#spring</a>\\s*</div>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_タグなし_タグリンク領域を表示しない")
+    void 投稿詳細_タグなし_タグリンク領域を表示しない() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:15:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("post__tags"))));
     }
 
     @Test

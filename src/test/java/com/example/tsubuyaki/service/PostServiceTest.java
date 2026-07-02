@@ -319,12 +319,61 @@ class PostServiceTest {
         Tag tag = new Tag("研修");
         Post first = new Post("alice", "new #研修", Instant.parse("2026-05-23T10:00:00Z"));
         Post second = new Post("bob", "old #研修", Instant.parse("2026-05-23T09:00:00Z"));
-        given(postTagRepository.findTop50ByTagNameOrderByPostCreatedAtDesc("研修"))
+        given(postTagRepository.findTop50ByTagNameOrderByPostCreatedAtDesc(any(), any()))
                 .willReturn(List.of(new PostTag(first, tag), new PostTag(second, tag)));
 
         List<Post> posts = postService.listByTag("研修");
 
         assertThat(posts).containsExactly(first, second);
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_latest_新着順Repositoryを呼ぶ")
+    void タグ別一覧_latest_新着順Repositoryを呼ぶ() {
+        Tag tag = new Tag("研修");
+        Post post = new Post("alice", "new #研修", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postTagRepository.findTop50ByTagNameOrderByPostCreatedAtDesc(any(), any()))
+                .willReturn(List.of(new PostTag(post, tag)));
+
+        List<Post> posts = postService.listByTag("研修", "latest");
+
+        assertThat(posts).containsExactly(post);
+        verify(postTagRepository).findTop50ByTagNameOrderByPostCreatedAtDesc(
+                org.mockito.ArgumentMatchers.eq("研修"),
+                org.mockito.ArgumentMatchers.argThat(pageable -> pageable.getPageSize() == 50));
+        verify(postTagRepository, never()).findByTagNameOrderByLikeCountDescCreatedAtDesc(any(), any());
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_popular_人気順Repositoryを呼ぶ")
+    void タグ別一覧_popular_人気順Repositoryを呼ぶ() {
+        Tag tag = new Tag("研修");
+        Post post = new Post("alice", "popular #研修", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postTagRepository.findByTagNameOrderByLikeCountDescCreatedAtDesc(any(), any()))
+                .willReturn(List.of(new PostTag(post, tag)));
+
+        List<Post> posts = postService.listByTag("研修", "popular");
+
+        assertThat(posts).containsExactly(post);
+        verify(postTagRepository).findByTagNameOrderByLikeCountDescCreatedAtDesc(
+                org.mockito.ArgumentMatchers.eq("研修"),
+                org.mockito.ArgumentMatchers.argThat(pageable -> pageable.getPageSize() == 50));
+        verify(postTagRepository, never()).findTop50ByTagNameOrderByPostCreatedAtDesc(any(), any());
+    }
+
+    @Test
+    @DisplayName("タグ別一覧_sort不正_新着順Repositoryを呼ぶ")
+    void タグ別一覧_sort不正_新着順Repositoryを呼ぶ() {
+        given(postTagRepository.findTop50ByTagNameOrderByPostCreatedAtDesc(any(), any()))
+                .willReturn(List.of());
+
+        List<Post> posts = postService.listByTag("研修", "oldest");
+
+        assertThat(posts).isEmpty();
+        verify(postTagRepository).findTop50ByTagNameOrderByPostCreatedAtDesc(
+                org.mockito.ArgumentMatchers.eq("研修"),
+                org.mockito.ArgumentMatchers.argThat(pageable -> pageable.getPageSize() == 50));
+        verify(postTagRepository, never()).findByTagNameOrderByLikeCountDescCreatedAtDesc(any(), any());
     }
 
     @Test
