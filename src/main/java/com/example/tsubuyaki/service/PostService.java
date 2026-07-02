@@ -52,7 +52,7 @@ public class PostService {
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findByIdAndDeletedAtIsNull(id);
+        return repository.findByIdWithTags(id);
     }
 
     public List<Post> findByTag(String name) {

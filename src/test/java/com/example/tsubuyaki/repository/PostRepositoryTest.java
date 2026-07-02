@@ -12,6 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,6 +56,21 @@ class PostRepositoryTest {
         assertThat(posts).hasSize(1);
         assertThat(Hibernate.isInitialized(posts.get(0).getTags())).isTrue();
         assertThat(posts.get(0).getTags()).extracting(Tag::getName).containsExactly("java");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_タグ付き投稿ID指定_tagsを初期化して返す")
+    void findByIdWithTags_taggedPostId_initializesTags() {
+        Tag java = tagRepository.save(new Tag("java"));
+        Post post = new Post("tagged", "#java 本文", LocalDateTime.parse("2026-05-23T10:00:00"));
+        post.addTag(java);
+        Post saved = postRepository.save(post);
+
+        Optional<Post> foundPost = postRepository.findByIdWithTags(saved.getId());
+
+        assertThat(foundPost).isPresent();
+        assertThat(Hibernate.isInitialized(foundPost.orElseThrow().getTags())).isTrue();
+        assertThat(foundPost.orElseThrow().getTags()).extracting(Tag::getName).containsExactly("java");
     }
 
     @Test

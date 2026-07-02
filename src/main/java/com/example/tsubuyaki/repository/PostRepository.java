@@ -19,5 +19,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.tags WHERE p.id IN :ids")
     List<Post> findAllWithTags(@Param("ids") List<Long> ids);
 
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.tags WHERE p.id = :id AND p.deletedAt IS NULL")
+    Optional<Post> findByIdWithTags(@Param("id") Long id);
+
     Optional<Post> findByIdAndDeletedAtIsNull(Long id);
 }

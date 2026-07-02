@@ -176,12 +176,12 @@ class PostServiceTest {
     @DisplayName("投稿詳細_取得するとき_RepositoryからIDで検索する")
     void 投稿詳細_取得するとき_RepositoryからIDで検索する() {
         Post post = new Post("tanaka", "本文", LocalDateTime.parse("2026-05-23T09:00:00"));
-        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdWithTags(1L)).willReturn(Optional.of(post));
 
         Optional<Post> foundPost = postService.findById(1L);
 
         assertThat(foundPost).contains(post);
-        verify(postRepository).findByIdAndDeletedAtIsNull(1L);
+        verify(postRepository).findByIdWithTags(1L);
     }
 
     @Test
