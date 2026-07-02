@@ -27,7 +27,7 @@
 
         <p class="error" th:if="${detailError != null}" th:text="${detailError}">エラー</p>
 
-        <article class="post" th:if="${post != null}" th:style="|background-color: ${post.backgroundColor};|">
+        <article class="post post--detail" th:if="${post != null}" th:style="|background-color: ${post.backgroundColor};|">
             <header>
                 <span class="post__author" th:text="${post.author}">投稿者</span>
             </header>
