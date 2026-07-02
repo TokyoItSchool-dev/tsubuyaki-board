@@ -12,6 +12,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 @Controller
 public class PostController {
 
+    private static final String POSTS_ATTRIBUTE = "posts";
+    private static final String POSTS_LIST_VIEW = "posts/list.html";
+    private static final String POST_FORM_ATTRIBUTE = "postForm";
+    private static final String POST_FORM_VIEW = "posts/form";
+
     private final PostService postService;
 
     public PostController(PostService postService) {
@@ -20,20 +25,20 @@ public class PostController {
 
     @GetMapping({ "/", "/posts" })
     public String list(Model model) {
-        model.addAttribute("posts", postService.findLatest50());
-        return "posts/list";
+        model.addAttribute(POSTS_ATTRIBUTE, postService.findLatest50());
+        return POSTS_LIST_VIEW;
     }
 
     @GetMapping("/posts/new")
     public String newForm(Model model) {
-        model.addAttribute("postForm", new PostForm());
-        return "posts/form";
+        model.addAttribute(POST_FORM_ATTRIBUTE, new PostForm());
+        return POST_FORM_VIEW;
     }
 
     @PostMapping("/posts")
     public String create(@Valid PostForm postForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return "posts/form";
+            return POST_FORM_VIEW;
         }
 
         postService.create(postForm.getAuthor(), postForm.getBody());

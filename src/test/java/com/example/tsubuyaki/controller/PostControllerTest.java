@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PostControllerTest {
 
     private static final String POSTS_PATH = "/posts";
-    private static final String POSTS_VIEW = "posts/list";
+    private static final String POSTS_VIEW = "posts/list.html";
     private static final String POSTS_ATTRIBUTE = "posts";
     private static final String NEW_POST_PATH = "/posts/new";
     private static final String POST_FORM_VIEW = "posts/form";
