@@ -33,6 +33,9 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @Transient
     private long likeCount;
 
@@ -81,6 +84,10 @@ public class Post {
         return createdAt;
     }
 
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
     public long getLikeCount() {
         return likeCount;
     }
@@ -92,6 +99,10 @@ public class Post {
     public void applyLikeState(long likeCount, boolean liked) {
         this.likeCount = likeCount;
         this.liked = liked;
+    }
+
+    public void delete(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override

@@ -444,6 +444,87 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_投稿時間の右側に_削除リンクを表示する")
+    void 投稿詳細_投稿時間の右側に_削除リンクを表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findByIdWithLike(42L, "1ad93342")).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/42").header("User-Agent", "JUnit").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "class=\"post-detail__delete-form\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/42/delete\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "class=\"post-detail__delete-link\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(">削除</a>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("hidden></form>")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        int metaRow = html.indexOf("class=\"post-detail__meta-row\"");
+        int createdAt = html.indexOf("class=\"post-detail__created-at\"", metaRow);
+        int deleteLink = html.indexOf("class=\"post-detail__delete-link\"", createdAt);
+        int deleteForm = html.indexOf("class=\"post-detail__delete-form\"", deleteLink);
+        assertThat(createdAt).isGreaterThan(metaRow);
+        assertThat(deleteLink).isGreaterThan(createdAt);
+        assertThat(deleteForm).isGreaterThan(deleteLink);
+        assertThat(deleteForm).isLessThan(html.indexOf("</article>", metaRow));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_削除リンク押下_画面遷移前に削除確認confirmを表示する")
+    void 投稿詳細_削除リンク押下_画面遷移前に削除確認confirmを表示する() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findByIdWithLike(eq(42L), anyString())).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "confirm('削除します')")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "document.getElementById('post-delete-form').requestSubmit()")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_削除確認でキャンセル_論理削除POSTを送信しない")
+    void 投稿詳細_削除確認でキャンセル_論理削除Postを送信しない() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.findByIdWithLike(eq(42L), anyString())).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "confirm('削除します')")));
+
+        verify(postService, org.mockito.Mockito.never()).delete(42L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_削除確認でOK_論理削除後に投稿一覧へリダイレクトする")
+    void 投稿詳細_削除確認でOk_論理削除後に投稿一覧へリダイレクトする() throws Exception {
+        Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.delete(42L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(post("/posts/42/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(42L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_削除済み投稿へ直接アクセス_404を返す")
+    void 投稿詳細_削除済み投稿へ直接アクセス_404を返す() throws Exception {
+        given(postService.findByIdWithLike(eq(42L), anyString())).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @DisplayName("投稿詳細_本文枠外の下の左側に_いいねトグルを表示し詳細へ戻る")
     void 投稿詳細_本文枠外の下の左側に_いいねトグルを表示し詳細へ戻る() throws Exception {
         Post post = postWithId(42L, "alice", "詳細の本文", Instant.parse("2026-05-23T10:15:00Z"));

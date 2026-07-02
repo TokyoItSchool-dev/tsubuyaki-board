@@ -37,12 +37,12 @@ class PostServiceTest {
     @DisplayName("投稿一覧_latest_Repositoryの新着50件取得結果を返す")
     void 投稿一覧_latest_Repositoryの新着50件取得結果を返す() {
         List<Post> posts = List.of(new Post("alice", "hello", "#2563EB", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> latest = postService.latest();
 
         assertThat(latest).isSameAs(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
@@ -50,7 +50,7 @@ class PostServiceTest {
     void 投稿一覧_latestWithLikes_いいね数とclientHashのいいね状態を付与する() {
         Post post = new Post("alice", "hello", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(List.of(post));
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(List.of(post));
         given(postLikeRepository.countByPostId(42L)).willReturn(2L);
         given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcdef12")).willReturn(true);
 
@@ -68,7 +68,8 @@ class PostServiceTest {
     void 投稿検索_searchWithLikes_本文部分一致の新着50件にいいね状態を付与する() {
         Post post = new Post("alice", "検索対象の本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
-        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象")).willReturn(List.of(post));
+        given(postRepository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc("検索対象"))
+                .willReturn(List.of(post));
         given(postLikeRepository.countByPostId(42L)).willReturn(3L);
         given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcdef12")).willReturn(false);
 
@@ -77,7 +78,7 @@ class PostServiceTest {
         assertThat(found).containsExactly(post);
         assertThat(found.get(0).getLikeCount()).isEqualTo(3);
         assertThat(found.get(0).isLiked()).isFalse();
-        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
+        verify(postRepository).findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc("検索対象");
         verify(postLikeRepository).countByPostId(42L);
         verify(postLikeRepository).existsByPostIdAndClientHash(42L, "abcdef12");
     }
@@ -85,24 +86,24 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿検索_countSearchResults_本文部分一致の件数を返す")
     void 投稿検索_countSearchResults_本文部分一致の件数を返す() {
-        given(postRepository.countByBodyContaining("検索対象")).willReturn(55L);
+        given(postRepository.countByBodyContainingAndDeletedAtIsNull("検索対象")).willReturn(55L);
 
         long count = postService.countSearchResults("検索対象");
 
         assertThat(count).isEqualTo(55);
-        verify(postRepository).countByBodyContaining("検索対象");
+        verify(postRepository).countByBodyContainingAndDeletedAtIsNull("検索対象");
     }
 
     @Test
     @DisplayName("投稿詳細_findById_Repositoryのid検索結果を返す")
     void 投稿詳細_findById_RepositoryのId検索結果を返す() {
         Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
 
         Optional<Post> found = postService.findById(42L);
 
         assertThat(found).containsSame(post);
-        verify(postRepository).findById(42L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(42L);
     }
 
     @Test
@@ -110,7 +111,7 @@ class PostServiceTest {
     void 投稿詳細_findByIdWithLike_いいね数とclientHashのいいね状態を付与する() {
         Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
         given(postLikeRepository.countByPostId(42L)).willReturn(1L);
         given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcdef12")).willReturn(false);
 
@@ -122,11 +123,35 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_delete_対象投稿のdeletedAtに削除日時を記録する")
+    void 投稿詳細_delete_対象投稿のDeletedAtに削除日時を記録する() {
+        Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
+        Instant before = Instant.now();
+
+        Optional<Post> deleted = postService.delete(42L);
+
+        Instant after = Instant.now();
+        assertThat(deleted).containsSame(post);
+        assertThat(post.getDeletedAt()).isBetween(before, after);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_delete_削除済みまたは存在しない投稿の場合_空を返す")
+    void 投稿詳細_delete_削除済みまたは存在しない投稿の場合_空を返す() {
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.empty());
+
+        Optional<Post> deleted = postService.delete(42L);
+
+        assertThat(deleted).isEmpty();
+    }
+
+    @Test
     @DisplayName("いいねトグル_未いいねの場合_いいねを保存する")
     void いいねトグル_未いいねの場合_いいねを保存する() {
         Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "abcdef12")).willReturn(Optional.empty());
 
         Optional<Post> toggled = postService.toggleLike(42L, "abcdef12");
@@ -145,7 +170,7 @@ class PostServiceTest {
         Post post = new Post("alice", "本文", "#2563EB", Instant.parse("2026-05-23T10:00:00Z"));
         org.springframework.test.util.ReflectionTestUtils.setField(post, "id", 42L);
         PostLike like = new PostLike(post, "abcdef12", Instant.parse("2026-05-23T10:01:00Z"));
-        given(postRepository.findById(42L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
         given(postLikeRepository.findByPostIdAndClientHash(42L, "abcdef12")).willReturn(Optional.of(like));
 
         Optional<Post> toggled = postService.toggleLike(42L, "abcdef12");

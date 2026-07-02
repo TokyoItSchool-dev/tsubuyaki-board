@@ -24,7 +24,7 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     public List<Post> latestWithLikes(String clientHash) {
@@ -34,17 +34,17 @@ public class PostService {
     }
 
     public List<Post> searchWithLikes(String keyword, String clientHash) {
-        List<Post> posts = repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword);
+        List<Post> posts = repository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc(keyword);
         posts.forEach(post -> applyLikeState(post, clientHash));
         return posts;
     }
 
     public long countSearchResults(String keyword) {
-        return repository.countByBodyContaining(keyword);
+        return repository.countByBodyContainingAndDeletedAtIsNull(keyword);
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findByIdAndDeletedAtIsNull(id);
     }
 
     public Optional<Post> findByIdWithLike(Long id, String clientHash) {
@@ -65,8 +65,15 @@ public class PostService {
     }
 
     @Transactional
+    public Optional<Post> delete(Long id) {
+        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(id);
+        post.ifPresent(value -> value.delete(Instant.now()));
+        return post;
+    }
+
+    @Transactional
     public Optional<Post> toggleLike(Long postId, String clientHash) {
-        Optional<Post> post = repository.findById(postId);
+        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(postId);
         if (post.isEmpty()) {
             return Optional.empty();
         }

@@ -37,7 +37,7 @@ class PostRepositoryTest {
         postRepository.saveAll(posts);
         postRepository.flush();
 
-        List<Post> latest = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> latest = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(latest).hasSize(50);
         assertThat(latest).extracting(Post::getBody)
@@ -56,14 +56,59 @@ class PostRepositoryTest {
         postRepository.saveAll(posts);
         postRepository.flush();
 
-        List<Post> found = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
-        long count = postRepository.countByBodyContaining("検索対象");
+        List<Post> found = postRepository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc("検索対象");
+        long count = postRepository.countByBodyContainingAndDeletedAtIsNull("検索対象");
 
         assertThat(found).hasSize(50);
         assertThat(count).isEqualTo(55);
         assertThat(found).allSatisfy(post -> assertThat(post.getBody()).contains("検索対象"));
         assertThat(found).extracting(Post::getBody)
                 .containsExactlyElementsOf(expectedSearchBodiesFrom54To5());
+    }
+
+    @Test
+    @DisplayName("投稿一覧_論理削除済み投稿_新着一覧に表示しない")
+    void 投稿一覧_論理削除済み投稿_新着一覧に表示しない() {
+        Post visible = new Post("alice", "表示する本文", "#2563EB", Instant.parse("2026-05-23T00:00:00Z"));
+        Post deleted = new Post("bob", "削除済み本文", "#2563EB", Instant.parse("2026-05-23T00:01:00Z"));
+        deleted.delete(Instant.parse("2026-05-23T00:02:00Z"));
+        postRepository.saveAll(List.of(visible, deleted));
+        postRepository.flush();
+
+        List<Post> latest = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(latest).extracting(Post::getBody)
+                .contains("表示する本文")
+                .doesNotContain("削除済み本文");
+    }
+
+    @Test
+    @DisplayName("投稿検索_論理削除済み投稿_検索結果と件数に含めない")
+    void 投稿検索_論理削除済み投稿_検索結果と件数に含めない() {
+        Post visible = new Post("alice", "検索対象 表示", "#2563EB", Instant.parse("2026-05-23T00:00:00Z"));
+        Post deleted = new Post("bob", "検索対象 削除済み", "#2563EB", Instant.parse("2026-05-23T00:01:00Z"));
+        deleted.delete(Instant.parse("2026-05-23T00:02:00Z"));
+        postRepository.saveAll(List.of(visible, deleted));
+        postRepository.flush();
+
+        List<Post> found = postRepository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc("検索対象");
+        long count = postRepository.countByBodyContainingAndDeletedAtIsNull("検索対象");
+
+        assertThat(count).isEqualTo(1);
+        assertThat(found).extracting(Post::getBody)
+                .containsExactly("検索対象 表示");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_論理削除済み投稿_id検索で取得できない")
+    void 投稿詳細_論理削除済み投稿_id検索で取得できない() {
+        Post deleted = new Post("bob", "削除済み本文", "#2563EB", Instant.parse("2026-05-23T00:01:00Z"));
+        deleted.delete(Instant.parse("2026-05-23T00:02:00Z"));
+        Post saved = postRepository.saveAndFlush(deleted);
+
+        assertThat(postRepository.findByIdAndDeletedAtIsNull(saved.getId())).isEmpty();
+        assertThat(postRepository.findById(saved.getId()).orElseThrow().getDeletedAt())
+                .isEqualTo(Instant.parse("2026-05-23T00:02:00Z"));
     }
 
     @Test

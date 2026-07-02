@@ -86,6 +86,13 @@ public class PostController {
         return "redirect:" + redirectPath(id, returnTo);
     }
 
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        postService.delete(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return "redirect:/posts";
+    }
+
     private static String redirectPath(Long postId, String returnTo) {
         String detailPath = "/posts/" + postId;
         if (detailPath.equals(returnTo)) {

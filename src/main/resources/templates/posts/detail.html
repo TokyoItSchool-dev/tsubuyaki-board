@@ -36,9 +36,19 @@
                     </button>
                 </form>
             </div>
-            <time class="post-detail__created-at"
-                  th:datetime="${post.createdAt}"
-                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <div class="post-detail__meta-actions">
+                <time class="post-detail__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                <a class="post-detail__delete-link"
+                   href="#"
+                   onclick="if (confirm('削除します')) { document.getElementById('post-delete-form').requestSubmit(); } return false;">削除</a>
+                <form class="post-detail__delete-form"
+                      id="post-delete-form"
+                      th:action="@{/posts/{id}/delete(id=${post.id})}"
+                      method="post"
+                      hidden></form>
+            </div>
         </div>
     </article>
 </main>

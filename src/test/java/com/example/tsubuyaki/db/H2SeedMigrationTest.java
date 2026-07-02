@@ -28,9 +28,15 @@ class H2SeedMigrationTest {
                 .migrate();
 
         try (Connection connection = DriverManager.getConnection(url, "sa", "");
-             Statement statement = connection.createStatement()) {
+            Statement statement = connection.createStatement()) {
             assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts")).isEqualTo(10);
             assertThat(singleLong(statement, "SELECT NEXT VALUE FOR posts_seq")).isEqualTo(11);
+            assertThat(singleLong(statement, """
+                    SELECT COUNT(*)
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = 'POSTS'
+                      AND COLUMN_NAME = 'DELETED_AT'
+                    """)).isEqualTo(1);
         }
     }
 
