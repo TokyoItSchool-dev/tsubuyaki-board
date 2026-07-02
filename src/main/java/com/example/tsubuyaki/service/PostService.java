@@ -48,7 +48,25 @@ public class PostService {
 
     @Transactional
     public void create(String author, String body) {
-        repository.save(new Post(author, body, Instant.now()));
+        create(author, body, null);
+    }
+
+    @Transactional
+    public void create(String author, String body, String avatarColor) {
+        String resolvedAvatarColor = resolveAvatarColor(author, avatarColor);
+        repository.save(new Post(author, body, Instant.now(), resolvedAvatarColor));
+        if (avatarColor != null && !avatarColor.isBlank()) {
+            repository.updateAvatarColorByAuthor(author, avatarColor);
+        }
+    }
+
+    private String resolveAvatarColor(String author, String avatarColor) {
+        if (avatarColor != null && !avatarColor.isBlank()) {
+            return avatarColor;
+        }
+        return repository.findFirstByAuthorAndAvatarColorIsNotNullOrderByCreatedAtDesc(author)
+                .map(Post::getAvatarColor)
+                .orElse(null);
     }
 
     @Transactional

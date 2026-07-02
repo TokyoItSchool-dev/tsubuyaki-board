@@ -4,6 +4,7 @@ import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
@@ -25,6 +26,9 @@ import java.util.Optional;
 
 @Controller
 public class PostController {
+
+    private static final String SESSION_AUTHOR = "postAuthor";
+    private static final String SESSION_AVATAR_COLOR = "avatarColor";
 
     private final PostService postService;
 
@@ -48,17 +52,27 @@ public class PostController {
     }
 
     @GetMapping("/posts/new")
-    public String newForm(Model model) {
-        model.addAttribute("postForm", new PostForm());
+    public String newForm(Model model, HttpSession session) {
+        PostForm postForm = new PostForm();
+        postForm.setAuthor((String) session.getAttribute(SESSION_AUTHOR));
+        postForm.setAvatarColor((String) session.getAttribute(SESSION_AVATAR_COLOR));
+        model.addAttribute("postForm", postForm);
         return "posts/form";
     }
 
     @PostMapping("/posts")
-    public String create(@Valid @ModelAttribute("postForm") PostForm postForm, BindingResult bindingResult) {
+    public String create(@Valid @ModelAttribute("postForm") PostForm postForm, BindingResult bindingResult,
+            HttpSession session) {
         if (bindingResult.hasErrors()) {
             return "posts/form";
         }
-        postService.create(postForm.getAuthor(), postForm.getBody());
+        postService.create(postForm.getAuthor(), postForm.getBody(), postForm.getAvatarColor());
+        session.setAttribute(SESSION_AUTHOR, postForm.getAuthor());
+        if (postForm.getAvatarColor() == null || postForm.getAvatarColor().isBlank()) {
+            session.removeAttribute(SESSION_AVATAR_COLOR);
+        } else {
+            session.setAttribute(SESSION_AVATAR_COLOR, postForm.getAvatarColor());
+        }
         return "redirect:/posts";
     }
 

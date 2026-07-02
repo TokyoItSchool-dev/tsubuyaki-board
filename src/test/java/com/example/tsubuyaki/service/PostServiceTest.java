@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,6 +82,28 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("Service_いいね数取得_Repositoryの件数を返す")
+    void countLikes_returnsLikeCountFromRepository() {
+        given(postLikeRepository.countByPostId(1L)).willReturn(3L);
+
+        long actual = postService.countLikes(1L);
+
+        assertThat(actual).isEqualTo(3L);
+        verify(postLikeRepository).countByPostId(1L);
+    }
+
+    @Test
+    @DisplayName("Service_いいね済み判定_Repositoryの判定結果を返す")
+    void isLiked_returnsExistsResultFromRepository() {
+        given(postLikeRepository.existsByPostIdAndClientHash(1L, "abcd1234")).willReturn(true);
+
+        boolean actual = postService.isLiked(1L, "abcd1234");
+
+        assertThat(actual).isTrue();
+        verify(postLikeRepository).existsByPostIdAndClientHash(1L, "abcd1234");
+    }
+
+    @Test
     @DisplayName("Service_投稿登録_authorとbodyを持つ投稿を保存する")
     void create_savesPostWithAuthorAndBody() {
         postService.create("alice", "hello");
@@ -91,6 +114,36 @@ class PostServiceTest {
         assertThat(saved.getAuthor()).isEqualTo("alice");
         assertThat(saved.getBody()).isEqualTo("hello");
         assertThat(saved.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Service_投稿登録_色を指定したら同じ投稿者の既存投稿色も更新する")
+    void create_whenAvatarColorIsSelected_updatesExistingPostsBySameAuthor() {
+        postService.create("alice", "hello", "blue");
+
+        verify(postRepository).updateAvatarColorByAuthor("alice", "blue");
+    }
+
+    @Test
+    @DisplayName("Service_投稿登録_色未選択なら同じ投稿者の既存投稿色は更新しない")
+    void create_whenAvatarColorIsBlank_doesNotUpdateExistingPostsBySameAuthor() {
+        postService.create("alice", "hello", "");
+
+        verify(postRepository, never()).updateAvatarColorByAuthor("alice", "");
+    }
+
+    @Test
+    @DisplayName("Service_投稿登録_色未選択でも同じ投稿者の既存色があれば引き継ぐ")
+    void create_whenAvatarColorIsBlankAndAuthorHasColor_savesPostWithExistingAuthorColor() {
+        Post existing = new Post("alice", "first", Instant.parse("2026-06-26T09:00:00Z"), "red");
+        given(postRepository.findFirstByAuthorAndAvatarColorIsNotNullOrderByCreatedAtDesc("alice"))
+                .willReturn(Optional.of(existing));
+
+        postService.create("alice", "second", "");
+
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertThat(postCaptor.getValue().getAvatarColor()).isEqualTo("red");
     }
 
     @Test

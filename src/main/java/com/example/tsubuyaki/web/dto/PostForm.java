@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.web.dto;
 
 import com.example.tsubuyaki.validation.NotBlankText;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class PostForm {
@@ -12,6 +13,9 @@ public class PostForm {
     @NotBlankText(message = "本文は必須です。")
     @Size(max = 280, message = "本文は280文字以内で入力してください。")
     private String body;
+
+    @Pattern(regexp = "red|blue|yellow|", message = "アバターカラーは赤・青・黄色から選択してください。")
+    private String avatarColor;
 
     public PostForm() {
     }
@@ -30,5 +34,13 @@ public class PostForm {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
     }
 }

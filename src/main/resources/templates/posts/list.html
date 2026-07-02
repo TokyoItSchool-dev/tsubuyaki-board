@@ -32,6 +32,7 @@
 
         <p class="empty-message" th:if="${showEmptyMessage}">まだ投稿はありません</p>
         <a class="post post--link" th:each="post : ${posts}"
+           th:classappend="${post.avatarColorCssClass}"
            th:href="@{/posts/{id}(id=${post.id},clientHash=${clientHash})}">
             <p class="post__author" th:text="${post.author}">投稿者</p>
             <p class="post__body" th:text="${post.body}">本文</p>

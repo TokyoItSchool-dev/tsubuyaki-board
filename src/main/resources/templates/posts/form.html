@@ -20,7 +20,23 @@
         </div>
 
         <div class="form-row">
-            <label for="author">投稿者</label>
+            <div class="author-label-row">
+                <label for="author">投稿者</label>
+                <div class="avatar-color-picker" role="group" aria-label="アバターカラー">
+                    <label class="avatar-color-picker__option avatar-color-picker__option--red">
+                        <input type="radio" th:field="*{avatarColor}" value="red">
+                        <span aria-hidden="true"></span>
+                    </label>
+                    <label class="avatar-color-picker__option avatar-color-picker__option--blue">
+                        <input type="radio" th:field="*{avatarColor}" value="blue">
+                        <span aria-hidden="true"></span>
+                    </label>
+                    <label class="avatar-color-picker__option avatar-color-picker__option--yellow">
+                        <input type="radio" th:field="*{avatarColor}" value="yellow">
+                        <span aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
         </div>
         <div class="form-row">

@@ -13,7 +13,7 @@
         <a th:href="@{/posts(clientHash=${clientHash})}">一覧に戻る</a>
     </nav>
 
-    <article class="post">
+    <article class="post" th:classappend="${post.avatarColorCssClass}">
         <p class="post__author" th:text="${post.author}">投稿者</p>
         <p class="post__body" th:text="${post.body}">本文</p>
         <time class="post__created-at"

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -336,6 +337,168 @@ class PostControllerTest {
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(html).contains("class=\"post-form\"");
         assertThat(html).contains("class=\"form-row\"");
+    }
+
+    @Test
+    @DisplayName("新規投稿フォーム_初期表示_投稿者と色は未入力未選択で表示する")
+    void newForm_whenSessionIsEmpty_showsBlankAuthorAndNoSelectedAvatarColor() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("name=\"author\" value=\"\"");
+        assertThat(html).contains("name=\"avatarColor\"");
+        assertThat(html).contains("value=\"red\"");
+        assertThat(html).contains("value=\"blue\"");
+        assertThat(html).contains("value=\"yellow\"");
+        assertThat(html).doesNotContain("checked=\"checked\"");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_色なし投稿_従来通り白背景の投稿として表示する")
+    void list_whenPostHasNoAvatarColor_showsPostWithoutAvatarColorClass() throws Exception {
+        postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("hello")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("class=\"post post--link\"");
+        assertThat(html).doesNotContain("post--avatar-");
+    }
+
+    @Test
+    @DisplayName("投稿登録_色を選択_一覧で選択色の淡い背景として表示する")
+    void create_whenAvatarColorIsSelected_showsPostWithAvatarColorClassInList() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "hello")
+                        .param("avatarColor", "blue"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("hello")))
+                .andExpect(content().string(containsString("post--avatar-blue")));
+    }
+
+    @Test
+    @DisplayName("投稿登録_同じ投稿者で色を変更_過去投稿も新しい投稿者色で表示する")
+    void create_whenSameAuthorChangesAvatarColor_updatesPreviousPostsToNewAuthorColor() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "first")
+                        .param("avatarColor", "red"))
+                .andExpect(status().isFound());
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "second")
+                        .param("avatarColor", "blue"))
+                .andExpect(status().isFound());
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("first")))
+                .andExpect(content().string(containsString("second")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("post--avatar-blue");
+        assertThat(html).doesNotContain("post--avatar-red");
+    }
+
+    @Test
+    @DisplayName("投稿登録_同じ投稿者で色未選択_既存の投稿者色を引き継いで表示する")
+    void create_whenSameAuthorDoesNotSelectAvatarColor_usesExistingAuthorColor() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "first")
+                        .param("avatarColor", "red"))
+                .andExpect(status().isFound());
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "second"))
+                .andExpect(status().isFound());
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("first")))
+                .andExpect(content().string(containsString("second")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("post--avatar-red");
+        assertThat(html).doesNotContain("class=\"post post--link\" href=");
+    }
+
+    @Test
+    @DisplayName("投稿登録_色未選択_一覧で従来通り白背景の投稿として表示する")
+    void create_whenAvatarColorIsNotSelected_showsPostWithoutAvatarColorClassInList() throws Exception {
+        MvcResult result = mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "hello"))
+                .andExpect(status().isFound())
+                .andReturn();
+
+        MvcResult listResult = mockMvc.perform(get("/posts").session((MockHttpSession) result.getRequest().getSession()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("hello")))
+                .andReturn();
+
+        String html = listResult.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("class=\"post post--link\"");
+        assertThat(html).doesNotContain("post--avatar-");
+    }
+
+    @Test
+    @DisplayName("投稿登録_投稿者と色を選択_再度新規投稿画面を開くと投稿者と色を復元する")
+    void newForm_afterCreatingPostWithAuthorAndAvatarColor_restoresAuthorAndAvatarColorFromSession() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        mockMvc.perform(post("/posts")
+                        .session(session)
+                        .param("author", "alice")
+                        .param("body", "hello")
+                        .param("avatarColor", "yellow"))
+                .andExpect(status().isFound());
+
+        MvcResult result = mockMvc.perform(get("/posts/new").session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("name=\"author\" value=\"alice\"");
+        assertThat(html.indexOf("value=\"yellow\"")).isLessThan(html.indexOf("checked=\"checked\""));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_色なし投稿_従来通り白背景の投稿として表示する")
+    void detail_whenPostHasNoAvatarColor_showsPostWithoutAvatarColorClass() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        MvcResult result = mockMvc.perform(get("/posts/{id}", saved.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("hello")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("class=\"post\"");
+        assertThat(html).doesNotContain("post--avatar-");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_色あり投稿_選択色の淡い背景として表示する")
+    void detail_whenPostHasAvatarColor_showsPostWithAvatarColorClass() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z"), "red"));
+
+        mockMvc.perform(get("/posts/{id}", saved.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("hello")))
+                .andExpect(content().string(containsString("post--avatar-red")));
     }
 
     @Test
