@@ -14,16 +14,46 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="search-box" th:action="@{/posts}" method="get">
+        <input class="search-box__input"
+               type="search"
+               name="q"
+               th:value="${query}"
+               placeholder="キーワードを入力"
+               aria-label="キーワード検索">
+        <button class="search-box__button" type="submit">検索</button>
+    </form>
+    <form class="toolbar" th:action="@{/posts/}" method="get">
+        <button type="submit">更新</button>
+    </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
-        <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
+        <p class="search-result-count" th:if="${searchExecuted}"
+           th:text="|検索結果：${searchResultCount}件|">検索結果：0件</p>
+        <p th:if="${!searchExecuted and #lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <article class="post post--link" th:each="post : ${posts}">
+            <a class="post__main-link" th:href="@{/posts/{id}(id=${post.id})}">
+                <p class="post__author author-line">
+                    <span class="author-icon"
+                          th:style="'background-color: ' + ${post.authorIconColor}"
+                          th:text="${post.authorInitial}">投</span>
+                    <span th:text="${post.author}">投稿者</span>
+                </p>
+                <p class="post__body" th:text="${post.body}">本文</p>
+            </a>
+            <div class="post__meta-row">
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                <form class="post__like-form" th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                    <input type="hidden" name="returnTo" value="/posts">
+                    <button type="submit"
+                            th:class="${post.liked} ? 'like-toggle like-toggle--liked' : 'like-toggle like-toggle--empty'"
+                            aria-label="いいね切り替え">
+                        <span class="like-heart" th:text="${post.liked} ? '♥' : '♡'">♡</span>
+                    </button>
+                </form>
+            </div>
         </article>
     </section>
 </main>
