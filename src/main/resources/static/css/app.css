@@ -583,6 +583,25 @@ h1 {
     border-top: 1px solid var(--color-border);
 }
 
+.comments__empty {
+    border-top: 1px solid var(--color-border);
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.comments__empty-title {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.comments__empty-message {
+    margin: 0.35rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
 .comment {
     padding: 0.85rem 0;
     border-bottom: 1px solid var(--color-border);

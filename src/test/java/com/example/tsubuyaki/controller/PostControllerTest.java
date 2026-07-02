@@ -1067,6 +1067,40 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_コメント0件の場合_コメントカード内に空状態を表示しコメント投稿フォームは表示する")
+    void 投稿詳細_コメント0件の場合_コメントカード内に空状態を表示しコメント投稿フォームは表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.findComments(1L)).willReturn(Collections.emptyList());
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("comments", Collections.emptyList()))
+                .andExpect(model().attributeExists("commentForm"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("💬 コメント（0）")
+                .contains("class=\"comments__empty\"")
+                .contains("class=\"comments__empty-title\"")
+                .contains("まだコメントはありません。")
+                .contains("class=\"comments__empty-message\"")
+                .contains("最初のコメントを投稿してみましょう！")
+                .contains("class=\"post-form comment-form comment-form--detail\"")
+                .contains("action=\"/posts/1/comments\"")
+                .doesNotContain("class=\"comments__list\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".comments__empty")
+                .contains("text-align: center")
+                .contains(".comments__empty-title")
+                .contains(".comments__empty-message")
+                .contains("color: var(--color-muted)");
+    }
+
+    @Test
     @DisplayName("投稿詳細_コメント削除後_件数を更新し削除済みコメントを表示せず上部に削除アイコンを表示する")
     void 投稿詳細_コメント削除後_件数を更新し削除済みコメントを表示せず上部に削除アイコンを表示する() throws Exception {
         given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));

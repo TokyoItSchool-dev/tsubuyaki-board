@@ -43,7 +43,7 @@
 
     <section class="comments comments--detail">
         <h2 class="comments__title" th:text="|💬 コメント（${#lists.size(comments)}）|">💬 コメント（0）</h2>
-        <div class="comments__list">
+        <div class="comments__list" th:if="${!#lists.isEmpty(comments)}">
             <article class="comment" th:each="comment : ${comments}">
                 <div class="comment__header">
                     <div class="comment__author-line">
@@ -63,6 +63,10 @@
                 </div>
                 <p class="comment__body" th:text="${comment.body}">コメント本文</p>
             </article>
+        </div>
+        <div class="comments__empty" th:if="${#lists.isEmpty(comments)}">
+            <p class="comments__empty-title">まだコメントはありません。</p>
+            <p class="comments__empty-message">最初のコメントを投稿してみましょう！</p>
         </div>
 
     </section>
