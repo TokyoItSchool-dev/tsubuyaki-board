@@ -101,6 +101,24 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_投稿件数があるとき_タイトル下に投稿数を表示する")
+    void 投稿一覧_投稿件数があるとき_タイトル下に投稿数を表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(Collections.emptyList());
+        given(postService.countActivePosts()).willReturn(3L);
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("postCount", 3L))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("class=\"post-count\"")
+                .contains("投稿数：3件");
+    }
+
+    @Test
     @DisplayName("投稿一覧_更新ボタンがあるとき_postsスラッシュへリクエストできる")
     void 投稿一覧_更新ボタンがあるとき_postsスラッシュへリクエストできる() throws Exception {
         given(postService.findLatestPosts()).willReturn(Collections.emptyList());
@@ -325,18 +343,59 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿検索_キーワード検索時_検索結果件数と投稿総数を表示する")
+    void 投稿検索_キーワード検索時_検索結果件数と投稿総数を表示する() throws Exception {
+        List<Post> searchResults = List.of(
+                new Post("alice", "Oracle本文1", Instant.parse("2026-05-23T10:00:00Z")),
+                new Post("bob", "Oracle本文2", Instant.parse("2026-05-23T09:00:00Z"))
+        );
+        given(postService.searchPosts("Oracle")).willReturn(searchResults);
+        given(postService.countActivePosts()).willReturn(5L);
+
+        MvcResult result = mockMvc.perform(get("/posts").param("q", "Oracle"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(searchResults)))
+                .andExpect(model().attribute("keyword", "Oracle"))
+                .andExpect(model().attribute("searchResultCount", 2))
+                .andExpect(model().attribute("postCount", 5L))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("投稿数：5件")
+                .contains("class=\"search-result\"")
+                .contains("class=\"search-result__keyword\"")
+                .contains(">Oracle</strong>")
+                .contains("」の検索結果：<span")
+                .contains(">2</span>件")
+                .contains("Oracle本文1")
+                .contains("Oracle本文2");
+    }
+
+    @Test
     @DisplayName("投稿検索_キーワードを指定しない場合_従来どおり投稿一覧を表示する")
     void 投稿検索_キーワードを指定しない場合_従来どおり投稿一覧を表示する() throws Exception {
         List<Post> latestPosts = List.of(
                 new Post("alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z"))
         );
         given(postService.findLatestPosts()).willReturn(latestPosts);
+        given(postService.countActivePosts()).willReturn(5L);
 
-        mockMvc.perform(get("/posts"))
+        MvcResult result = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", sameInstance(latestPosts)))
-                .andExpect(model().attribute("keyword", ""));
+                .andExpect(model().attribute("keyword", ""))
+                .andExpect(model().attributeDoesNotExist("searchResultCount"))
+                .andExpect(model().attribute("postCount", 5L))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("投稿数：5件")
+                .doesNotContain("class=\"search-result\"")
+                .doesNotContain("の検索結果：");
 
         then(postService).should().findLatestPosts();
     }
@@ -400,6 +459,41 @@ class PostControllerTest {
                 .contains("緑")
                 .contains("黄")
                 .contains("紫");
+    }
+
+    @Test
+    @DisplayName("投稿作成フォーム_GET_posts_new_入力項目を縦並びのカード内に表示し投稿ボタンを右下に配置する")
+    void 投稿作成フォーム_GET_posts_new_入力項目を縦並びのカード内に表示し投稿ボタンを右下に配置する() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("class=\"post-form\"")
+                .containsSubsequence(
+                        "class=\"post-form__field\"",
+                        "for=\"author\"",
+                        "name=\"author\"",
+                        "class=\"post-form__field\"",
+                        "for=\"avatarColor\"",
+                        "name=\"avatarColor\"",
+                        "class=\"post-form__field\"",
+                        "for=\"body\"",
+                        "name=\"body\"",
+                        "class=\"post-form__actions\"",
+                        "type=\"submit\"",
+                        ">投稿</button>");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".post-form")
+                .contains(".post-form__field")
+                .contains(".post-form__actions")
+                .contains("max-width")
+                .contains("flex-direction: column")
+                .contains("justify-content: flex-end");
     }
 
     @Test

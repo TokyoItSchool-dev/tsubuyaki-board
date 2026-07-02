@@ -46,8 +46,10 @@ public class PostController {
     public String list(@RequestParam(name = "q", required = false) String keyword, Model model) {
         if (StringUtils.hasText(keyword)) {
             String trimmedKeyword = keyword.trim();
-            addPosts(model, postService.searchPosts(trimmedKeyword));
+            List<Post> posts = postService.searchPosts(trimmedKeyword);
+            addPosts(model, posts);
             model.addAttribute("keyword", trimmedKeyword);
+            model.addAttribute("searchResultCount", posts.size());
             return "posts/list";
         }
 
@@ -123,6 +125,7 @@ public class PostController {
         }
         model.addAttribute("posts", posts);
         model.addAttribute("likeCounts", likeCounts);
+        model.addAttribute("postCount", postService.countActivePosts());
     }
 
     public record AvatarColorOption(String value, String label) {

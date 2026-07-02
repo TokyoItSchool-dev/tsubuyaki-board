@@ -67,6 +67,17 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿件数_論理削除されていない投稿数を返す")
+    void 投稿件数_論理削除されていない投稿数を返す() {
+        given(postRepository.countByDeletedAtIsNull()).willReturn(3L);
+
+        long count = postService.countActivePosts();
+
+        assertThat(count).isEqualTo(3L);
+        then(postRepository).should().countByDeletedAtIsNull();
+    }
+
+    @Test
     @DisplayName("投稿削除_存在する投稿の場合_deletedAtに削除日時を設定する")
     void 投稿削除_存在する投稿の場合_deletedAtに削除日時を設定する() {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T10:00:00Z"));

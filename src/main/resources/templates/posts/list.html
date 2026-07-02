@@ -9,6 +9,11 @@
 <body>
 <main>
     <h1>社内つぶやきボード</h1>
+    <p class="post-count" th:text="|投稿数：${postCount}件|">投稿数：0件</p>
+    <p class="search-result" th:if="${searchResultCount != null}">
+        「<strong class="search-result__keyword" th:text="${keyword}">キーワード</strong>」の検索結果：<span
+            th:text="${searchResultCount}">0</span>件
+    </p>
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |

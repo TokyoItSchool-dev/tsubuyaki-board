@@ -35,6 +35,10 @@ public class PostService {
         return repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(keyword);
     }
 
+    public long countActivePosts() {
+        return repository.countByDeletedAtIsNull();
+    }
+
     public Optional<Post> findPost(Long id) {
         return repository.findById(id);
     }

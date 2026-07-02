@@ -85,4 +85,20 @@ class PostRepositoryTest {
         assertThat(posts).contains(visiblePost);
         assertThat(posts).doesNotContain(deletedPost);
     }
+
+    @Test
+    @DisplayName("投稿件数_投稿追加と論理削除に応じて削除済みを除いた件数を返す")
+    void 投稿件数_投稿追加と論理削除に応じて削除済みを除いた件数を返す() {
+        Instant baseTime = Instant.parse("2026-05-23T00:00:00Z");
+        assertThat(postRepository.countByDeletedAtIsNull()).isZero();
+
+        Post firstPost = postRepository.save(new Post("alice", "1件目", baseTime.plusSeconds(1)));
+        postRepository.save(new Post("bob", "2件目", baseTime.plusSeconds(2)));
+        postRepository.flush();
+        assertThat(postRepository.countByDeletedAtIsNull()).isEqualTo(2);
+
+        firstPost.markDeleted(baseTime.plusSeconds(3));
+        postRepository.flush();
+        assertThat(postRepository.countByDeletedAtIsNull()).isEqualTo(1);
+    }
 }
