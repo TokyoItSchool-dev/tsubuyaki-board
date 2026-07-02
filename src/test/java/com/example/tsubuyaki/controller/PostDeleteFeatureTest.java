@@ -123,10 +123,7 @@ class PostDeleteFeatureTest {
                 .andExpect(content().string(containsString("条件に一致する結果が見つかりませんでした。")));
 
         mockMvc.perform(get("/posts/{id}", postId).with(client(OWNER_IP, OWNER_USER_AGENT)))
-                .andExpect(status().isOk())
-                .andExpect(view().name("posts/detail"))
-                .andExpect(content().string(containsString("投稿が見つかりません。")))
-                .andExpect(content().string(not(containsString("delete-body"))));
+                .andExpect(status().isGone());
     }
 
     private boolean columnExists(String tableName, String columnName) {

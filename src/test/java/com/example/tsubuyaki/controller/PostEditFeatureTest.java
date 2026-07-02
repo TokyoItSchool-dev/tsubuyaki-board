@@ -91,7 +91,7 @@ class PostEditFeatureTest {
                 .andExpect(content().string(containsString("edit-user")))
                 .andExpect(content().string(containsString("edit-before")))
                 .andExpect(content().string(containsString("本文は必須・280文字以内です。")))
-                .andExpect(content().string(containsString("aria-describedby=\"body-help body-error\"")))
+                .andExpect(content().string(containsString("aria-describedby=\"body-help\"")))
                 .andExpect(content().string(containsString("class=\"button button--primary\"")))
                 .andExpect(content().string(containsString("class=\"button button--ghost\"")))
                 .andExpect(content().string(containsString("value=\"#fee2e2\"")))
@@ -155,9 +155,7 @@ class PostEditFeatureTest {
                 .andExpect(redirectedUrl("/posts"));
 
         mockMvc.perform(get("/posts/{id}/edit", postId).with(client(OWNER_IP, OWNER_USER_AGENT)))
-                .andExpect(status().isOk())
-                .andExpect(view().name("posts/detail"))
-                .andExpect(content().string(containsString("投稿が見つかりません。")));
+                .andExpect(status().isGone());
     }
 
     private boolean columnExists(String tableName, String columnName) {

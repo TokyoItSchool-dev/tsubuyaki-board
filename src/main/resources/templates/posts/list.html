@@ -33,7 +33,8 @@
                 <button class="button button--secondary" type="submit">更新</button>
             </form>
             <form class="post-search" method="get" th:action="@{/posts}">
-                <input class="post-search__input" type="search" name="q" th:value="${query}" placeholder="本文を検索">
+                <input class="post-search__input" type="search" name="q" th:value="${query}"
+                       maxlength="280" placeholder="本文を検索">
                 <button class="post-search__button button button--secondary" type="submit">検索</button>
             </form>
             <div class="search-status" th:if="${searched}">
@@ -45,7 +46,8 @@
         <section class="timeline-feed" aria-label="投稿一覧">
             <p class="empty-state" th:if="${#lists.isEmpty(posts) and !searched}">まだ投稿はありません。</p>
             <p class="empty-state" th:if="${#lists.isEmpty(posts) and searched}">条件に一致する結果が見つかりませんでした。</p>
-            <article class="post post-card" th:each="post : ${posts}" th:style="|background-color: ${post.backgroundColor};|">
+            <article class="post post-card" th:each="post : ${posts}"
+                     th:classappend="${post.backgroundColorClass}">
                 <header class="post__header">
                     <a class="post__author" th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.author}">投稿者</a>
                 </header>
@@ -62,6 +64,7 @@
                     <span class="post__like-count" th:text="|いいね ${post.likeCount}|">いいね 0</span>
                     <form class="post__like-form" method="post" th:action="@{/posts/{id}/likes(id=${post.id})}">
                         <input type="hidden" name="returnTo" value="list">
+                        <input type="hidden" name="q" th:if="${searched}" th:value="${query}">
                         <input type="hidden" th:if="${_csrf != null}"
                                th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                         <button class="post__like-button" type="submit">いいね！</button>

@@ -30,7 +30,7 @@
             <p>この操作は取り消せません。</p>
         </div>
 
-        <article class="post" th:style="|background-color: ${post.backgroundColor};|">
+        <article class="post" th:classappend="${post.backgroundColorClass}">
             <header>
                 <span class="post__author" th:text="${post.author}">投稿者</span>
             </header>

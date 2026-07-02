@@ -30,7 +30,8 @@
                 <label class="required-label" for="author">投稿者</label>
                 <p id="author-help" class="form-help">投稿者名は必須・30文字以内です。</p>
                 <input type="text" id="author" th:field="*{author}" maxlength="30" required
-                       aria-describedby="author-help author-error">
+                       th:attr="aria-describedby=${#fields.hasErrors('author') ? 'author-help author-error' : 'author-help'},
+                                aria-invalid=${#fields.hasErrors('author') ? 'true' : null}">
                 <p id="author-error" class="error" th:if="${#fields.hasErrors('author')}"
                    th:errors="*{author}">エラー</p>
             </div>
@@ -38,7 +39,8 @@
                 <label class="required-label" for="body">本文</label>
                 <p id="body-help" class="form-help">本文は必須・280文字以内です。</p>
                 <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required
-                          aria-describedby="body-help body-error"></textarea>
+                          th:attr="aria-describedby=${#fields.hasErrors('body') ? 'body-help body-error' : 'body-help'},
+                                   aria-invalid=${#fields.hasErrors('body') ? 'true' : null}"></textarea>
                 <p id="body-error" class="error" th:if="${#fields.hasErrors('body')}"
                    th:errors="*{body}">エラー</p>
             </div>

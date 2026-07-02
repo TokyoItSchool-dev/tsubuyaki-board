@@ -16,6 +16,8 @@ public final class PostBackgroundColor {
         "#fef9c3"
     };
 
+    private static final String DEFAULT_CLASS = "post--bg-default";
+
     private PostBackgroundColor() {
     }
 
@@ -32,5 +34,16 @@ public final class PostBackgroundColor {
 
     public static String[] colors() {
         return COLORS.clone();
+    }
+
+    public static String cssClass(String color) {
+        return switch (normalize(color)) {
+            case "#fee2e2" -> "post--bg-red";
+            case "#f3e8ff" -> "post--bg-purple";
+            case "#dbeafe" -> "post--bg-blue";
+            case "#dcfce7" -> "post--bg-green";
+            case "#fef9c3" -> "post--bg-yellow";
+            default -> DEFAULT_CLASS;
+        };
     }
 }

@@ -55,8 +55,8 @@ class PostNewFormFeatureTest {
                 .andExpect(content().string(containsString("href=\"/posts/new\"")))
                 .andExpect(content().string(containsString("投稿者名は必須・30文字以内です。")))
                 .andExpect(content().string(containsString("本文は必須・280文字以内です。")))
-                .andExpect(content().string(containsString("aria-describedby=\"author-help author-error\"")))
-                .andExpect(content().string(containsString("aria-describedby=\"body-help body-error\"")))
+                .andExpect(content().string(containsString("aria-describedby=\"author-help\"")))
+                .andExpect(content().string(containsString("aria-describedby=\"body-help\"")))
                 .andExpect(content().string(containsString("class=\"button button--primary\"")))
                 .andExpect(content().string(containsString("class=\"color-palette__input\"")))
                 .andExpect(content().string(containsString("class=\"color-palette__swatch\"")));

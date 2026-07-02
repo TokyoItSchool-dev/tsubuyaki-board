@@ -37,7 +37,8 @@
                 <label class="required-label" for="body">本文</label>
                 <p id="body-help" class="form-help">本文は必須・280文字以内です。</p>
                 <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required
-                          aria-describedby="body-help body-error"></textarea>
+                          th:attr="aria-describedby=${#fields.hasErrors('body') ? 'body-help body-error' : 'body-help'},
+                                   aria-invalid=${#fields.hasErrors('body') ? 'true' : null}"></textarea>
                 <p id="body-error" class="error" th:if="${#fields.hasErrors('body')}"
                    th:errors="*{body}">エラー</p>
             </div>

@@ -166,7 +166,7 @@ class PostListFeatureTest {
                 "class=\"timeline-layout\"",
                 "class=\"composer-card\"",
                 "class=\"timeline-feed\"",
-                "class=\"post post-card\"");
+                "class=\"post post-card post--bg-default\"");
         assertThat(html).contains("詳細を見る");
         assertThat(html).contains("class=\"post__detail-link button button--ghost\"");
         assertThat(html).containsSubsequence("composer-card", "新規投稿", "timeline-feed", "modern-user", "モダンUIの本文");

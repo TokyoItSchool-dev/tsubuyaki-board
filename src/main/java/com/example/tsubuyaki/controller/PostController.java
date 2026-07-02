@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Optional;
 
+import static org.springframework.http.HttpStatus.GONE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Controller
@@ -27,9 +29,9 @@ public class PostController {
 
     private static final String RETURN_TO_LIST = "list";
     private static final String RETURN_TO_DETAIL = "detail";
+    private static final int MAX_QUERY_LENGTH = 280;
     private static final String DELETE_ERROR_MESSAGE = "この投稿は削除できません。";
     private static final String EDIT_ERROR_MESSAGE = "この投稿は編集できません。";
-    private static final String NOT_FOUND_MESSAGE = "投稿が見つかりません。";
 
     private final PostService postService;
 
@@ -155,16 +157,26 @@ public class PostController {
     public String toggleLike(
             @PathVariable Long id,
             @RequestParam(defaultValue = RETURN_TO_DETAIL) String returnTo,
+            @RequestParam(name = "q", required = false) String query,
             HttpServletRequest request) {
         if (!postService.toggleLike(id, clientHash(request))) {
             throw new ResponseStatusException(NOT_FOUND);
         }
-        return likeRedirectUrl(id, returnTo);
+        return likeRedirectUrl(id, returnTo, query);
     }
 
-    private String likeRedirectUrl(Long id, String returnTo) {
+    private String likeRedirectUrl(Long id, String returnTo, String query) {
         if (RETURN_TO_LIST.equals(returnTo)) {
-            return "redirect:/posts";
+            String normalizedQuery = normalizeQuery(query);
+            if (normalizedQuery.isEmpty()) {
+                return "redirect:/posts";
+            }
+            String listUrl = UriComponentsBuilder.fromPath("/posts")
+                    .queryParam("q", normalizedQuery)
+                    .build()
+                    .encode()
+                    .toUriString();
+            return "redirect:" + listUrl;
         }
         return "redirect:/posts/" + id;
     }
@@ -179,8 +191,7 @@ public class PostController {
             return "posts/detail";
         }
         if (postService.existsDeletedById(id)) {
-            model.addAttribute("detailError", NOT_FOUND_MESSAGE);
-            return "posts/detail";
+            throw new ResponseStatusException(GONE);
         }
         throw new ResponseStatusException(NOT_FOUND);
     }
@@ -189,7 +200,11 @@ public class PostController {
         if (query == null) {
             return "";
         }
-        return query.trim();
+        String trimmedQuery = query.trim();
+        if (trimmedQuery.length() <= MAX_QUERY_LENGTH) {
+            return trimmedQuery;
+        }
+        return trimmedQuery.substring(0, MAX_QUERY_LENGTH);
     }
 
     private String clientHash(HttpServletRequest request) {

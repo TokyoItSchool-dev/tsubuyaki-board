@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -93,11 +94,11 @@ class PostBackgroundColorFeatureTest {
                 savedPostId);
         assertThat(savedColor).isEqualTo(SELECTED_COLOR);
 
-        String style = "style=\"background-color: " + SELECTED_COLOR + ";\"";
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
-                .andExpect(content().string(containsString(style)))
+                .andExpect(content().string(containsString("post--bg-blue")))
+                .andExpect(content().string(not(containsString("style=\"background-color:"))))
                 .andExpect(content().string(containsString("color-body")));
 
         Post defaultColorPost = postRepository.save(new Post(
@@ -109,6 +110,7 @@ class PostBackgroundColorFeatureTest {
         mockMvc.perform(get("/posts/{id}", defaultColorPost.getId()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
-                .andExpect(content().string(containsString("style=\"background-color: #ffffff;\"")));
+                .andExpect(content().string(containsString("post--bg-default")))
+                .andExpect(content().string(not(containsString("style=\"background-color:"))));
     }
 }

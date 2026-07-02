@@ -90,31 +90,27 @@ class PostCardLayoutFeatureTest {
 
         String css = new ClassPathResource("static/css/app.css").getContentAsString(StandardCharsets.UTF_8);
 
-        assertThat(css).contains(
-                ".post {",
-                "padding: 1.25rem;",
-                ".post__body {",
+        assertThat(selectorBlock(css, ".post")).contains("padding: 1.25rem;");
+        assertThat(selectorBlock(css, ".post__body")).contains(
                 "font-size: 1.08rem;",
                 "white-space: pre-wrap;",
                 "overflow-wrap: anywhere;",
-                "word-break: break-word;",
-                ".post--detail .post__body {",
-                "line-height: 1.75;",
-                ".post__author {",
-                "font-size: 0.95rem;",
-                ".post__actions {",
+                "word-break: break-word;");
+        assertThat(selectorBlock(css, ".post--detail .post__body")).contains("line-height: 1.75;");
+        assertThat(selectorBlock(css, ".post__author")).contains("font-size: 0.95rem;");
+        assertThat(selectorBlock(css, ".post__actions")).contains(
                 "display: flex;",
                 "align-items: center;",
                 "border-top:",
-                "padding-top:",
-                ".post__like-count {",
+                "padding-top:");
+        assertThat(selectorBlock(css, ".post__like-count")).contains(
                 "border-radius:",
-                "background:",
-                ".post__like-button {",
-                "border-radius: 999px;",
-                "@media (max-width: 640px)",
-                ".post__actions {",
-                "flex-direction: column;");
+                "background:");
+        assertThat(selectorBlock(css, ".post__like-button")).contains(
+                "min-height: 2.5rem;",
+                "border-radius: 999px;");
+        assertThat(selectorBlockAfter(css, ".post__actions", css.indexOf("@media (max-width: 640px)")))
+                .contains("flex-direction: column;");
     }
 
     private RequestPostProcessor client() {
@@ -123,5 +119,17 @@ class PostCardLayoutFeatureTest {
             request.addHeader("User-Agent", OWNER_USER_AGENT);
             return request;
         };
+    }
+
+    private String selectorBlock(String css, String selector) {
+        return selectorBlockAfter(css, selector, 0);
+    }
+
+    private String selectorBlockAfter(String css, String selector, int fromIndex) {
+        int start = css.indexOf(selector + " {", fromIndex);
+        assertThat(start).as("CSS selector %s exists", selector).isNotNegative();
+        int end = css.indexOf('}', start);
+        assertThat(end).as("CSS selector %s closes", selector).isGreaterThan(start);
+        return css.substring(start, end + 1);
     }
 }

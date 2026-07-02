@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -110,27 +112,38 @@ public class PostService {
         return UpdatePostResult.UPDATED;
     }
 
-    private PostView toView(Post post) {
-        return toView(post, null);
+    private PostView toView(Post post, String clientHash) {
+        return toView(post, clientHash, likeRepository.countByPostId(post.getId()));
     }
 
-    private PostView toView(Post post, String clientHash) {
+    private PostView toView(Post post, String clientHash, long likeCount) {
         boolean canModify = post.canModify(clientHash);
-        return new PostView(
-                post.getId(),
-                post.getAuthor(),
-                post.getBody(),
-                post.getCreatedAt(),
-                likeRepository.countByPostId(post.getId()),
-                post.getBackgroundColor(),
-                canModify,
-                canModify,
-                post.getUpdatedAt());
+        return PostView.builder(post.getId(), post.getAuthor(), post.getBody(), post.getCreatedAt())
+                .likeCount(likeCount)
+                .backgroundColor(post.getBackgroundColor())
+                .canDelete(canModify)
+                .canEdit(canModify)
+                .updatedAt(post.getUpdatedAt())
+                .build();
     }
 
     private List<PostView> toViews(List<Post> posts) {
+        Map<Long, Long> likeCounts = likeCountsByPostId(posts);
         return posts.stream()
-                .map(this::toView)
+                .map(post -> toView(post, null, likeCounts.getOrDefault(post.getId(), 0L)))
                 .toList();
+    }
+
+    private Map<Long, Long> likeCountsByPostId(List<Post> posts) {
+        if (posts.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> postIds = posts.stream()
+                .map(Post::getId)
+                .toList();
+        return likeRepository.countByPostIdIn(postIds).stream()
+                .collect(Collectors.toMap(
+                        PostLikeRepository.PostLikeCount::getPostId,
+                        PostLikeRepository.PostLikeCount::getLikeCount));
     }
 }
