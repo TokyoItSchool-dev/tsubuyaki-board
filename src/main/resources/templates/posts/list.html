@@ -3,27 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>投稿一覧 - 社内つぶやきボード</title>
+    <title th:text="${tagName != null} ? |#${tagName} - 社内つぶやきボード| : '投稿一覧 - 社内つぶやきボード'">投稿一覧 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
 <main>
-    <h1>社内つぶやきボード</h1>
+    <h1 th:text="${tagName != null} ? |#${tagName}| : '社内つぶやきボード'">社内つぶやきボード</h1>
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="search-form" th:if="${tagName == null}" th:action="@{/posts}" method="get">
+        <input type="search" name="q" th:value="${q}" placeholder="本文を検索">
+        <button type="submit">検索</button>
+    </form>
+    <form class="refresh-form" th:if="${tagName == null}" th:action="@{/posts/}" method="get">
+        <button type="submit">更新</button>
+    </form>
+    <nav class="tag-sort" th:if="${tagName != null}" aria-label="タグ一覧の並び替え">
+        <a th:href="@{/tags/{name}(name=${tagName},sort='latest')}"
+           th:classappend="${sort == 'latest'} ? ' tag-sort__link--active'">最新ポスト</a>
+        |
+        <a th:href="@{/tags/{name}(name=${tagName},sort='popular')}"
+           th:classappend="${sort == 'popular'} ? ' tag-sort__link--active'">人気ポスト</a>
+    </nav>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
+            <div class="post__author">
+                <span class="post__avatar" th:style="'background-color: ' + ${post.avatarColor}" th:text="${#strings.toUpperCase(#strings.substring(post.author, 0, 1))}">A</span>
+                <span class="post__author-name" th:text="${post.author}">投稿者</span>
+            </div>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <div class="post__meta">
+                <time class="post__created-at"
+                      th:datetime="${post.createdAt}"
+                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+            </div>
         </article>
     </section>
 </main>

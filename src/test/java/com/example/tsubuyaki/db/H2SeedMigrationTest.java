@@ -28,8 +28,10 @@ class H2SeedMigrationTest {
                 .migrate();
 
         try (Connection connection = DriverManager.getConnection(url, "sa", "");
-             Statement statement = connection.createStatement()) {
+            Statement statement = connection.createStatement()) {
             assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts")).isEqualTo(10);
+            assertThat(singleLong(statement, "SELECT COUNT(*) FROM posts WHERE avatar_color = '#3498db'"))
+                    .isEqualTo(10);
             assertThat(singleLong(statement, "SELECT NEXT VALUE FOR posts_seq")).isEqualTo(11);
         }
     }

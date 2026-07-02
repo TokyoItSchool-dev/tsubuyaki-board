@@ -31,6 +31,51 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.refresh-form {
+    margin: 1rem 0;
+}
+
+.tag-sort {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    color: var(--color-muted);
+    font-size: 0.95rem;
+}
+
+.tag-sort a {
+    color: var(--color-accent);
+}
+
+.tag-sort__link--active {
+    font-weight: 700;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+}
+
+.search-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.search-form button {
+    padding: 0.4rem 0.8rem;
+}
+
+.error {
+    color: #e11d48;
+    margin-top: 1px;
+    font-size: 0.85rem;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -40,8 +85,29 @@ h1 {
 }
 
 .post__author {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 600;
-    margin-right: 0.5rem;
+}
+
+.post__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.post__author-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .post__created-at {
@@ -51,6 +117,154 @@ h1 {
 
 .post__body {
     margin-top: 0.5rem;
+    overflow-wrap: anywhere;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.post__tags a {
+    color: var(--color-accent);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.post__tags a:hover {
+    text-decoration: underline;
+}
+
+.post__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.post__like-form {
+    margin: 0.75rem 0 0.5rem;
+}
+
+.post__like-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.85rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 9999px;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1.3;
+}
+
+.post__like-button:hover {
+    border-color: #f9a8d4;
+}
+
+.post__like-heart {
+    color: #e11d48;
+}
+
+.post__like-count {
+    font-weight: 700;
+}
+
+.post__like-label {
+    font-weight: 400;
+}
+
+.tag-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+.tag-suggestions[hidden] {
+    display: none;
+}
+
+.tag-suggestions__item {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    background: white;
+    color: var(--color-accent);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.9rem;
+}
+
+.tag-selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+.tag-selected-tags__entry {
+    position: relative;
+    display: inline-flex;
+}
+
+.tag-selected-tags__item {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.9rem;
+    text-decoration: underline;
+}
+
+.tag-selected-tags__item--selected {
+    font-weight: 600;
+}
+
+.tag-selected-tags__popover {
+    position: absolute;
+    z-index: 10;
+    bottom: calc(100% + 0.45rem);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.3rem;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    background: white;
+    box-shadow: 0 8px 18px rgb(0 0 0 / 12%);
+    white-space: nowrap;
+}
+
+.tag-selected-tags__popover::before {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    border-right: 1px solid #fecaca;
+    border-bottom: 1px solid #fecaca;
+    background: white;
+    content: "";
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.tag-selected-tags__delete {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid #fecaca;
+    border-radius: 9999px;
+    background: #fff5f5;
+    color: #b91c1c;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+    line-height: 1.3;
 }
