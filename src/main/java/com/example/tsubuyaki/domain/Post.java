@@ -1,15 +1,22 @@
 package com.example.tsubuyaki.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "posts")
@@ -26,17 +33,35 @@ public class Post {
     @Column(name = "body", length = 280, nullable = false)
     private String body;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Column(name = "avatar_color", length = 20)
+    private String avatarColor;
+
+    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
+    private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at", columnDefinition = "TIMESTAMP(6)")
+    private LocalDateTime deletedAt;
+
+    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(
+            name = "post_tags",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags = new LinkedHashSet<>();
 
     protected Post() {
         // JPA
     }
 
-    public Post(String author, String body, Instant createdAt) {
+    public Post(String author, String body, LocalDateTime createdAt) {
+        this(author, body, createdAt, null);
+    }
+
+    public Post(String author, String body, LocalDateTime createdAt, String avatarColor) {
         this.author = author;
         this.body = body;
         this.createdAt = createdAt;
+        this.avatarColor = avatarColor;
     }
 
     public Long getId() {
@@ -51,8 +76,32 @@ public class Post {
         return body;
     }
 
-    public Instant getCreatedAt() {
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public Set<Tag> getTags() {
+        return Collections.unmodifiableSet(tags);
+    }
+
+    public boolean hasTags() {
+        return !tags.isEmpty();
+    }
+
+    public void addTag(Tag tag) {
+        tags.add(Objects.requireNonNull(tag));
+    }
+
+    public void markDeleted(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override

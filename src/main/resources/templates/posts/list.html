@@ -14,16 +14,36 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="post-list__refresh" method="get" th:action="@{/posts/}">
+        <button type="submit">更新</button>
+    </form>
+    <form class="post-list__search" method="get" th:action="@{/posts}">
+        <input type="search" name="q" th:value="${q}" placeholder="本文を検索">
+        <select name="sort" aria-label="並び順">
+            <option value="new" th:selected="${sort != 'old'}">新しい順</option>
+            <option value="old" th:selected="${sort == 'old'}">古い順</option>
+        </select>
+        <button type="submit">検索</button>
+    </form>
+    <p th:if="${tagName != null}" th:text="|#${tagName} の投稿|">#tag の投稿</p>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
+            <p class="post__author"
+               th:style="${#strings.isEmpty(post.avatarColor)} ? null : |color: ${post.avatarColor}|"
+               th:text="${post.author}">投稿者</p>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <p class="post__tags" th:if="${post.hasTags()}">
+                <a th:each="tag : ${post.tags}"
+                   class="post__tag-link"
+                   th:href="@{/tags/{name}(name=${tag.name})}"
+                   th:text="|#${tag.name}|">#tag</a>
+            </p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
         </article>
     </section>
 </main>

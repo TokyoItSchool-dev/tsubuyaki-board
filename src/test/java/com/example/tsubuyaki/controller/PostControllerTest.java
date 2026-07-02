@@ -1,0 +1,515 @@
+package com.example.tsubuyaki.controller;
+
+import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
+import com.example.tsubuyaki.domain.Comment;
+import com.example.tsubuyaki.service.PostService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+@WebMvcTest(PostController.class)
+class PostControllerTest {
+
+    private static final LocalDateTime BASE_TIME = LocalDateTime.parse("2026-06-30T00:00:00");
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private PostService postService;
+
+    @Test
+    @DisplayName("投稿一覧_GET_posts_新着50件をビューに渡す")
+    void list_GET_posts_新着50件をビューに渡す() throws Exception {
+        List<Post> posts = List.of(post("alice", "最新の共有です", BASE_TIME.plusSeconds(1)));
+        given(postService.findLatest50()).willReturn(posts);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)));
+
+        verify(postService).findLatest50();
+    }
+
+    @Test
+    @DisplayName("投稿一覧_0件の場合_まだ投稿はありませんを表示する")
+    void list_0件の場合_まだ投稿はありませんを表示する() throws Exception {
+        List<Post> posts = Collections.emptyList();
+        given(postService.findLatest50()).willReturn(posts);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(content().string(containsString("まだ投稿はありません")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_新着50件を受け取った場合_50件を表示する")
+    void list_新着50件を受け取った場合_50件を表示する() throws Exception {
+        List<Post> posts = IntStream.rangeClosed(2, 51)
+                .mapToObj(index -> post(
+                        "author" + index,
+                        "body" + index,
+                        BASE_TIME.plusSeconds(index)))
+                .toList();
+        given(postService.findLatest50()).willReturn(posts);
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(countOccurrences(html, "<article class=\"post\">")).isEqualTo(50);
+        assertThat(html).contains(">body51<");
+        assertThat(html).doesNotContain(">body1<");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_更新ボタンがあり_GETでpostsスラッシュへリクエストする")
+    void list_更新ボタンがあり_GETでpostsスラッシュへリクエストする() throws Exception {
+        given(postService.findLatest50()).willReturn(List.of());
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("class=\"post-list__refresh\" method=\"get\" action=\"/posts/\"");
+        assertThat(html).contains("<button type=\"submit\">更新</button>");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿がある場合_投稿者内容投稿日の順に表示する")
+    void list_投稿がある場合_投稿者内容投稿日の順に表示する() throws Exception {
+        Post post = post("alice", "本日の共有です", LocalDateTime.parse("2026-06-30T10:15:00"));
+        given(postService.findLatest50()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).containsSubsequence("alice", "本日の共有です", "2026-06-30 10:15");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_sortがoldのとき_古い順の投稿一覧を表示する")
+    void list_sortがoldのとき_古い順の投稿一覧を表示する() throws Exception {
+        List<Post> posts = List.of(post("alice", "古い投稿です", BASE_TIME.plusSeconds(1)));
+        given(postService.findOldest50()).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("sort", "old"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("sort", "old"))
+                .andExpect(content().string(containsString("value=\"old\" selected")));
+
+        verify(postService).findOldest50();
+    }
+
+    @Test
+    @DisplayName("投稿一覧_アバター色がある場合_投稿者名に色を反映する")
+    void list_アバター色がある場合_投稿者名に色を反映する() throws Exception {
+        Post post = post(
+                "alice",
+                "本日の共有です",
+                LocalDateTime.parse("2026-06-30T10:15:00"),
+                "green");
+        given(postService.findLatest50()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("style=\"color: green\"");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿がある場合_詳細画面へのリンクを表示する")
+    void list_投稿がある場合_詳細画面へのリンクを表示する() throws Exception {
+        Post post = postWithId(10L, "alice", "詳細へ遷移できる投稿です", BASE_TIME.plusSeconds(1));
+        given(postService.findLatest50()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("href=\"/posts/10\"");
+        assertThat(html).contains(">詳細<");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_タグがある場合_タグリンクを表示する")
+    void list_タグがある場合_タグリンクを表示する() throws Exception {
+        Post post = post("alice", "タグ付き投稿です", BASE_TIME.plusSeconds(1));
+        post.addTag(new Tag("java", BASE_TIME));
+        given(postService.findLatest50()).willReturn(List.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("href=\"/tags/java\"");
+        assertThat(html).contains(">#java<");
+    }
+
+    @Test
+    @DisplayName("投稿検索_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す")
+    void list_qを指定したとき_本文検索結果と検索語を一覧ビューに渡す() throws Exception {
+        List<Post> posts = List.of(post("alice", "検索対象の共有です", BASE_TIME.plusSeconds(1)));
+        given(postService.searchByBodyContaining("共有")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", "共有"))
+                .andExpect(content().string(containsString("検索対象の共有です")))
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("value=\"共有\"")));
+
+        verify(postService).searchByBodyContaining("共有");
+    }
+
+    @Test
+    @DisplayName("投稿検索_qに前後空白があるとき_trimした本文検索結果を一覧ビューに渡す")
+    void list_qに前後空白があるとき_trimした本文検索結果を一覧ビューに渡す() throws Exception {
+        List<Post> posts = List.of(post("alice", "検索対象の共有です", BASE_TIME.plusSeconds(1)));
+        given(postService.searchByBodyContaining("共有")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("q", " 共有 "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", "共有"))
+                .andExpect(content().string(containsString("value=\"共有\"")));
+
+        verify(postService).searchByBodyContaining("共有");
+    }
+
+    @Test
+    @DisplayName("タグ一覧_GET_tags_name_タグ関連投稿を一覧ビューに渡す")
+    void listByTag_GET_tags_name_タグ関連投稿を一覧ビューに渡す() throws Exception {
+        List<Post> posts = List.of(post("alice", "共有です #java", BASE_TIME.plusSeconds(1)));
+        given(postService.findByTagName("java")).willReturn(posts);
+
+        mockMvc.perform(get("/tags/Java"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("tagName", "java"))
+                .andExpect(content().string(containsString("共有です #java")));
+
+        verify(postService).findByTagName("java");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するIDのとき_投稿を表示する")
+    void detail_存在するIDのとき_投稿を表示する() throws Exception {
+        Post post = post("alice", "詳細表示の本文です", LocalDateTime.parse("2026-06-30T10:15:00"));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+        given(postService.countLikes(10L)).willReturn(3L);
+
+        mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", sameInstance(post)))
+                .andExpect(model().attribute("postId", 10L))
+                .andExpect(model().attribute("likeCount", 3L))
+                .andExpect(content().string(containsString("alice")))
+                .andExpect(content().string(containsString("詳細表示の本文です")))
+                .andExpect(content().string(containsString("2026-06-30 10:15")))
+                .andExpect(content().string(containsString("いいね 3")))
+                .andExpect(content().string(containsString("method=\"post\" action=\"/posts/10/likes\"")))
+                .andExpect(content().string(containsString("<button type=\"submit\">Like</button>")));
+
+        verify(postService).findById(10L);
+        verify(postService).countLikes(10L);
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するIDのとき_三点メニュー内に削除フォームを表示する")
+    void detail_存在するIDのとき_三点メニュー内に削除フォームを表示する() throws Exception {
+        Post post = post("alice", "削除対象の投稿です", LocalDateTime.parse("2026-06-30T01:15:00"));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("class=\"post-menu\"");
+        assertThat(html).contains("class=\"post-menu__toggle\"");
+        assertThat(html).contains("aria-label=\"投稿メニュー\"");
+        assertThat(html).contains(">…<");
+        assertThat(html).contains("class=\"post-menu__dropdown\" hidden");
+        assertThat(html).contains("method=\"post\" action=\"/posts/10/delete\"");
+        assertThat(html).contains("class=\"post-menu__delete\"");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_タグがある場合_タグリンクを表示する")
+    void detail_タグがある場合_タグリンクを表示する() throws Exception {
+        Post post = post("alice", "タグ付き投稿です", LocalDateTime.parse("2026-06-30T01:15:00"));
+        post.addTag(new Tag("java", BASE_TIME));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+
+        MvcResult result = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("href=\"/tags/java\"");
+        assertThat(html).contains(">#java<");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_コメント欄_見出し直下に入力フォームとコメント一覧を表示する")
+    void detail_コメント欄_見出し直下に入力フォームとコメント一覧を表示する() throws Exception {
+        Post post = post("alice", "詳細表示の本文です", LocalDateTime.parse("2026-06-30T10:15:00"));
+        Comment comment = new Comment(post, "コメント本文です", BASE_TIME.plusMinutes(1));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+        given(postService.findCommentsByPostId(10L)).willReturn(List.of(comment));
+
+        MvcResult result = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("class=\"comment-panel\"");
+        assertThat(html).contains("class=\"comment-list\"");
+        assertThat(html).contains("class=\"comment-form\"");
+        assertThat(html).containsSubsequence("コメント", "class=\"comment-form\"", "class=\"comment-list\"", "コメント本文です");
+    }
+
+    @Test
+    @DisplayName("タグUI_一覧と詳細でタグリンクをバッジ表示できる")
+    void tagUi_一覧と詳細でタグリンクをバッジ表示できる() throws Exception {
+        Post post = postWithId(10L, "alice", "タグ付き投稿です", BASE_TIME.plusSeconds(1));
+        post.addTag(new Tag("java", BASE_TIME));
+        given(postService.findLatest50()).willReturn(List.of(post));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+
+        String listHtml = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String detailHtml = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(listHtml).contains("class=\"post__tag-link\"");
+        assertThat(detailHtml).contains("class=\"post__tag-link\"");
+    }
+
+
+    @Test
+    @DisplayName("投稿詳細_存在しないIDのとき_404を返す")
+    void detail_存在しないIDのとき_404を返す() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+
+        verify(postService).findById(999L);
+    }
+
+    @Test
+    @DisplayName("いいね_POSTしたとき_clientHashでトグルして詳細へリダイレクトする")
+    void like_POSTしたとき_clientHashでトグルして詳細へリダイレクトする() throws Exception {
+        String ipAddress = "192.0.2.10";
+        String userAgent = "JUnit Browser";
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/posts/10/likes")
+                        .with(request -> {
+                            request.setRemoteAddr(ipAddress);
+                            return request;
+                        })
+                        .header("User-Agent", userAgent))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/10"));
+
+        verify(postService).toggleLike(10L, clientHash(ipAddress, userAgent));
+    }
+
+    @Test
+    @DisplayName("投稿削除_POSTしたとき_Serviceで削除し一覧へリダイレクトする")
+    void delete_POSTしたとき_Serviceで削除し一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/posts/10/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(10L);
+    }
+
+    @Test
+    @DisplayName("投稿登録_入力が妥当なとき_Serviceで保存し投稿一覧へリダイレクトする")
+    void create_入力が妥当なとき_Serviceで保存し投稿一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/posts")
+                        .param("author", "alice")
+                        .param("body", "本日の共有です")
+                        .param("avatarColor", "green")
+                        .param("tagNames", "java", "spring"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "本日の共有です", "green", "java spring");
+    }
+
+    @Test
+    @DisplayName("投稿登録フォーム_HTML入力制限を出力しない")
+    void newForm_HTML入力制限を出力しない() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).doesNotContain("maxlength=");
+        assertThat(html).doesNotContain(" required");
+    }
+
+    @Test
+    @DisplayName("投稿登録フォーム_投稿者名と任意のアバター色を入力できる")
+    void newForm_投稿者名と任意のアバター色とタグを入力できる() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("name=\"author\"");
+        assertThat(html).contains("name=\"avatarColor\"");
+        assertThat(html).contains("name=\"tagNames\"");
+        assertThat(html).contains("value=\"\"");
+        assertThat(html).contains("value=\"blue\"");
+        assertThat(html).contains("value=\"green\"");
+        assertThat(html).contains("value=\"pink\"");
+    }
+
+    @Test
+    @DisplayName("投稿登録フォーム_タグ追加ボタンで複数タグ入力欄を追加できる")
+    void newForm_タグ追加ボタンで複数タグ入力欄を追加できる() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("data-tag-list");
+        assertThat(html).contains("name=\"tagNames\"");
+        assertThat(html).contains("data-tag-add");
+        assertThat(html).contains(">+ タグ追加<");
+    }
+
+    @Test
+    @DisplayName("投稿登録_空白のみのとき_入力値を保持してフォームを再表示する")
+    void create_空白のみのとき_入力値を保持してフォームを再表示する() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/posts")
+                        .param("author", " ")
+                        .param("body", " "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author", "body"))
+                .andExpect(content().string(containsString("投稿者名を入力してください")))
+                .andExpect(content().string(containsString("本文を入力してください")))
+                .andExpect(content().string(containsString("value=\" \"")))
+                .andExpect(content().string(containsString("> </textarea>")));
+
+        verify(postService, never()).create(" ", " ");
+    }
+
+    @Test
+    @DisplayName("投稿登録_投稿者名31文字のとき_エラーを表示して入力値を保持する")
+    void create_投稿者名31文字のとき_エラーを表示して入力値を保持する() throws Exception {
+        String author = "a".repeat(31);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/posts")
+                        .param("author", author)
+                        .param("body", "本日の共有です"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeHasFieldErrors("postForm", "author"))
+                .andExpect(content().string(containsString("投稿者名は 1 文字以上 30 文字以内で入力してください")))
+                .andExpect(content().string(containsString("value=\"" + author + "\"")));
+
+        verify(postService, never()).create(author, "本日の共有です");
+    }
+
+    private static Post post(String author, String body, LocalDateTime createdAt) {
+        return new Post(author, body, createdAt);
+    }
+
+    private static Post post(String author, String body, LocalDateTime createdAt, String avatarColor) {
+        return new Post(author, body, createdAt, avatarColor);
+    }
+
+    private static Post postWithId(Long id, String author, String body, LocalDateTime createdAt) {
+        Post post = post(author, body, createdAt);
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
+    }
+
+    private static String clientHash(String ipAddress, String userAgent) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest((ipAddress + userAgent).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hashed).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
+    }
+
+    private static int countOccurrences(String text, String target) {
+        int count = 0;
+        int fromIndex = 0;
+        int foundIndex = text.indexOf(target, fromIndex);
+        while (foundIndex >= 0) {
+            count++;
+            fromIndex = foundIndex + target.length();
+            foundIndex = text.indexOf(target, fromIndex);
+        }
+        return count;
+    }
+}

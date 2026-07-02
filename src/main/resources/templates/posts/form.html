@@ -13,19 +13,75 @@
         <a th:href="@{/posts}">一覧に戻る</a>
     </nav>
 
-    <form th:action="@{/posts}" th:object="${postForm}" method="post">
-        <div>
-            <label for="author">投稿者</label>
-            <input type="text" id="author" th:field="*{author}" maxlength="30" required>
+    <form class="post-form" th:action="@{/posts}" th:object="${postForm}" method="post">
+        <div class="post-form__field">
+            <label class="post-form__label" for="author">投稿者</label>
+            <input class="post-form__input" type="text" id="author" th:field="*{author}">
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
-        <div>
-            <label for="body">本文 (280 文字まで)</label>
-            <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
+        <fieldset class="post-form__fieldset">
+            <legend class="post-form__label">アバター色</legend>
+            <div class="post-form__choices">
+            <label class="post-form__choice">
+                <input type="radio" th:field="*{avatarColor}" value="">
+                指定なし
+            </label>
+            <label class="post-form__choice">
+                <input type="radio" th:field="*{avatarColor}" value="blue">
+                青
+            </label>
+            <label class="post-form__choice">
+                <input type="radio" th:field="*{avatarColor}" value="green">
+                緑
+            </label>
+            <label class="post-form__choice">
+                <input type="radio" th:field="*{avatarColor}" value="pink">
+                ピンク
+            </label>
+            </div>
+        </fieldset>
+        <div class="post-form__field">
+            <label class="post-form__label" for="body">本文</label>
+            <textarea class="post-form__textarea" id="body" th:field="*{body}" rows="6"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
-        <button type="submit">投稿</button>
+        <div class="post-form__field">
+            <label class="post-form__label" for="tagNames">タグ1</label>
+            <div class="post-form__tag-list" data-tag-list>
+                <input class="post-form__input" type="text" id="tagNames" th:field="*{tagNames}">
+            </div>
+            <button class="post-form__add-tag" type="button" data-tag-add>+ タグ追加</button>
+        </div>
+        <div class="post-form__actions">
+            <button class="post-form__submit" type="submit">投稿</button>
+        </div>
     </form>
+    <script>
+        (() => {
+            const tagList = document.querySelector("[data-tag-list]");
+            const addButton = document.querySelector("[data-tag-add]");
+            if (!tagList || !addButton) {
+                return;
+            }
+            addButton.addEventListener("click", () => {
+                const nextIndex = tagList.querySelectorAll("input[name='tagNames']").length + 1;
+                const fieldId = `tagNames${nextIndex}`;
+                const wrapper = document.createElement("div");
+                wrapper.className = "post-form__tag-field";
+                const label = document.createElement("label");
+                label.className = "post-form__label";
+                label.htmlFor = fieldId;
+                label.textContent = `タグ${nextIndex}`;
+                const input = document.createElement("input");
+                input.className = "post-form__input";
+                input.type = "text";
+                input.id = fieldId;
+                input.name = "tagNames";
+                wrapper.append(label, input);
+                tagList.append(wrapper);
+            });
+        })();
+    </script>
 </main>
 </body>
 </html>

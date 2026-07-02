@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <nav>
+        <a th:href="@{/posts}">一覧に戻る</a>
+    </nav>
+
+    <article class="post">
+        <div class="post-menu" data-post-menu>
+            <button class="post-menu__toggle"
+                    type="button"
+                    aria-label="投稿メニュー"
+                    aria-expanded="false"
+                    data-post-menu-toggle>…</button>
+            <div class="post-menu__dropdown" hidden data-post-menu-dropdown>
+                <form method="post" th:action="@{/posts/{id}/delete(id=${postId})}">
+                    <button class="post-menu__delete" type="submit">削除</button>
+                </form>
+            </div>
+        </div>
+        <p class="post__author" th:text="${post.author}">投稿者</p>
+        <p class="post__body" th:text="${post.body}">本文</p>
+        <p class="post__tags" th:if="${post.hasTags()}">
+            <a th:each="tag : ${post.tags}"
+               class="post__tag-link"
+               th:href="@{/tags/{name}(name=${tag.name})}"
+               th:text="|#${tag.name}|">#tag</a>
+        </p>
+        <time class="post__created-at"
+              th:datetime="${post.createdAt}"
+              th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+    </article>
+    <section>
+        <p th:text="|いいね ${likeCount}|">いいね 0</p>
+        <form method="post" th:action="@{/posts/{id}/likes(id=${postId})}">
+            <button type="submit">Like</button>
+        </form>
+    </section>
+    <section class="comment-panel">
+        <h2>コメント</h2>
+        <form class="comment-form" method="post" th:action="@{/posts/{id}/comments(id=${postId})}">
+            <textarea name="body"></textarea>
+            <button type="submit">コメントする</button>
+        </form>
+        <div class="comment-list">
+            <p th:if="${#lists.isEmpty(comments)}">まだコメントはありません</p>
+            <article class="comment" th:each="comment : ${comments}">
+                <p class="comment__body" th:text="${comment.body}">コメント本文</p>
+                <time class="comment__created-at"
+                      th:datetime="${comment.createdAt}"
+                      th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            </article>
+        </div>
+    </section>
+
+</main>
+<script>
+    (() => {
+        const menu = document.querySelector("[data-post-menu]");
+        if (!menu) {
+            return;
+        }
+
+        const toggle = menu.querySelector("[data-post-menu-toggle]");
+        const dropdown = menu.querySelector("[data-post-menu-dropdown]");
+        if (!toggle || !dropdown) {
+            return;
+        }
+
+        const closeMenu = () => {
+            dropdown.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+        };
+
+        toggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const willOpen = dropdown.hidden;
+            dropdown.hidden = !willOpen;
+            toggle.setAttribute("aria-expanded", String(willOpen));
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!menu.contains(event.target)) {
+                closeMenu();
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closeMenu();
+            }
+        });
+    })();
+</script>
+</body>
+</html>
