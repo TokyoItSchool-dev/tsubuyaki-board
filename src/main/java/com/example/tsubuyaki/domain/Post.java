@@ -37,8 +37,14 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    @Column(name = "likes_count", nullable = false)
+    private long likesCount;
 
     @OneToMany(mappedBy = "post")
     private List<PostTag> postTags = new ArrayList<>();
@@ -56,6 +62,7 @@ public class Post {
         this.body = body;
         this.avatarColor = avatarColor;
         this.createdAt = createdAt;
+        this.updatedAt = createdAt;
     }
 
     public Long getId() {
@@ -78,8 +85,16 @@ public class Post {
         return createdAt;
     }
 
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
     public Instant getDeletedAt() {
         return deletedAt;
+    }
+
+    public long getLikesCount() {
+        return likesCount;
     }
 
     public List<Tag> getTags() {
@@ -89,13 +104,18 @@ public class Post {
     }
 
     public void update(String author, String body) {
-        update(author, body, DEFAULT_AVATAR_COLOR);
+        update(author, body, DEFAULT_AVATAR_COLOR, Instant.now());
     }
 
     public void update(String author, String body, String avatarColor) {
+        update(author, body, avatarColor, Instant.now());
+    }
+
+    public void update(String author, String body, String avatarColor, Instant updatedAt) {
         this.author = author;
         this.body = body;
         this.avatarColor = avatarColor;
+        this.updatedAt = updatedAt;
     }
 
     public void delete(Instant deletedAt) {

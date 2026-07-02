@@ -10,15 +10,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 import java.util.Objects;
 
 @Entity
-@Table(name = "post_likes", uniqueConstraints = {
-        @UniqueConstraint(name = "post_likes_post_client_uk", columnNames = {"post_id", "client_hash"})
-})
+@Table(name = "post_likes")
 public class PostLike {
 
     @Id

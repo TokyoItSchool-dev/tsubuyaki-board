@@ -1,20 +1,23 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
-import com.example.tsubuyaki.domain.PostLike;
 import com.example.tsubuyaki.domain.PostTag;
 import com.example.tsubuyaki.domain.Tag;
-import com.example.tsubuyaki.repository.PostLikeRepository;
+import com.example.tsubuyaki.repository.PostApiRow;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.PostTagRepository;
 import com.example.tsubuyaki.repository.TagRepository;
+import com.example.tsubuyaki.service.dto.PostApiResponse;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,17 +28,14 @@ public class PostService {
     private static final int LATEST_POST_LIMIT = 50;
 
     private final PostRepository postRepository;
-    private final PostLikeRepository postLikeRepository;
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
     private final TagExtractor tagExtractor = new TagExtractor();
 
     public PostService(PostRepository postRepository,
-            PostLikeRepository postLikeRepository,
             TagRepository tagRepository,
             PostTagRepository postTagRepository) {
         this.postRepository = postRepository;
-        this.postLikeRepository = postLikeRepository;
         this.tagRepository = tagRepository;
         this.postTagRepository = postTagRepository;
     }
@@ -46,6 +46,35 @@ public class PostService {
             return List.of();
         }
         return postRepository.findAllWithTagsByIdIn(ids);
+    }
+
+    public List<PostApiResponse> latestForApi() {
+        List<Long> ids = postRepository.findLatestIds(PageRequest.of(0, LATEST_POST_LIMIT));
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, ApiPostBuilder> posts = new LinkedHashMap<>();
+        for (PostApiRow row : postRepository.findApiRowsByIds(ids)) {
+            ApiPostBuilder post = posts.computeIfAbsent(row.id(), id -> new ApiPostBuilder(row));
+            if (row.tagName() != null) {
+                post.addTag(row.tagName());
+            }
+        }
+        return posts.values().stream()
+                .map(ApiPostBuilder::toResponse)
+                .toList();
+    }
+
+    public Map<Long, Long> countLikesByPostIds(List<Long> postIds) {
+        if (postIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, Long> counts = new LinkedHashMap<>();
+        postRepository.findLikeCountsByPostIds(postIds)
+                .forEach(count -> counts.put(count.postId(), count.likesCount()));
+        return counts;
     }
 
     public List<Post> search(String query) {
@@ -98,9 +127,12 @@ public class PostService {
     }
 
     @Transactional
-    public Optional<Boolean> toggleLike(Long postId, String clientHash) {
-        return postRepository.findByIdAndDeletedAtIsNull(postId)
-                .map(post -> toggleLike(postId, post, clientHash));
+    public Optional<Long> incrementLike(Long postId) {
+        int updatedRows = postRepository.incrementLikesCountById(postId);
+        if (updatedRows == 0) {
+            return Optional.empty();
+        }
+        return postRepository.findLikesCountById(postId);
     }
 
     @Transactional
@@ -115,22 +147,7 @@ public class PostService {
     }
 
     public long countLikes(Long postId) {
-        return postLikeRepository.countByPostId(postId);
-    }
-
-    public boolean likedBy(Long postId, String clientHash) {
-        return postLikeRepository.existsByPostIdAndClientHash(postId, clientHash);
-    }
-
-    private boolean toggleLike(Long postId, Post post, String clientHash) {
-        Optional<PostLike> existingLike = postLikeRepository.findByPostIdAndClientHash(postId, clientHash);
-        if (existingLike.isPresent()) {
-            postLikeRepository.delete(existingLike.get());
-            return false;
-        }
-
-        postLikeRepository.save(new PostLike(post, clientHash, Instant.now()));
-        return true;
+        return postRepository.findLikesCountById(postId).orElse(0L);
     }
 
     private void saveTags(Post post, String body) {
@@ -139,6 +156,32 @@ public class PostService {
             Tag tag = tagRepository.findByName(tagName)
                     .orElseGet(() -> tagRepository.save(new Tag(tagName)));
             postTagRepository.save(new PostTag(post, tag));
+        }
+    }
+
+    private static final class ApiPostBuilder {
+
+        private final PostApiRow row;
+        private final List<String> tags = new ArrayList<>();
+
+        private ApiPostBuilder(PostApiRow row) {
+            this.row = row;
+        }
+
+        private void addTag(String tagName) {
+            tags.add(tagName);
+        }
+
+        private PostApiResponse toResponse() {
+            return new PostApiResponse(
+                    row.id(),
+                    row.author(),
+                    row.body(),
+                    row.avatarColor(),
+                    row.createdAt(),
+                    row.updatedAt(),
+                    List.copyOf(tags),
+                    row.likesCount());
         }
     }
 }

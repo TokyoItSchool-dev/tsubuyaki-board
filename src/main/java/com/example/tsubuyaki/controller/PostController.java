@@ -1,10 +1,8 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
-import com.example.tsubuyaki.service.ClientHashGenerator;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -19,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class PostController {
@@ -26,47 +25,50 @@ public class PostController {
     private static final List<String> AVATAR_COLORS = List.of("red", "blue", "green", "yellow", "purple");
 
     private final PostService postService;
-    private final ClientHashGenerator clientHashGenerator = new ClientHashGenerator();
 
     public PostController(PostService postService) {
         this.postService = postService;
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(@RequestParam(name = "q", required = false) String q, Model model) {
-        model.addAttribute("posts", StringUtils.hasText(q) ? postService.search(q) : postService.latest());
+    public String list(@RequestParam(name = "q", required = false) String q,
+            Model model) {
+        List<Post> posts = StringUtils.hasText(q) ? postService.search(q) : postService.latest();
+        setupListModel(posts, model);
         model.addAttribute("q", q == null ? "" : q);
         return "posts/list";
     }
 
     @GetMapping("/tags/{name}")
     public String tagList(@PathVariable String name, Model model) {
-        model.addAttribute("posts", postService.findByTagName(name));
+        setupListModel(postService.findByTagName(name), model);
         model.addAttribute("q", "");
         model.addAttribute("tagName", name);
         return "posts/list";
     }
 
     @GetMapping("/posts/{id}")
-    public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
+    public String detail(@PathVariable Long id, Model model) {
         Post post = postService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "投稿が見つかりません"));
-        String clientHash = clientHash(request);
 
         model.addAttribute("postId", id);
         model.addAttribute("post", post);
         model.addAttribute("likeCount", postService.countLikes(id));
-        model.addAttribute("likedByClient", postService.likedBy(id, clientHash));
         model.addAttribute("tags", postService.findTagsByPostId(id));
         return "posts/detail";
     }
 
     @PostMapping("/posts/{id}/likes")
-    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
-        postService.toggleLike(id, clientHash(request))
+    public String incrementLike(@PathVariable Long id,
+            @RequestParam(name = "redirectTo", required = false) String redirectTo) {
+        postService.incrementLike(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "投稿が見つかりません"));
+        if ("/posts".equals(redirectTo) || "/posts/".equals(redirectTo)) {
+            return "redirect:/posts";
+        }
         return "redirect:/posts/" + id;
     }
 
@@ -144,7 +146,13 @@ public class PostController {
         model.addAttribute("avatarColors", AVATAR_COLORS);
     }
 
-    private String clientHash(HttpServletRequest request) {
-        return clientHashGenerator.generate(request.getRemoteAddr(), request.getHeader("User-Agent"));
+    private void setupListModel(List<Post> posts, Model model) {
+        List<Long> postIds = posts.stream()
+                .map(Post::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        model.addAttribute("posts", posts);
+        model.addAttribute("likeCounts", postService.countLikesByPostIds(postIds));
     }
 }

@@ -22,6 +22,8 @@ class PostTest {
         assertThat(post.getBody()).isEqualTo("hello");
         assertThat(post.getAvatarColor()).isEqualTo("purple");
         assertThat(post.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(post.getUpdatedAt()).isEqualTo(createdAt);
+        assertThat(post.getLikesCount()).isZero();
     }
 
     @Test
@@ -54,14 +56,16 @@ class PostTest {
     @DisplayName("Post_更新時_投稿者と本文とアバター色を変更し投稿日を維持する")
     void update_changesAuthorBodyAndAvatarColorOnly() {
         Instant createdAt = Instant.parse("2026-05-23T10:00:00Z");
+        Instant updatedAt = Instant.parse("2026-05-24T10:00:00Z");
         Post post = new Post("alice", "hello", "blue", createdAt);
 
-        post.update("bob", "更新後本文です", "green");
+        post.update("bob", "更新後本文です", "green", updatedAt);
 
         assertThat(post.getAuthor()).isEqualTo("bob");
         assertThat(post.getBody()).isEqualTo("更新後本文です");
         assertThat(post.getAvatarColor()).isEqualTo("green");
         assertThat(post.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(post.getUpdatedAt()).isEqualTo(updatedAt);
     }
 
     @Test

@@ -32,7 +32,6 @@
                th:text="|#${tag.name}|">#java</a>
         </p>
         <div class="post__likes">
-            <span th:text="|いいね ${likeCount}|">いいね 0</span>
             <form class="post__like-form"
                   method="post"
                   th:action="@{/posts/{id}/likes(id=${postId})}">
@@ -40,7 +39,11 @@
                        th:if="${_csrf != null}"
                        th:name="${_csrf.parameterName}"
                        th:value="${_csrf.token}">
-                <button type="submit" th:text="${likedByClient} ? 'いいね解除' : 'いいね'">いいね</button>
+                <button class="post__like-mark"
+                        type="submit"
+                        aria-label="いいねする"
+                        th:text="|👍 ${likeCount}|"
+                        title="いいね">👍 0</button>
             </form>
         </div>
         <form class="post__delete-form"

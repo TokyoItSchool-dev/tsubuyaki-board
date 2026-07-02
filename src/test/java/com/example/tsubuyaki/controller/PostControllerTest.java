@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -194,11 +195,11 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿一覧_投稿表示_投稿者内容投稿日の順に表示する")
-    void list_displaysAuthorBodyCreatedAtInOrder() throws Exception {
-        given(postService.latest()).willReturn(List.of(
-                new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"))
-        ));
+    @DisplayName("投稿一覧_投稿表示_投稿者内容更新日時の順に表示する")
+    void list_displaysAuthorBodyUpdatedAtInOrder() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        post.update("alice", "本文です", "blue", Instant.parse("2026-05-24T02:00:00Z"));
+        given(postService.latest()).willReturn(List.of(post));
 
         String html = mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -206,9 +207,11 @@ class PostControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertThat(html).contains("alice", "本文です", "2026-05-23 10:00");
+        assertThat(html).contains("alice", "本文です", "2026-05-24 11:00");
+        assertThat(html).doesNotContain("2026-05-23 10:00");
+        assertThat(html).contains("class=\"post__updated-at\"");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("本文です"));
-        assertThat(html.indexOf("本文です")).isLessThan(html.indexOf("2026-05-23 10:00"));
+        assertThat(html.indexOf("本文です")).isLessThan(html.indexOf("2026-05-24 11:00"));
     }
 
     @Test
@@ -249,6 +252,37 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("href=\"/posts/42\"")))
                 .andExpect(content().string(containsString("詳細")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_いいね数_各投稿にグッドマークと件数を表示する")
+    void list_displaysLikeMarkAndCountForEachPost() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.latest()).willReturn(List.of(post));
+        given(postService.countLikesByPostIds(List.of(42L))).willReturn(Map.of(42L, 3L));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("likeCounts", Map.of(42L, 3L)))
+                .andExpect(content().string(containsString("👍")))
+                .andExpect(content().string(containsString("👍 3")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_いいねフォーム_posts_id_likesへPOST送信し一覧へ戻る")
+    void list_hasLikeFormPostingToLikesAndReturningList() throws Exception {
+        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        given(postService.latest()).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("action=\"/posts/42/likes\"")))
+                .andExpect(content().string(containsString("name=\"redirectTo\"")))
+                .andExpect(content().string(containsString("value=\"/posts\"")))
+                .andExpect(content().string(containsString("class=\"post__like-mark\"")));
     }
 
     @Test
@@ -459,20 +493,23 @@ class PostControllerTest {
         mockMvc.perform(get("/posts/42"))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("likeCount", 3L))
-                .andExpect(content().string(containsString("いいね 3")));
+                .andExpect(content().string(containsString("👍 3")));
     }
 
     @Test
-    @DisplayName("投稿詳細_いいねボタン_posts_id_likesへPOST送信する")
-    void detail_hasLikeButtonPostingToLikes() throws Exception {
+    @DisplayName("投稿詳細_グッドマーク_posts_id_likesへPOST送信する")
+    void detail_hasLikeMarkPostingToLikes() throws Exception {
         Post post = new Post("alice", "詳細本文です", Instant.parse("2026-05-23T01:00:00Z"));
         given(postService.findById(42L)).willReturn(Optional.of(post));
+        given(postService.countLikes(42L)).willReturn(5L);
 
         mockMvc.perform(get("/posts/42"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("method=\"post\"")))
                 .andExpect(content().string(containsString("action=\"/posts/42/likes\"")))
-                .andExpect(content().string(containsString("いいね")));
+                .andExpect(content().string(containsString("class=\"post__like-mark\"")))
+                .andExpect(content().string(containsString("👍")))
+                .andExpect(content().string(containsString("👍 5")));
     }
 
     @Test
@@ -489,33 +526,36 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("いいね_POST_posts_id_likes_いいねを切り替えて詳細へリダイレクトする")
-    void like_whenPostExists_togglesLikeAndRedirectsToDetail() throws Exception {
-        given(postService.toggleLike(42L, "0a409f63")).willReturn(Optional.of(true));
+    @DisplayName("いいね_POST_posts_id_likes_likesCountを増やして詳細へリダイレクトする")
+    void like_whenPostExists_incrementsLikeAndRedirectsToDetail() throws Exception {
+        given(postService.incrementLike(42L)).willReturn(Optional.of(4L));
 
-        mockMvc.perform(post("/posts/42/likes")
-                        .with(request -> {
-                            request.setRemoteAddr("127.0.0.1");
-                            return request;
-                        })
-                        .header("User-Agent", "JUnit UA"))
+        mockMvc.perform(post("/posts/42/likes"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts/42"));
 
-        verify(postService).toggleLike(42L, "0a409f63");
+        verify(postService).incrementLike(42L);
+    }
+
+    @Test
+    @DisplayName("いいね_POST_posts_id_likes_一覧から呼び出した場合は一覧へリダイレクトする")
+    void like_whenRedirectToPosts_redirectsToList() throws Exception {
+        given(postService.incrementLike(42L)).willReturn(Optional.of(4L));
+
+        mockMvc.perform(post("/posts/42/likes")
+                        .param("redirectTo", "/posts"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).incrementLike(42L);
     }
 
     @Test
     @DisplayName("いいね_POST_posts_id_likes_存在しないidは404を返す")
     void like_whenPostDoesNotExist_returns404() throws Exception {
-        given(postService.toggleLike(999L, "0a409f63")).willReturn(Optional.empty());
+        given(postService.incrementLike(999L)).willReturn(Optional.empty());
 
-        mockMvc.perform(post("/posts/999/likes")
-                        .with(request -> {
-                            request.setRemoteAddr("127.0.0.1");
-                            return request;
-                        })
-                        .header("User-Agent", "JUnit UA"))
+        mockMvc.perform(post("/posts/999/likes"))
                 .andExpect(status().isNotFound());
     }
 

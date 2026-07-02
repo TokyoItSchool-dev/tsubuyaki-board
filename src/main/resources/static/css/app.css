@@ -73,7 +73,8 @@ h1 {
     color: #9333ea;
 }
 
-.post__created-at {
+.post__created-at,
+.post__updated-at {
     color: var(--color-muted);
     font-size: 0.85rem;
 }
@@ -106,4 +107,23 @@ h1 {
 
 .post__like-form {
     margin: 0;
+}
+
+.post__like-count {
+    font-weight: 600;
+}
+
+.post__like-mark {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0.25rem;
+}
+
+.post__like-mark:hover,
+.post__like-mark:focus {
+    transform: translateY(-1px);
 }

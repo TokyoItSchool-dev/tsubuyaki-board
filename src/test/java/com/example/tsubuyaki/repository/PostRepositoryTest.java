@@ -104,6 +104,7 @@ class PostRepositoryTest {
                     assertThat(updated.getBody()).isEqualTo("更新後本文です");
                     assertThat(updated.getAvatarColor()).isEqualTo("green");
                     assertThat(updated.getCreatedAt()).isEqualTo(Instant.parse("2026-05-23T00:00:00Z"));
+                    assertThat(updated.getUpdatedAt()).isNotNull();
                 });
     }
 
@@ -198,6 +199,76 @@ class PostRepositoryTest {
         assertThat(posts.get(0).getTags())
                 .extracting(Tag::getName)
                 .containsExactly("java");
+    }
+
+    @Test
+    @DisplayName("投稿一覧API_JOIN行_削除済みを除外しタグといいね数を返す")
+    void findApiRowsByIds_excludesDeletedPostsAndReturnsTagsAndLikes() {
+        Post activePost = postRepository.save(new Post(
+                "alice", "#java #spring 表示する投稿", "purple", Instant.parse("2026-05-23T03:00:00Z")));
+        Post deletedPost = new Post(
+                "bob", "#oracle 表示しない投稿", "green", Instant.parse("2026-05-23T04:00:00Z"));
+        deletedPost.delete(Instant.parse("2026-05-24T00:00:00Z"));
+        postRepository.save(deletedPost);
+        Tag java = tagRepository.save(new Tag("java"));
+        Tag spring = tagRepository.save(new Tag("spring"));
+        Tag oracle = tagRepository.save(new Tag("oracle"));
+        postTagRepository.saveAll(List.of(
+                new PostTag(activePost, java),
+                new PostTag(activePost, spring),
+                new PostTag(deletedPost, oracle)
+        ));
+        postRepository.incrementLikesCountById(activePost.getId());
+        postRepository.incrementLikesCountById(activePost.getId());
+        postRepository.incrementLikesCountById(deletedPost.getId());
+        flushAndClear();
+
+        List<Long> ids = postRepository.findLatestIds(PageRequest.of(0, 50));
+        List<PostApiRow> rows = postRepository.findApiRowsByIds(ids);
+
+        assertThat(ids).containsExactly(activePost.getId());
+        assertThat(rows)
+                .extracting(PostApiRow::body)
+                .containsOnly("#java #spring 表示する投稿");
+        assertThat(rows)
+                .extracting(PostApiRow::tagName)
+                .containsExactly("java", "spring");
+        assertThat(rows)
+                .extracting(PostApiRow::likesCount)
+                .containsOnly(2L);
+    }
+
+    @Test
+    @DisplayName("いいね累積_存在する投稿_likesCountを押した回数だけ増やす")
+    void incrementLikesCountById_whenPostExists_incrementsEveryTime() {
+        Post post = postRepository.saveAndFlush(new Post(
+                "alice", "本文です", Instant.parse("2026-05-23T01:00:00Z")));
+
+        int first = postRepository.incrementLikesCountById(post.getId());
+        int second = postRepository.incrementLikesCountById(post.getId());
+        flushAndClear();
+
+        assertThat(first).isEqualTo(1);
+        assertThat(second).isEqualTo(1);
+        assertThat(postRepository.findByIdAndDeletedAtIsNull(post.getId()))
+                .get()
+                .extracting(Post::getLikesCount)
+                .isEqualTo(2L);
+        assertThat(postRepository.findLikesCountById(post.getId())).contains(2L);
+    }
+
+    @Test
+    @DisplayName("いいね累積_削除済み投稿_likesCountを増やさない")
+    void incrementLikesCountById_whenPostDeleted_doesNotIncrement() {
+        Post post = new Post("alice", "削除済み投稿", Instant.parse("2026-05-23T01:00:00Z"));
+        post.delete(Instant.parse("2026-05-24T00:00:00Z"));
+        Post savedPost = postRepository.saveAndFlush(post);
+
+        int updatedRows = postRepository.incrementLikesCountById(savedPost.getId());
+        flushAndClear();
+
+        assertThat(updatedRows).isZero();
+        assertThat(postRepository.findLikesCountById(savedPost.getId())).isEmpty();
     }
 
     @Test

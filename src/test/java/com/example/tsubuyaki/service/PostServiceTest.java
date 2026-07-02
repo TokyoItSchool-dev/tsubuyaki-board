@@ -1,13 +1,13 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
-import com.example.tsubuyaki.domain.PostLike;
 import com.example.tsubuyaki.domain.PostTag;
 import com.example.tsubuyaki.domain.Tag;
-import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.PostTagRepository;
+import com.example.tsubuyaki.repository.PostApiRow;
 import com.example.tsubuyaki.repository.TagRepository;
+import com.example.tsubuyaki.service.dto.PostApiResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +20,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -33,9 +35,6 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
-
-    @Mock
-    private PostLikeRepository postLikeRepository;
 
     @Mock
     private TagRepository tagRepository;
@@ -107,6 +106,46 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿一覧API_最新50件のJOIN行をタグ配列といいね数に変換する")
+    void latestForApi_groupsRowsIntoApiResponses() {
+        Instant newer = Instant.parse("2026-05-23T03:00:00Z");
+        Instant older = Instant.parse("2026-05-23T01:00:00Z");
+        List<Long> ids = List.of(2L, 1L);
+        given(postRepository.findLatestIds(PageRequest.of(0, 50))).willReturn(ids);
+        given(postRepository.findApiRowsByIds(ids)).willReturn(List.of(
+                new PostApiRow(2L, "bob", "#spring 新しい投稿", "green", newer, newer, "spring", 2L),
+                new PostApiRow(2L, "bob", "#spring 新しい投稿", "green", newer, newer, "java", 2L),
+                new PostApiRow(1L, "alice", "古い投稿", "blue", older, older, null, 0L)
+        ));
+
+        List<PostApiResponse> actual = postService.latestForApi();
+
+        assertThat(actual).hasSize(2);
+        assertThat(actual.get(0).id()).isEqualTo(2L);
+        assertThat(actual.get(0).tags()).containsExactly("spring", "java");
+        assertThat(actual.get(0).likesCount()).isEqualTo(2L);
+        assertThat(actual.get(0).updatedAt()).isEqualTo(newer);
+        assertThat(actual.get(1).id()).isEqualTo(1L);
+        assertThat(actual.get(1).tags()).isEmpty();
+        verify(postRepository).findLatestIds(PageRequest.of(0, 50));
+        verify(postRepository).findApiRowsByIds(ids);
+    }
+
+    @Test
+    @DisplayName("投稿一覧_いいね数_投稿idごとの件数Mapを返す")
+    void countLikesByPostIds_returnsCountMap() {
+        given(postRepository.findLikeCountsByPostIds(List.of(42L, 43L))).willReturn(List.of(
+                new com.example.tsubuyaki.repository.PostLikeCount(42L, 3L),
+                new com.example.tsubuyaki.repository.PostLikeCount(43L, 1L)
+        ));
+
+        Map<Long, Long> actual = postService.countLikesByPostIds(List.of(42L, 43L));
+
+        assertThat(actual).containsEntry(42L, 3L);
+        assertThat(actual).containsEntry(43L, 1L);
+        verify(postRepository).findLikeCountsByPostIds(List.of(42L, 43L));
+    }
+
     @DisplayName("投稿作成_入力正常_アバター色を含むPostに変換してRepositoryへ保存する")
     void create_whenValid_savesPostWithAvatarColor() {
         postService.create("alice", "本文です", "purple");
@@ -212,71 +251,55 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("いいね_未いいねの場合_いいねを保存してtrueを返す")
-    void toggleLike_whenNotLiked_savesLikeAndReturnsTrue() {
-        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
-        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
-        given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234")).willReturn(Optional.empty());
+    @DisplayName("いいね_投稿が存在する場合_likesCountを1増やして更新後件数を返す")
+    void incrementLike_whenPostExists_incrementsLikesCountAndReturnsCount() {
+        given(postRepository.incrementLikesCountById(42L)).willReturn(1);
+        given(postRepository.findLikesCountById(42L)).willReturn(Optional.of(4L));
 
-        Optional<Boolean> actual = postService.toggleLike(42L, "abcd1234");
+        Optional<Long> actual = postService.incrementLike(42L);
 
-        assertThat(actual).contains(true);
-        ArgumentCaptor<PostLike> captor = ArgumentCaptor.forClass(PostLike.class);
-        verify(postLikeRepository).save(captor.capture());
-        assertThat(captor.getValue().getPost()).isSameAs(post);
-        assertThat(captor.getValue().getClientHash()).isEqualTo("abcd1234");
-        assertThat(captor.getValue().getCreatedAt()).isNotNull();
+        assertThat(actual).contains(4L);
+        verify(postRepository).incrementLikesCountById(42L);
+        verify(postRepository).findLikesCountById(42L);
     }
 
     @Test
-    @DisplayName("いいね_いいね済みの場合_いいねを削除してfalseを返す")
-    void toggleLike_whenAlreadyLiked_deletesLikeAndReturnsFalse() {
-        Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
-        PostLike like = new PostLike(post, "abcd1234", Instant.parse("2026-05-23T02:00:00Z"));
-        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
-        given(postLikeRepository.findByPostIdAndClientHash(42L, "abcd1234")).willReturn(Optional.of(like));
+    @DisplayName("いいね_連続実行_トグルせず毎回likesCount更新を呼ぶ")
+    void incrementLike_whenCalledRepeatedly_incrementsEveryTime() {
+        given(postRepository.incrementLikesCountById(42L)).willReturn(1);
+        given(postRepository.findLikesCountById(42L)).willReturn(Optional.of(1L), Optional.of(2L));
 
-        Optional<Boolean> actual = postService.toggleLike(42L, "abcd1234");
+        Optional<Long> first = postService.incrementLike(42L);
+        Optional<Long> second = postService.incrementLike(42L);
 
-        assertThat(actual).contains(false);
-        verify(postLikeRepository).delete(like);
-        verify(postLikeRepository, never()).save(org.mockito.ArgumentMatchers.any(PostLike.class));
+        assertThat(first).contains(1L);
+        assertThat(second).contains(2L);
+        verify(postRepository, org.mockito.Mockito.times(2)).incrementLikesCountById(42L);
     }
 
     @Test
-    @DisplayName("いいね_存在しない投稿の場合_保存削除せず空を返す")
-    void toggleLike_whenPostDoesNotExist_returnsEmpty() {
-        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
+    @DisplayName("いいね_存在しない投稿の場合_更新せず空を返す")
+    void incrementLike_whenPostDoesNotExist_returnsEmpty() {
+        given(postRepository.incrementLikesCountById(999L)).willReturn(0);
 
-        Optional<Boolean> actual = postService.toggleLike(999L, "abcd1234");
+        Optional<Long> actual = postService.incrementLike(999L);
 
         assertThat(actual).isEmpty();
-        verify(postLikeRepository, never()).save(org.mockito.ArgumentMatchers.any(PostLike.class));
+        verify(postRepository).incrementLikesCountById(999L);
+        verify(postRepository, never()).findLikesCountById(999L);
     }
 
     @Test
     @DisplayName("いいね数_投稿id指定_Repositoryの件数を返す")
     void countLikes_returnsRepositoryCount() {
-        given(postLikeRepository.countByPostId(42L)).willReturn(3L);
+        given(postRepository.findLikesCountById(42L)).willReturn(Optional.of(3L));
 
         long actual = postService.countLikes(42L);
 
         assertThat(actual).isEqualTo(3L);
-        verify(postLikeRepository).countByPostId(42L);
+        verify(postRepository).findLikesCountById(42L);
     }
 
-    @Test
-    @DisplayName("いいね状態_投稿idとclientHash指定_Repositoryの存在判定を返す")
-    void likedBy_returnsRepositoryExistsResult() {
-        given(postLikeRepository.existsByPostIdAndClientHash(42L, "abcd1234")).willReturn(true);
-
-        boolean actual = postService.likedBy(42L, "abcd1234");
-
-        assertThat(actual).isTrue();
-        verify(postLikeRepository).existsByPostIdAndClientHash(42L, "abcd1234");
-    }
-
-    @Test
     @DisplayName("投稿削除_存在するid_deletedAtをセットして保存しtrueを返す")
     void delete_whenPostExists_setsDeletedAtAndReturnsTrue() {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
