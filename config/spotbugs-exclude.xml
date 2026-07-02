@@ -23,6 +23,20 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
+    <!-- Spring DI で注入される Repository は保持して利用する設計 -->
+    <Match>
+        <Class name="com.example.tsubuyaki.service.PostService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Spring DI で注入される Controller の依存は保持して利用する設計 -->
+    <Match>
+        <Class name="~com\.example\.tsubuyaki\.controller\..*Controller"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- Lombok 等で生成される equals/hashCode -->
     <Match>
         <Bug pattern="HE_EQUALS_USE_HASHCODE"/>

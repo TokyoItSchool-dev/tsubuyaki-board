@@ -1,0 +1,32 @@
+package com.example.tsubuyaki.controller;
+
+import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.ApiPostResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@Tag(name = "posts", description = "投稿 API")
+public class ApiPostController {
+
+    private final PostService postService;
+
+    public ApiPostController(PostService postService) {
+        this.postService = postService;
+    }
+
+    @GetMapping(path = "/api/posts", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            summary = "投稿一覧を取得する",
+            description = "削除済み投稿を除外し、最新50件をタグ情報付きで新着順に返します。")
+    public List<ApiPostResponse> list() {
+        return postService.latest().stream()
+                .map(ApiPostResponse::from)
+                .toList();
+    }
+}
