@@ -1,7 +1,6 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
-import com.example.tsubuyaki.domain.PostTag;
 import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.repository.PostTagRepository;
@@ -27,6 +26,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -202,7 +202,8 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿編集_存在するid_アバター色を含む投稿を更新してRepositoryへ保存する")
     void update_whenPostExists_updatesAndSavesPostWithAvatarColor() {
-        Post post = new Post("alice", "更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        Instant createdAt = Instant.parse("2026-05-23T01:00:00Z");
+        Post post = new Post("alice", "更新前本文です", createdAt);
         given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
 
         Optional<Post> actual = postService.update(42L, "bob", "更新後本文です", "green");
@@ -211,6 +212,8 @@ class PostServiceTest {
         assertThat(post.getAuthor()).isEqualTo("bob");
         assertThat(post.getBody()).isEqualTo("更新後本文です");
         assertThat(post.getAvatarColor()).isEqualTo("green");
+        assertThat(post.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(post.getUpdatedAt()).isAfter(createdAt);
         verify(postRepository).findByIdAndDeletedAtIsNull(42L);
         verify(postRepository).save(post);
     }
@@ -219,18 +222,26 @@ class PostServiceTest {
     @DisplayName("投稿作成_本文にタグあり_TagとPostTagを保存する")
     void create_whenBodyHasTags_savesTagsAndPostTags() {
         Tag java = new Tag("java");
+        ReflectionTestUtils.setField(java, "id", 1L);
         Tag spring = new Tag("spring-boot");
+        ReflectionTestUtils.setField(spring, "id", 2L);
+        given(postRepository.save(org.mockito.ArgumentMatchers.any(Post.class)))
+                .willAnswer(invocation -> {
+                    Post post = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(post, "id", 42L);
+                    return post;
+                });
         given(tagRepository.findByName("java")).willReturn(Optional.of(java));
         given(tagRepository.findByName("spring-boot")).willReturn(Optional.empty());
         given(tagRepository.save(org.mockito.ArgumentMatchers.any(Tag.class))).willReturn(spring);
 
         postService.create("alice", "#java #spring-boot #java 本文です", "purple");
 
-        ArgumentCaptor<PostTag> captor = ArgumentCaptor.forClass(PostTag.class);
-        verify(postTagRepository, org.mockito.Mockito.times(2)).save(captor.capture());
-        assertThat(captor.getAllValues())
-                .extracting(postTag -> postTag.getTag().getName())
-                .containsExactly("java", "spring-boot");
+        verify(postTagRepository).save(42L, 1L);
+        verify(postTagRepository).save(42L, 2L);
+        verify(postTagRepository, org.mockito.Mockito.times(2)).save(
+                org.mockito.ArgumentMatchers.eq(42L),
+                org.mockito.ArgumentMatchers.anyLong());
     }
 
     @Test
@@ -239,17 +250,35 @@ class PostServiceTest {
         Post post = new Post("alice", "#java 更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
         ReflectionTestUtils.setField(post, "id", 42L);
         Tag spring = new Tag("spring");
+        ReflectionTestUtils.setField(spring, "id", 8L);
         given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
         given(tagRepository.findByName("spring")).willReturn(Optional.of(spring));
 
         Optional<Post> actual = postService.update(42L, "alice", "#spring 更新後本文です", "blue");
 
         assertThat(actual).containsSame(post);
+        org.mockito.InOrder inOrder = inOrder(postRepository, postTagRepository, tagRepository);
+        inOrder.verify(postRepository).save(post);
+        inOrder.verify(postTagRepository).deleteByPostId(42L);
+        inOrder.verify(tagRepository).findByName("spring");
+        inOrder.verify(postTagRepository).save(42L, spring.getId());
+    }
+
+    @Test
+    @DisplayName("投稿編集_同じタグ複数回_重複を除去して1回だけPostTagを保存する")
+    void update_whenBodyHasDuplicateTags_savesPostTagOnce() {
+        Post post = new Post("alice", "#java 更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        Tag java = new Tag("java");
+        ReflectionTestUtils.setField(java, "id", 7L);
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
+        given(tagRepository.findByName("java")).willReturn(Optional.of(java));
+
+        Optional<Post> actual = postService.update(42L, "alice", "#java #java #java 更新後本文です", "blue");
+
+        assertThat(actual).containsSame(post);
         verify(postTagRepository).deleteByPostId(42L);
-        ArgumentCaptor<PostTag> captor = ArgumentCaptor.forClass(PostTag.class);
-        verify(postTagRepository).save(captor.capture());
-        assertThat(captor.getValue().getPost()).isSameAs(post);
-        assertThat(captor.getValue().getTag().getName()).isEqualTo("spring");
+        verify(postTagRepository, org.mockito.Mockito.times(1)).save(42L, 7L);
     }
 
     @Test

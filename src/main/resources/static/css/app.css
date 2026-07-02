@@ -73,10 +73,17 @@ h1 {
     color: #9333ea;
 }
 
+.post__dates,
 .post__created-at,
 .post__updated-at {
     color: var(--color-muted);
     font-size: 0.85rem;
+}
+
+.post__dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
 .tag-heading {

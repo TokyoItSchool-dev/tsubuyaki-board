@@ -195,8 +195,8 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿一覧_投稿表示_投稿者内容更新日時の順に表示する")
-    void list_displaysAuthorBodyUpdatedAtInOrder() throws Exception {
+    @DisplayName("投稿一覧_投稿表示_投稿者内容登録日時更新日時の順に表示する")
+    void list_displaysAuthorBodyCreatedAtAndUpdatedAtInOrder() throws Exception {
         Post post = new Post("alice", "本文です", Instant.parse("2026-05-23T01:00:00Z"));
         post.update("alice", "本文です", "blue", Instant.parse("2026-05-24T02:00:00Z"));
         given(postService.latest()).willReturn(List.of(post));
@@ -207,11 +207,30 @@ class PostControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertThat(html).contains("alice", "本文です", "2026-05-24 11:00");
-        assertThat(html).doesNotContain("2026-05-23 10:00");
+        assertThat(html).contains("alice", "本文です", "登録日:", "2026-05-23 10:00", "更新日:", "2026-05-24 11:00");
+        assertThat(html).contains("class=\"post__dates\"");
+        assertThat(html).contains("class=\"post__created-at\"");
         assertThat(html).contains("class=\"post__updated-at\"");
         assertThat(html.indexOf("alice")).isLessThan(html.indexOf("本文です"));
-        assertThat(html.indexOf("本文です")).isLessThan(html.indexOf("2026-05-24 11:00"));
+        assertThat(html.indexOf("本文です")).isLessThan(html.indexOf("登録日:"));
+        assertThat(html.indexOf("登録日:")).isLessThan(html.indexOf("2026-05-23 10:00"));
+        assertThat(html.indexOf("2026-05-23 10:00")).isLessThan(html.indexOf("更新日:"));
+        assertThat(html.indexOf("更新日:")).isLessThan(html.indexOf("2026-05-24 11:00"));
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索結果一覧_登録日時と更新日時を表示する")
+    void list_whenSearchResult_displaysCreatedAtAndUpdatedAt() throws Exception {
+        Post post = new Post("alice", "abcを含む投稿", Instant.parse("2026-05-23T01:00:00Z"));
+        post.update("alice", "abcを含む投稿", "blue", Instant.parse("2026-05-24T02:00:00Z"));
+        given(postService.search("abc")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/posts").param("q", "abc"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("登録日:")))
+                .andExpect(content().string(containsString("2026-05-23 10:00")))
+                .andExpect(content().string(containsString("更新日:")))
+                .andExpect(content().string(containsString("2026-05-24 11:00")));
     }
 
     @Test
@@ -314,6 +333,9 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("alice")))
                 .andExpect(content().string(containsString("#java 削除済み投稿")))
                 .andExpect(content().string(containsString("● purple")))
+                .andExpect(content().string(containsString("登録日:")))
+                .andExpect(content().string(containsString("2026-05-23 10:00")))
+                .andExpect(content().string(containsString("更新日:")))
                 .andExpect(content().string(containsString("2026-05-24 11:00")))
                 .andExpect(content().string(containsString("href=\"/tags/java\"")));
 

@@ -141,31 +141,41 @@ class PostRepositoryTest {
     @Test
     @DisplayName("投稿一覧_タグあり_findAllWithTagsは投稿に紐づくタグを含めて返す")
     void findAllWithTags_whenPostsHaveTags_returnsPostsWithTags() {
-        Post post = postRepository.save(new Post(
-                "alice", "#java #spring 本文です", Instant.parse("2026-05-23T01:00:00Z")));
+        Instant createdAt = Instant.parse("2026-05-23T01:00:00Z");
+        Instant updatedAt = Instant.parse("2026-05-24T02:00:00Z");
+        Post post = new Post("alice", "#java #spring 本文です", createdAt);
+        post.update("alice", "#java #spring 本文です", "blue", updatedAt);
+        Post savedPost = postRepository.save(post);
         Tag java = tagRepository.save(new Tag("java"));
         Tag spring = tagRepository.save(new Tag("spring"));
-        postTagRepository.saveAll(List.of(new PostTag(post, java), new PostTag(post, spring)));
+        postTagRepository.saveAll(List.of(new PostTag(savedPost, java), new PostTag(savedPost, spring)));
         flushAndClear();
 
-        List<Post> posts = postRepository.findAllWithTagsByIdIn(List.of(post.getId()));
+        List<Post> posts = postRepository.findAllWithTagsByIdIn(List.of(savedPost.getId()));
 
         assertThat(posts).singleElement()
-                .satisfies(actual -> assertThat(actual.getTags())
-                        .extracting(Tag::getName)
-                        .containsExactlyInAnyOrder("java", "spring"));
+                .satisfies(actual -> {
+                    assertThat(actual.getCreatedAt()).isEqualTo(createdAt);
+                    assertThat(actual.getUpdatedAt()).isEqualTo(updatedAt);
+                    assertThat(actual.getTags())
+                            .extracting(Tag::getName)
+                            .containsExactlyInAnyOrder("java", "spring");
+                });
     }
 
     @Test
     @DisplayName("投稿検索_タグあり_findByKeywordWithTagsは検索結果に紐づくタグを含めて返す")
     void findByKeywordWithTags_whenPostsHaveTags_returnsMatchingPostsWithTags() {
-        Post matchingPost = postRepository.save(new Post(
-                "alice", "abc #java 本文です", Instant.parse("2026-05-23T01:00:00Z")));
+        Instant createdAt = Instant.parse("2026-05-23T01:00:00Z");
+        Instant updatedAt = Instant.parse("2026-05-24T02:00:00Z");
+        Post matchingPost = new Post("alice", "abc #java 本文です", createdAt);
+        matchingPost.update("alice", "abc #java 本文です", "blue", updatedAt);
+        Post savedMatchingPost = postRepository.save(matchingPost);
         Post otherPost = postRepository.save(new Post(
                 "bob", "対象外 #spring 本文です", Instant.parse("2026-05-23T02:00:00Z")));
         Tag java = tagRepository.save(new Tag("java"));
         Tag spring = tagRepository.save(new Tag("spring"));
-        postTagRepository.saveAll(List.of(new PostTag(matchingPost, java), new PostTag(otherPost, spring)));
+        postTagRepository.saveAll(List.of(new PostTag(savedMatchingPost, java), new PostTag(otherPost, spring)));
         flushAndClear();
 
         List<Post> posts = postRepository.findByKeywordWithTags("abc");
@@ -173,6 +183,8 @@ class PostRepositoryTest {
         assertThat(posts).singleElement()
                 .satisfies(actual -> {
                     assertThat(actual.getBody()).isEqualTo("abc #java 本文です");
+                    assertThat(actual.getCreatedAt()).isEqualTo(createdAt);
+                    assertThat(actual.getUpdatedAt()).isEqualTo(updatedAt);
                     assertThat(actual.getTags())
                             .extracting(Tag::getName)
                             .containsExactly("java");
@@ -228,6 +240,10 @@ class PostRepositoryTest {
         assertThat(posts)
                 .extracting(Post::getBody)
                 .containsExactly("#oracle 新しい削除済み投稿", "#spring 古い削除済み投稿");
+        assertThat(posts.get(0).getCreatedAt()).isEqualTo(Instant.parse("2026-05-23T03:00:00Z"));
+        assertThat(posts.get(0).getUpdatedAt()).isEqualTo(Instant.parse("2026-05-24T03:00:00Z"));
+        assertThat(posts.get(1).getCreatedAt()).isEqualTo(Instant.parse("2026-05-23T02:00:00Z"));
+        assertThat(posts.get(1).getUpdatedAt()).isEqualTo(Instant.parse("2026-05-24T01:00:00Z"));
         assertThat(posts.get(0).getTags())
                 .extracting(Tag::getName)
                 .containsExactly("oracle");

@@ -59,4 +59,20 @@ class PostTagRepositoryTest {
         assertThat(tagRepository.findByName("java"))
                 .contains(savedTag);
     }
+
+    @Test
+    @DisplayName("投稿編集タグ再解析_DELETE後に同じPostTagを再INSERTしても一意制約違反にならない")
+    void deleteByPostId_thenSaveSamePostTag_doesNotViolateUniqueConstraint() {
+        Post post = postRepository.saveAndFlush(new Post(
+                "alice", "#java 更新前本文です", Instant.parse("2026-05-23T01:00:00Z")));
+        Tag java = tagRepository.saveAndFlush(new Tag("java"));
+        postTagRepository.saveAndFlush(new PostTag(post, java));
+
+        postTagRepository.deleteByPostId(post.getId());
+        postTagRepository.save(post.getId(), java.getId());
+
+        assertThat(postTagRepository.findTagsByPostId(post.getId()))
+                .extracting(Tag::getName)
+                .containsExactly("java");
+    }
 }

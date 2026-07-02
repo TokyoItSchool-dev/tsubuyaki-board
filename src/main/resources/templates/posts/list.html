@@ -34,9 +34,18 @@
                       th:text="|● ${post.avatarColor}|">● blue</span>
             </header>
             <p class="post__body" th:text="${post.body}">本文</p>
-            <time class="post__updated-at"
-                  th:datetime="${post.updatedAt}"
-                  th:text="${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <div class="post__dates">
+                <span>登録日:
+                    <time class="post__created-at"
+                          th:datetime="${post.createdAt}"
+                          th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                </span>
+                <span>更新日:
+                    <time class="post__updated-at"
+                          th:datetime="${post.updatedAt}"
+                          th:text="${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-05-24 09:00</time>
+                </span>
+            </div>
             <p class="post__tags" th:if="${post.tags != null and !#lists.isEmpty(post.tags)}">
                 <a th:each="tag : ${post.tags}"
                    th:href="@{/tags/{name}(name=${tag.name})}"

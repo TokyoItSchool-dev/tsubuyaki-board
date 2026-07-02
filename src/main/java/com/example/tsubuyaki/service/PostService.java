@@ -1,7 +1,6 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
-import com.example.tsubuyaki.domain.PostTag;
 import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.repository.PostApiRow;
 import com.example.tsubuyaki.repository.PostRepository;
@@ -109,8 +108,8 @@ public class PostService {
     @Transactional
     public void create(String author, String body, String avatarColor) {
         Post post = new Post(author, body, avatarColor, Instant.now());
-        postRepository.save(post);
-        saveTags(post, body);
+        Post savedPost = postRepository.save(post);
+        saveTags(savedPost, body);
     }
 
     @Transactional
@@ -159,7 +158,7 @@ public class PostService {
         for (String tagName : tagNames) {
             Tag tag = tagRepository.findByName(tagName)
                     .orElseGet(() -> tagRepository.save(new Tag(tagName)));
-            postTagRepository.save(new PostTag(post, tag));
+            postTagRepository.save(post.getId(), tag.getId());
         }
     }
 
