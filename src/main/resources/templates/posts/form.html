@@ -23,7 +23,9 @@
         <div>
             <label for="avatarColor">アバター色</label>
             <select id="avatarColor" th:field="*{avatarColor}" required>
-                <option th:each="color : ${avatarColors}" th:value="${color}" th:text="${color}">BLUE</option>
+                <option th:each="color : ${avatarColors}"
+                        th:value="${color}"
+                        th:text="${T(com.example.tsubuyaki.domain.AvatarColor).from(color).displayName}">青</option>
             </select>
             <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
         </div>

@@ -1317,7 +1317,155 @@ feat(tag): implement hashtag parsing and tag pages
 tag機能の画面表示をした時に、表示自体出来なかったので、どこまで効いていたのかが不明。
 ---------
 
+## プロンプト 12
 
+**フェーズ**:
+C2: 投稿削除
+
+**プロンプト本文**:
+
+```
+C2: 投稿削除（論理削除）を TDD で実装してください。
+
+## 要件
+- 投稿を論理削除できるようにする。
+- 削除対象は `POST /posts/{id}/delete` とする。
+- 物理削除は行わず、`deleted_at` カラムに削除日時を保存する。
+- 削除後は `302` で `/posts` にリダイレクトする。
+- 論理削除済みの投稿は一覧画面（GET /posts）に表示しない。
+- 投稿詳細（GET /posts/{id}）で論理削除済みの投稿へアクセスした場合は `404 Not Found` を返す。
+- 削除ボタンは投稿詳細画面に配置する。
+
+## 設計方針
+### Domain
+- `Post` に論理削除を表す `deletedAt` を持たせる。
+- `markDeleted()` などのメソッドで削除日時を設定する。
+- `isDeleted()` を用意し、論理削除済みか判定できるようにする。
+
+### Repository
+- 一覧取得では `deleted_at IS NULL` の投稿のみ取得する。
+- ID検索も論理削除済みを除外する。
+- 必要に応じて論理削除用の更新メソッドを追加する。
+
+### Service
+- `delete(Long id)` を追加する。
+- 存在しない投稿や論理削除済みの投稿は適切な例外を送出する。
+
+### Controller
+- `POST /posts/{id}/delete` を追加する。
+- 削除成功後は `/posts` にリダイレクトする。
+- 詳細取得では論理削除済みを404として扱う。
+
+## TDD
+### RED
+以下の失敗するテストから実装する。
+
+#### Controller
+- POST `/posts/{id}/delete` が302で `/posts` にリダイレクトする。
+- 論理削除済み投稿へ GET `/posts/{id}` すると404になる。
+
+#### Service
+- delete() 実行で deletedAt が設定される。
+- delete() を2回実行しても適切に扱われる。
+
+#### Repository
+- 一覧取得で deleted_at が設定された投稿は取得されない。
+- ID検索でも deleted_at が設定された投稿は取得されない。
+
+### GREEN
+最小実装でテストを通す。
+
+### REFACTOR
+- 論理削除判定の重複をなくす。
+- 命名を整理する。
+- マジックナンバー・重複SQLを排除する。
+
+## 品質確認
+以下をすべて成功させること。
+
+- `./mvnw -B -Ph2 test`
+- `./mvnw checkstyle:check`
+- `./mvnw spotbugs:check`
+- `./mvnw jacoco:check`
+
+## コミット
+Conventional Commits 形式でコミットする。
+
+```
+
+**結果**:  効いた / 部分的に効いた / 効かなかった
+部分的に効いた
+
+**振り返り**:
+削除後に画面遷移した画面のメッセージ表示に違和感があった。
+目指したい画面のメッセージやUIをもう少し細かくプロンプトの記載するように意識する。
+---------
+
+## プロンプト 13
+
+**フェーズ**:
+C3: REST API
+
+**プロンプト本文**:
+
+```
+C3: REST API を TDD（RED→GREEN→REFACTOR）で実装してください。
+
+■ 要件
+- GET /api/posts を追加する。
+- HTMLではなく JSON を返す REST API とする。
+- 投稿一覧を新着順で返却する。
+- 論理削除済み（deleted_at が設定されている投稿）は返却しない。
+- 返却件数は最大50件とする。
+- API専用のレスポンスDTOを作成し、Entityをそのまま返却しない。
+- レスポンスには最低限以下を含める。
+  - id
+  - author
+  - avatarColor
+  - body
+  - createdAt
+  - likeCount（存在する場合）
+- ステータスコードは200を返す。
+
+■ OpenAPI
+- springdoc-openapi を利用して簡易APIドキュメントを追加する。
+- Swagger UI から GET /api/posts を確認・実行できるようにする。
+- 必要に応じて @Operation や @Schema などのアノテーションを付与し、API概要が表示されるようにする。
+
+■ テスト（RED）
+- @WebMvcTest + MockMvc を使用して失敗するテストを先に作成する。
+- HTTPステータス200を検証する。
+- Content-Type が application/json であることを検証する。
+- JSON配列が返ることを検証する。
+- 主要項目（id、author、avatarColor、body、createdAt）が返却されることを検証する。
+- Serviceは @MockBean を使用する。
+
+■ GREEN
+- テストが通る最小限の実装を行う。
+
+■ REFACTOR
+- Controllerを薄く保ち、Serviceに業務ロジックを集約する。
+- DTOへの変換処理を整理する。
+- 命名・重複コードを整理する。
+- レイヤードアーキテクチャ（Controller / Service / Repository / Domain / DTO）の責務を守る。
+- SpotBugs・Checkstyle・PMDで警告が出ない実装を心掛ける。
+
+■ 完了条件
+- ./mvnw -B -Ph2 test が成功すること。
+- Swagger UI（/swagger-ui/index.html）で API を確認できること。
+- Conventional Commits形式でコミットすること。
+  例:
+  feat(api): add REST endpoint for posts
+```
+
+**結果**:  効いた / 部分的に効いた / 効かなかった
+部分的に効いた
+
+**振り返り**:
+API確認は行い、API取得できていることを確認できた。
+ただ、テストとして、APIの表示以外に何を実施すればよいか、自分自身の知識不足でテストケースが足りないと感じた。
+
+---------
 
 
 

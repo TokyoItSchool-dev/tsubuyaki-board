@@ -17,11 +17,15 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
 @Controller
 public class PostController {
+
+    static final String SUCCESS_MESSAGE_ATTRIBUTE = "successMessage";
+    static final String DELETE_SUCCESS_MESSAGE = "投稿を削除しました。";
 
     private final PostService postService;
     private final LikeService likeService;
@@ -84,8 +88,9 @@ public class PostController {
     }
 
     @PostMapping("/posts/{id}/delete")
-    public String delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         postService.delete(id);
+        redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE_ATTRIBUTE, DELETE_SUCCESS_MESSAGE);
         return "redirect:/posts";
     }
 }

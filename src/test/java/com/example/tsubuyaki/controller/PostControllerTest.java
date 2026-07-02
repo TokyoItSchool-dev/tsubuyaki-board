@@ -26,6 +26,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -34,6 +35,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,7 +74,8 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", List.of()))
-                .andExpect(content().string(containsString("まだ投稿はありません")));
+                .andExpect(content().string(containsString("まだ投稿はありません")))
+                .andExpect(content().string(not(containsString(PostController.DELETE_SUCCESS_MESSAGE))));
     }
 
     @Test
@@ -229,15 +232,24 @@ class PostControllerTest {
     @Test
     @DisplayName("新規投稿フォーム_GET_posts_new_空の投稿フォームを表示する")
     void 新規投稿フォーム_GET_posts_new_空の投稿フォームを表示する() throws Exception {
-        mockMvc.perform(get("/posts/new"))
+        MvcResult result = mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
                 .andExpect(model().attributeExists("avatarColors"))
                 .andExpect(content().string(containsString("avatarColor")))
-                .andExpect(content().string(containsString("BLUE")))
-                .andExpect(content().string(containsString("RED")))
-                .andExpect(content().string(containsString("PURPLE")));
+                .andReturn();
+
+        assertThat(result.getResponse().getContentAsString())
+                .contains("<option value=\"RED\">赤</option>")
+                .contains("<option value=\"BLUE\" selected=\"selected\">青</option>")
+                .contains("<option value=\"GREEN\">緑</option>")
+                .contains("<option value=\"YELLOW\">黄</option>")
+                .contains("<option value=\"PURPLE\">紫</option>")
+                .contains("<option value=\"ORANGE\">オレンジ</option>")
+                .doesNotContain(">RED</option>")
+                .doesNotContain(">BLUE</option>")
+                .doesNotContain(">PURPLE</option>");
     }
 
     @Test
@@ -291,9 +303,25 @@ class PostControllerTest {
     void 投稿削除_POST_posts_id_delete_論理削除して一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts/{id}/delete", 1L).with(csrf()))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/posts"));
+                .andExpect(redirectedUrl("/posts"))
+                .andExpect(flash().attribute(
+                        PostController.SUCCESS_MESSAGE_ATTRIBUTE,
+                        PostController.DELETE_SUCCESS_MESSAGE));
 
         verify(postService).delete(1L);
+    }
+
+    @Test
+    @DisplayName("投稿一覧_Flash成功メッセージあり_一覧上部に削除完了を表示する")
+    void 投稿一覧_Flash成功メッセージあり_一覧上部に削除完了を表示する() throws Exception {
+        given(postService.findPosts(null)).willReturn(List.of());
+
+        mockMvc.perform(get("/posts").flashAttr(
+                        PostController.SUCCESS_MESSAGE_ATTRIBUTE,
+                        PostController.DELETE_SUCCESS_MESSAGE))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(content().string(containsString(PostController.DELETE_SUCCESS_MESSAGE)));
     }
 
     @Test

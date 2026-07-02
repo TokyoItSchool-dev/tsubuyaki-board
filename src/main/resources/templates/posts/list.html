@@ -22,6 +22,9 @@
         <input id="q" type="search" name="q" th:value="${query}">
         <button type="submit">検索</button>
     </form>
+    <p class="flash-message flash-message--success"
+       th:if="${successMessage != null}"
+       th:text="${successMessage}">投稿を削除しました。</p>
 
     <section>
         <h2 class="post-list__heading"
