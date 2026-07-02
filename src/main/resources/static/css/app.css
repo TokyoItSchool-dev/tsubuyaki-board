@@ -35,6 +35,18 @@ h1 {
     margin: 1rem 0;
 }
 
+.post-list__search {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.post-list__search input {
+    flex: 1;
+    min-width: 0;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);

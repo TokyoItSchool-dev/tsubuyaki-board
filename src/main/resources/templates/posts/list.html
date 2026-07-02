@@ -17,6 +17,11 @@
     <form class="post-list__refresh" method="get" th:action="@{/posts/}">
         <button type="submit">更新</button>
     </form>
+    <form class="post-list__search" method="get" th:action="@{/posts}">
+        <label for="q">本文検索</label>
+        <input id="q" name="q" type="search" th:value="${q}" maxlength="280">
+        <button type="submit">検索</button>
+    </form>
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>

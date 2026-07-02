@@ -40,4 +40,18 @@ class PostRepositoryTest {
                 .startsWith("body50", "body49", "body48")
                 .doesNotContain("body0");
     }
+
+    @Test
+    @DisplayName("投稿検索_本文に検索ワードを含む投稿_新着順で最大50件を返す")
+    void 投稿検索_本文に検索ワードを含む投稿_新着順で最大50件を返す() {
+        postRepository.save(new Post("suzuki", "古い一致", "AI研修のメモ", LocalDateTime.of(2026, 7, 2, 9, 0)));
+        postRepository.save(new Post("tanaka", "不一致", "ランチのメモ", LocalDateTime.of(2026, 7, 2, 10, 0)));
+        postRepository.save(new Post("sato", "新しい一致", "明日のAI研修", LocalDateTime.of(2026, 7, 2, 11, 0)));
+        postRepository.flush();
+
+        List<Post> actual = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("AI研修");
+
+        assertThat(actual).extracting(Post::getTitle)
+                .containsExactly("新しい一致", "古い一致");
+    }
 }

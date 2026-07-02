@@ -4,6 +4,7 @@ import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -24,6 +25,14 @@ public class PostService {
 
     public List<Post> latest() {
         return repository.findTop50ByOrderByCreatedAtDesc();
+    }
+
+    public List<Post> searchByBody(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            throw new IllegalArgumentException("検索ワードを入力してください");
+        }
+
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword.trim());
     }
 
     public Optional<Post> find(Long id) {

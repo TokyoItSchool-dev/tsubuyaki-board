@@ -17,6 +17,7 @@ import java.time.ZoneId;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -46,6 +47,27 @@ class PostServiceTest {
 
         assertThat(actual).containsExactlyElementsOf(posts);
         verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索ワードあり_本文部分一致の最新50件を返す")
+    void 投稿検索_検索ワードあり_本文部分一致の最新50件を返す() {
+        List<Post> posts = List.of(
+                new Post("suzuki", "検索タイトル", "AI研修のメモ", LocalDateTime.of(2026, 7, 2, 9, 0)));
+        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("AI研修")).willReturn(posts);
+
+        List<Post> actual = postService.searchByBody(" AI研修 ");
+
+        assertThat(actual).containsExactlyElementsOf(posts);
+        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("AI研修");
+    }
+
+    @Test
+    @DisplayName("投稿検索_検索ワードが空白のみ_IllegalArgumentExceptionを投げる")
+    void 投稿検索_検索ワードが空白のみ_IllegalArgumentExceptionを投げる() {
+        assertThatThrownBy(() -> postService.searchByBody("   "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("検索ワードを入力してください");
     }
 
     @Test
