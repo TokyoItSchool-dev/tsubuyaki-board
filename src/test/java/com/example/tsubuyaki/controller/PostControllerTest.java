@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -144,5 +145,59 @@ class PostControllerTest {
         mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在するID_posts_detailを表示する")
+    void detail_whenPostExists_returnsDetailView() throws Exception {
+        Post post = new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_存在しないID_404を返す")
+    void detail_whenPostDoesNotExist_returnsNotFound() throws Exception {
+        given(postService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿一覧_article押下時_投稿詳細へ遷移できる")
+    void list_whenArticleClicked_requestsPostDetail() throws Exception {
+        given(postService.latest()).willReturn(List.of(
+                new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))));
+        given(postService.findById(1L)).willReturn(Optional.of(
+                new Post(1L, "alice", "hello", Instant.parse("2026-05-23T10:00:00Z"))));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "<a class=\"post__link\" href=\"/posts/1\">")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "<article class=\"post\">")));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_対象IDの投稿_投稿内容を表示する")
+    void detail_whenPostExists_showsTargetPostContent() throws Exception {
+        given(postService.findById(2L)).willReturn(Optional.of(
+                new Post(2L, "bob", "対象IDの本文", Instant.parse("2026-05-24T10:00:00Z"))));
+
+        mockMvc.perform(get("/posts/2"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("bob")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("対象IDの本文")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("2026-05-24 19:00")));
     }
 }
