@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.sample;
 
+import com.example.tsubuyaki.repository.LikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
@@ -22,14 +23,17 @@ class SamplePostServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private LikeRepository likeRepository;
+
     @InjectMocks
     private PostService postService;
 
     @Test
-    @DisplayName("Service_latest_未実装のとき_空リストを返す")
-    void latest_returnsEmpty_byDefault() {
-        // 現在の PostService.latest() は TODO 状態で空リストを返す。
+    @DisplayName("Service_findPosts_未実装のとき_空リストを返す")
+    void findPosts_returnsEmpty_byDefault() {
+        // 現在の PostService.findPosts() は TODO 状態で空リストを返す。
         // 受講生が実装したら、このテストは別シナリオに置き換える。
-        assertThat(postService.latest()).isEmpty();
+        assertThat(postService.findPosts(null)).isEmpty();
     }
 }

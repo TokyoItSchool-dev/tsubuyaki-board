@@ -1,10 +1,17 @@
 package com.example.tsubuyaki.repository;
 
-import com.example.tsubuyaki.domain.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PostRepository extends JpaRepository<Post, Long> {
+import java.util.List;
+import java.util.Optional;
 
-    // 演習中に追加するメソッド例:
-    //   List<Post> findTop50ByOrderByCreatedAtDesc();
+public interface PostRepository extends JpaRepository<PostEntity, Long> {
+
+    List<PostEntity> findTop50ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+
+    List<PostEntity> findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDescIdDesc(String keyword);
+
+    List<PostEntity> findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDescIdDesc(String tagName);
+
+    Optional<PostEntity> findByIdAndDeletedAtIsNull(Long id);
 }

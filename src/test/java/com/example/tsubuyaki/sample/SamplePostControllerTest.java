@@ -1,11 +1,16 @@
 package com.example.tsubuyaki.sample;
 
+import com.example.tsubuyaki.config.SecurityConfig;
 import com.example.tsubuyaki.controller.PostController;
+import com.example.tsubuyaki.service.ClientHashService;
+import com.example.tsubuyaki.service.LikeService;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.PostFormOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>@WebMvcTest で Spring の MVC スライスのみ起動し、Service はモック化する。</p>
  */
 @WebMvcTest(PostController.class)
+@Import(SecurityConfig.class)
 class SamplePostControllerTest {
 
     @Autowired
@@ -31,10 +37,19 @@ class SamplePostControllerTest {
     @MockitoBean
     private PostService postService;
 
+    @MockitoBean
+    private LikeService likeService;
+
+    @MockitoBean
+    private ClientHashService clientHashService;
+
+    @MockitoBean
+    private PostFormOptions postFormOptions;
+
     @Test
     @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")
     void getPosts_rendersListView() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.findPosts(null)).willReturn(Collections.emptyList());
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())

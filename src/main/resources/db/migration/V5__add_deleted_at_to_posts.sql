@@ -1,0 +1,8 @@
+-- =========================================================================
+-- 社内つぶやきボード V5: POSTS に論理削除日時を追加
+-- Oracle XE 21c および H2(MODE=Oracle) の双方で動く DDL
+-- =========================================================================
+
+ALTER TABLE posts ADD deleted_at TIMESTAMP(6);
+
+CREATE INDEX posts_deleted_at_idx ON posts (deleted_at);

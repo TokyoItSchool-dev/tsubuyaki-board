@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿詳細 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿詳細</h1>
+    <nav>
+        <a th:href="@{/posts}">一覧に戻る</a>
+    </nav>
+
+    <article class="post">
+        <div class="post__author-row">
+            <span class="post__avatar-color"
+                  th:classappend="${post.avatarColorCssClass()}"
+                  aria-hidden="true"></span>
+            <span class="post__author" th:text="${post.author}">投稿者</span>
+        </div>
+        <p class="post__body" th:text="${post.displayBody}">本文</p>
+        <p class="post__tags" th:if="${!#lists.isEmpty(post.tagNames)}">
+            <a th:each="tag : ${post.tagNames}"
+               class="post__tag post__tag--plain"
+               th:href="@{/tags/{name}(name=${tag})}"
+               th:text="|#${tag}|">#Java</a>
+        </p>
+        <div class="post__likes">
+            <span th:text="|♥ ${likeCount}|">♥ 0</span>
+            <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit">Like</button>
+            </form>
+        </div>
+        <form class="post__delete-form" th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit">削除</button>
+        </form>
+        <time class="post__created-at"
+              th:datetime="${post.createdAt}"
+              th:text="${post.createdAt}">2026-05-23T09:00:00Z</time>
+    </article>
+</main>
+</body>
+</html>
