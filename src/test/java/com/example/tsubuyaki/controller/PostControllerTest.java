@@ -94,6 +94,34 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("テーマカラー_不正値はなしに戻し遷移先にも現在テーマを反映する")
+    void themeColor_不正値はなしに戻し遷移先にも現在テーマを反映する() throws Exception {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        given(postService.latest()).willReturn(List.of(post));
+        given(postService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts").param("themeColor", "orange"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"page\"")))
+                .andExpect(content().string(not(containsString("page--theme-orange"))))
+                .andExpect(content().string(containsString("name=\"themeColor\"")))
+                .andExpect(content().string(containsString("value=\"\" selected=\"selected\"")))
+                .andExpect(content().string(containsString("value=\"blue\"")))
+                .andExpect(content().string(containsString("value=\"green\"")))
+                .andExpect(content().string(containsString("value=\"pink\"")))
+                .andExpect(content().string(containsString("value=\"gray\"")));
+
+        mockMvc.perform(get("/posts/new").cookie(new jakarta.servlet.http.Cookie("themeColor", "green")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"page page--theme-green\"")));
+
+        mockMvc.perform(get("/posts/1").cookie(new jakarta.servlet.http.Cookie("themeColor", "green")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"page page--theme-green\"")));
+    }
+
+    @Test
     @DisplayName("投稿作成フォーム_GET_/posts/new_posts/formを表示しpostFormをビューに渡す")
     void newForm_GET_postsNew_postsFormを表示しpostFormをビューに渡す() throws Exception {
         mockMvc.perform(get("/posts/new"))

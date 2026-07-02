@@ -3,12 +3,15 @@ package com.example.tsubuyaki.controller;
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,14 +23,37 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 
 @Controller
 public class PostController {
+    private static final String THEME_COOKIE_NAME = "themeColor";
+    private static final List<String> THEME_COLORS = List.of("blue", "green", "pink", "gray");
 
     private final PostService postService;
 
     public PostController(PostService postService) {
         this.postService = postService;
+    }
+
+    @ModelAttribute
+    public void addThemeColor(
+            @RequestParam(name = THEME_COOKIE_NAME, required = false) String requestedThemeColor,
+            @CookieValue(name = THEME_COOKIE_NAME, required = false) String cookieThemeColor,
+            HttpServletResponse response,
+            Model model) {
+        String themeColor = normalizeThemeColor(
+                requestedThemeColor == null ? cookieThemeColor : requestedThemeColor);
+        if (requestedThemeColor != null) {
+            Cookie cookie = new Cookie(THEME_COOKIE_NAME, themeColor);
+            cookie.setPath("/");
+            if (themeColor.isBlank()) {
+                cookie.setMaxAge(0);
+            }
+            response.addCookie(cookie);
+        }
+        model.addAttribute(THEME_COOKIE_NAME, themeColor);
+        model.addAttribute("themeColorOptions", THEME_COLORS);
     }
 
     @GetMapping({ "/", "/posts" })
@@ -87,5 +113,15 @@ public class PostController {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 algorithm is not available", e);
         }
+    }
+
+    private String normalizeThemeColor(String themeColor) {
+        if (themeColor == null || themeColor.isBlank()) {
+            return "";
+        }
+        if (!THEME_COLORS.contains(themeColor)) {
+            return "";
+        }
+        return themeColor;
     }
 }
