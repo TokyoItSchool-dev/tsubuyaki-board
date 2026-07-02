@@ -14,16 +14,26 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="post-list__refresh" method="get" th:action="@{/posts/}">
+        <button type="submit">更新</button>
+    </form>
+    <form class="post-list__search" method="get" th:action="@{/posts}">
+        <label for="q">本文検索</label>
+        <input id="q" name="q" type="search" th:value="${q}" maxlength="280">
+        <button type="submit">検索</button>
+    </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
+            <div class="post__author" th:text="${post.author}">投稿者</div>
+            <a class="post__title" th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}">タイトル</a>
+            <p class="post__body">
+                <span th:text="${post.body}">本文</span>
+            </p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
         </article>
     </section>
 </main>

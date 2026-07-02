@@ -2,9 +2,21 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.validation.Valid;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.util.StringUtils;
 
 @Controller
 public class PostController {
@@ -15,9 +27,11 @@ public class PostController {
         this.postService = postService;
     }
 
-    @GetMapping({ "/", "/posts" })
-    public String list(Model model) {
-        model.addAttribute("posts", postService.latest());
+    @GetMapping({ "/", "/posts", "/posts/" })
+    public String list(@RequestParam(name = "q", required = false) String keyword, Model model) {
+        String query = StringUtils.hasText(keyword) ? keyword.trim() : "";
+        model.addAttribute("posts", query.isEmpty() ? postService.latest() : postService.searchByBody(query));
+        model.addAttribute("q", query);
         return "posts/list";
     }
 
@@ -27,7 +41,26 @@ public class PostController {
         return "posts/form";
     }
 
-    // 演習中に追加するエンドポイント:
-    //   @PostMapping("/posts")           // 投稿登録
-    //   @GetMapping("/posts/{id}")       // 詳細
+    @GetMapping("/posts/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        model.addAttribute("post", postService.find(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        return "posts/detail";
+    }
+
+    @PostMapping("/posts")
+    public String create(@Valid @ModelAttribute("postForm") PostForm postForm,
+                         BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return "posts/form";
+        }
+
+        postService.create(postForm.getAuthor(), postForm.getTitle(), postForm.getBody());
+        return "redirect:/posts";
+    }
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(String.class, new StringTrimmerEditor(false));
+    }
 }
