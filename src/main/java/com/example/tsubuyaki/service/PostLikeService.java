@@ -29,8 +29,8 @@ public class PostLikeService {
 
     @Transactional
     public void toggle(Long postId, String clientHash) {
-        // 存在しない投稿へのいいねは404にするため、先に投稿の存在を確認する。
-        Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+        // 同じ投稿への同時トグルを直列化するため、投稿行を悲観ロック付きで取得する。
+        Post post = postRepository.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new);
 
         postLikeRepository.findByPostIdAndClientHash(postId, clientHash).ifPresentOrElse(
                 existingLike -> {

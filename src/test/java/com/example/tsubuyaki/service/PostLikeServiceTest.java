@@ -38,7 +38,7 @@ class PostLikeServiceTest {
     void いいねService_未登録clientHash_新しいいいねを保存する() {
         // 存在する投稿idとして扱うため、PostRepositoryが投稿を返すように設定する。
         Post post = new Post("alice", "Serviceテスト", LocalDateTime.parse("2026-06-01T09:00:00"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdForUpdate(1L)).willReturn(Optional.of(post));
         // 未登録clientHashとして扱うため、PostLikeRepositoryが空を返すように設定する。
         given(postLikeRepository.findByPostIdAndClientHash(1L, "abcd1234")).willReturn(Optional.empty());
         ArgumentCaptor<PostLike> captor = ArgumentCaptor.forClass(PostLike.class);
@@ -58,7 +58,7 @@ class PostLikeServiceTest {
     void いいねService_登録済みclientHash_既存いいねを削除する() {
         // 存在する投稿idとして扱うため、PostRepositoryが投稿を返すように設定する。
         Post post = new Post("alice", "Serviceテスト", LocalDateTime.parse("2026-06-01T09:00:00"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdForUpdate(1L)).willReturn(Optional.of(post));
         // 登録済みclientHashとして扱うため、既存PostLikeをRepositoryから返す。
         PostLike existingLike = new PostLike(post, "abcd1234", LocalDateTime.parse("2026-06-01T10:00:00"));
         given(postLikeRepository.findByPostIdAndClientHash(1L, "abcd1234")).willReturn(Optional.of(existingLike));
@@ -75,7 +75,7 @@ class PostLikeServiceTest {
     @DisplayName("いいねService_存在しない投稿id_PostNotFoundExceptionを投げる")
     void いいねService_存在しない投稿id_PostNotFoundExceptionを投げる() {
         // 存在しない投稿idとして扱うため、PostRepositoryが空を返すように設定する。
-        given(postRepository.findById(999L)).willReturn(Optional.empty());
+        given(postRepository.findByIdForUpdate(999L)).willReturn(Optional.empty());
 
         // 存在しない投稿idの場合、404に対応するPostNotFoundExceptionが投げられることを検証する。
         assertThatThrownBy(() -> postLikeService.toggle(999L, "abcd1234"))

@@ -47,4 +47,21 @@ class PostLikeRepositoryTest {
         // 未保存clientHashの存在確認がfalseになることを検証する。
         assertThat(postLikeRepository.existsByPostIdAndClientHash(savedPost.getId(), "zzzz9999")).isFalse();
     }
+
+    @Test
+    @DisplayName("投稿Repository_ロック付きid検索_対象投稿を取得できる")
+    void 投稿Repository_ロック付きid検索_対象投稿を取得できる() {
+        // いいねトグルの直列化でロック取得する対象投稿をDBへ保存する。
+        Post savedPost = postRepository.save(new Post(
+                "alice",
+                "ロック付き検索の投稿",
+                LocalDateTime.parse("2026-06-01T09:00:00")));
+
+        // 悲観ロック付き検索でも、通常のid検索と同じ投稿を取得できることを検証する。
+        assertThat(postRepository.findByIdForUpdate(savedPost.getId()))
+                .isPresent()
+                .get()
+                .extracting(Post::getBody)
+                .isEqualTo("ロック付き検索の投稿");
+    }
 }
