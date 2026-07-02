@@ -16,9 +16,27 @@
     <form th:action="@{/posts}" th:object="${postForm}" method="post">
         <div>
             <label for="author">投稿者</label>
-            <input type="text" id="author" th:field="*{author}" maxlength="30" required>
+            <input type="text" id="author" th:field="*{author}" maxlength="15" required>
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
+        <fieldset class="avatar-colors">
+            <legend>アバター色</legend>
+            <label>
+                <input type="radio" th:field="*{avatarColor}" value="red">
+                <span class="avatar-swatch avatar-swatch--red" aria-hidden="true"></span>
+                赤
+            </label>
+            <label>
+                <input type="radio" th:field="*{avatarColor}" value="blue">
+                <span class="avatar-swatch avatar-swatch--blue" aria-hidden="true"></span>
+                青
+            </label>
+            <label>
+                <input type="radio" th:field="*{avatarColor}" value="green">
+                <span class="avatar-swatch avatar-swatch--green" aria-hidden="true"></span>
+                緑
+            </label>
+        </fieldset>
         <div>
             <label for="body">本文 (280 文字まで)</label>
             <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
@@ -27,5 +45,6 @@
         <button type="submit">投稿</button>
     </form>
 </main>
+<script defer th:src="@{/js/falling-leaves.js}"></script>
 </body>
 </html>

@@ -2,9 +2,12 @@ package com.example.tsubuyaki.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
@@ -14,44 +17,44 @@ import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
-@Table(name = "posts")
-public class Post {
-
-    private static final String DEFAULT_AVATAR_COLOR = "red";
+@Table(name = "replies")
+public class Reply {
 
     private static final ZoneOffset DATABASE_ZONE = ZoneOffset.UTC;
 
     @Id
-    @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "posts_seq_gen")
+    @SequenceGenerator(name = "replies_seq_gen", sequenceName = "replies_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "replies_seq_gen")
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_reply_id")
+    private Reply parent;
 
     @Column(name = "author", length = 15, nullable = false)
     private String author;
 
-    @Column(name = "avatar_color", length = 20, nullable = false)
-    private String avatarColor;
-
-    @Column(name = "body", length = 280, nullable = false)
+    @Column(name = "body", length = 1000, nullable = false)
     private String body;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
 
-    protected Post() {
+    protected Reply() {
         // JPA
     }
 
-    public Post(String author, String body, Instant createdAt) {
-        this(author, "red", body, createdAt);
-    }
-
-    public Post(String author, String avatarColor, String body, Instant createdAt) {
+    public Reply(Post post, Reply parent, String author, String body, Instant createdAt) {
+        this.post = post;
+        this.parent = parent;
         this.author = author;
-        this.avatarColor = normalizeAvatarColor(avatarColor);
         this.body = body;
         this.createdAt = toDatabaseTimestamp(createdAt);
     }
@@ -60,12 +63,23 @@ public class Post {
         return id;
     }
 
-    public String getAuthor() {
-        return author;
+    public Post getPost() {
+        return post;
     }
 
-    public String getAvatarColor() {
-        return avatarColor;
+    public Reply getParent() {
+        return parent;
+    }
+
+    public Long getParentId() {
+        if (parent == null) {
+            return null;
+        }
+        return parent.getId();
+    }
+
+    public String getAuthor() {
+        return author;
     }
 
     public String getBody() {
@@ -76,12 +90,20 @@ public class Post {
         return toInstant(createdAt);
     }
 
-    public Instant getDeletedAt() {
-        return toInstant(deletedAt);
+    public Instant getReadAt() {
+        return toInstant(readAt);
     }
 
-    public void markDeleted(Instant deletedAt) {
-        this.deletedAt = toDatabaseTimestamp(deletedAt);
+    public boolean isRead() {
+        return readAt != null;
+    }
+
+    public void markRead(Instant readAt) {
+        this.readAt = toDatabaseTimestamp(readAt);
+    }
+
+    public void markUnread() {
+        this.readAt = null;
     }
 
     private static LocalDateTime toDatabaseTimestamp(Instant instant) {
@@ -98,19 +120,12 @@ public class Post {
         return timestamp.toInstant(DATABASE_ZONE);
     }
 
-    private static String normalizeAvatarColor(String avatarColor) {
-        if (avatarColor == null || avatarColor.isBlank()) {
-            return DEFAULT_AVATAR_COLOR;
-        }
-        return avatarColor;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Post other)) {
+        if (!(o instanceof Reply other)) {
             return false;
         }
         return Objects.equals(id, other.id);

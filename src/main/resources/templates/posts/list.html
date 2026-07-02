@@ -14,18 +14,42 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="toolbar toolbar--search" th:action="@{/posts}" method="get">
+        <label class="toolbar__label" for="post-search">本文検索</label>
+        <input id="post-search"
+               class="toolbar__query"
+               type="search"
+               name="q"
+               th:value="${q}"
+               maxlength="280">
+        <button type="submit">検索</button>
+        <a th:href="@{/posts}">クリア</a>
+    </form>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
+            <p class="post__author">
+                <span class="avatar"
+                      th:classappend="|avatar--${post.avatarColor}|"
+                      aria-hidden="true"></span>
+                <span th:text="${post.author}">投稿者</span>
+            </p>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <p class="post__actions">
+                <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+                <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+                    <input th:if="${_csrf != null}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="submit">削除</button>
+                </form>
+            </p>
         </article>
     </section>
 </main>
+<script defer th:src="@{/js/falling-leaves.js}"></script>
 </body>
 </html>
