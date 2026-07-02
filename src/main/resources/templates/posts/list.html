@@ -21,9 +21,22 @@
         <a class="nav__link" th:href="@{/posts/trash}">ごみ箱</a>
     </nav>
 
-    <form class="toolbar" th:action="@{/posts/}" method="get">
-        <button type="submit">更新</button>
-    </form>
+    <div class="toolbar">
+        <form class="search-form" th:action="@{/posts}" method="get">
+            <label class="search-form__label" for="searchQuery">本文検索</label>
+            <input id="searchQuery"
+                   name="q"
+                   type="search"
+                   th:value="${searchQuery}"
+                   autocomplete="off"
+                   placeholder="キーワード">
+            <button id="searchSubmit" type="submit" disabled>検索</button>
+        </form>
+
+        <form th:action="@{/posts/}" method="get">
+            <button type="submit">更新</button>
+        </form>
+    </div>
 
     <div class="board-layout">
         <aside class="notice-panel" aria-label="お知らせ">
@@ -37,7 +50,17 @@
             <p class="empty-message" th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
             <article class="post" th:each="post : ${posts}">
                 <a class="post__id" th:href="@{/posts/{id}(id=${post.id})}" th:text="|ID ${post.id}|">ID 1</a>
-                <div class="post__author" th:text="${post.author}">投稿者</div>
+                <div class="post__meta">
+                    <div class="post__author" th:text="${post.author}">投稿者</div>
+                    <img class="post__avatar"
+                         th:if="${post.hasAvatarImage()}"
+                         th:src="${post.avatarImageDataUri}"
+                         alt="">
+                    <span class="post__avatar"
+                          th:unless="${post.hasAvatarImage()}"
+                          th:style="|background-color: ${post.avatarColor == null ? '#d6dde6' : post.avatarColor}|"
+                          aria-hidden="true"></span>
+                </div>
                 <p class="post__body"
                    th:classappend="${#strings.length(post.body) > 100 ? 'post__body--truncated' : ''}"
                    th:attr="data-tooltip=${#strings.length(post.body) > 100 ? post.body : null},
@@ -56,18 +79,38 @@
     <nav class="pagination" th:if="${totalPages > 1}" aria-label="ページ遷移">
         <a class="pagination__link"
            th:if="${hasPrevious}"
-           th:href="@{/posts/(page=${currentPage - 1})}">前へ</a>
+           th:href="${#strings.isEmpty(searchQuery)
+               ? '/posts/?page=' + (currentPage - 1)
+               : '/posts/?page=' + (currentPage - 1) + '&q=' + searchQuery}">前へ</a>
         <a class="pagination__link"
            th:each="pageNumber : ${pageNumbers}"
            th:classappend="${pageNumber == currentPage ? 'pagination__link--current' : ''}"
-           th:href="@{/posts/(page=${pageNumber})}"
+           th:href="${#strings.isEmpty(searchQuery)
+               ? '/posts/?page=' + pageNumber
+               : '/posts/?page=' + pageNumber + '&q=' + searchQuery}"
            th:text="${pageNumber + 1}">1</a>
         <a class="pagination__link"
            th:if="${hasNext}"
-           th:href="@{/posts/(page=${currentPage + 1})}">次へ</a>
+           th:href="${#strings.isEmpty(searchQuery)
+               ? '/posts/?page=' + (currentPage + 1)
+               : '/posts/?page=' + (currentPage + 1) + '&q=' + searchQuery}">次へ</a>
     </nav>
 
     <a class="back-to-top" href="#top" aria-label="TOPへ戻る">TOP</a>
 </main>
+<script>
+    (() => {
+        const searchQuery = document.getElementById("searchQuery");
+        const searchSubmit = document.getElementById("searchSubmit");
+        const unsafeSearchPattern = /[<>]/;
+        const refreshSearchSubmitState = () => {
+            searchSubmit.disabled = !searchQuery.value.trim()
+                || unsafeSearchPattern.test(searchQuery.value);
+        };
+
+        searchQuery.addEventListener("input", refreshSearchSubmitState);
+        refreshSearchSubmitState();
+    })();
+</script>
 </body>
 </html>

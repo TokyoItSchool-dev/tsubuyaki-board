@@ -32,7 +32,10 @@ class PostRegistrationIntegrationTest {
         String body = "integration-test-body";
 
         try {
-            mockMvc.perform(post("/posts").param("author", "alice").param("body", body))
+            mockMvc.perform(post("/posts")
+                            .param("author", "alice")
+                            .param("body", body)
+                            .param("avatarColor", "#2563eb"))
                     .andExpect(status().isFound())
                     .andExpect(redirectedUrl("/posts"));
 

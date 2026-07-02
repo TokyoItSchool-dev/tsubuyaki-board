@@ -3,6 +3,7 @@ package com.example.tsubuyaki.web.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
 
 public class PostForm {
 
@@ -18,6 +19,11 @@ public class PostForm {
             regexp = "(?is)^(?!.*<\\s*/?\\s*script\\b).*$",
             message = "本文に script タグは入力できません")
     private String body;
+
+    @Pattern(regexp = "^$|#[0-9a-fA-F]{6}", message = "カラーは #RRGGBB 形式で選択してください")
+    private String avatarColor;
+
+    private MultipartFile avatarImage;
 
     public PostForm() {
     }
@@ -40,5 +46,21 @@ public class PostForm {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
+    }
+
+    public MultipartFile getAvatarImage() {
+        return avatarImage;
+    }
+
+    public void setAvatarImage(MultipartFile avatarImage) {
+        this.avatarImage = avatarImage;
     }
 }

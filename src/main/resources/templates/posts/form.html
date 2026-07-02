@@ -14,7 +14,7 @@
         <a class="nav__link" th:if="${postId != null}" th:href="@{/posts/{id}(id=${postId})}">詳細に戻る</a>
     </nav>
 
-    <form class="post-form" th:action="@{${formAction}}" th:object="${postForm}" method="post">
+    <form class="post-form" th:action="@{${formAction}}" th:object="${postForm}" method="post" enctype="multipart/form-data">
         <div class="form-field">
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
@@ -30,22 +30,49 @@
                       data-forbidden-pattern="&lt;script"></textarea>
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
+        <div class="form-field avatar-field">
+            <label for="avatarColor">アバター色</label>
+            <input type="color"
+                   id="avatarColor"
+                   name="avatarColor"
+                   th:value="*{avatarColor} ?: '#2563eb'"
+                   aria-describedby="avatarHelp">
+            <p id="avatarHelp" class="form-help">画像を選ぶ場合は、色は送信されません。</p>
+            <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
+        </div>
+        <div class="form-field avatar-field">
+            <label for="avatarImage">アバター画像</label>
+            <input type="file" id="avatarImage" name="avatarImage" accept="image/*">
+        </div>
         <button id="postSubmit" type="submit" disabled th:text="${submitLabel}">投稿</button>
     </form>
     <script>
         (() => {
             const author = document.getElementById("author");
             const body = document.getElementById("body");
+            const avatarColor = document.getElementById("avatarColor");
+            const avatarImage = document.getElementById("avatarImage");
             const submit = document.getElementById("postSubmit");
             const scriptTagPattern = /<\s*\/?\s*script\b/i;
+            const hasAvatarImage = () => avatarImage && avatarImage.files.length > 0;
             const refreshSubmitState = () => {
+                if (avatarColor && avatarImage) {
+                    avatarColor.disabled = hasAvatarImage();
+                }
                 submit.disabled = !author.value.trim()
                     || !body.value.trim()
-                    || scriptTagPattern.test(body.value);
+                    || scriptTagPattern.test(body.value)
+                    || (!hasAvatarImage() && (!avatarColor || !avatarColor.value));
             };
 
             author.addEventListener("input", refreshSubmitState);
             body.addEventListener("input", refreshSubmitState);
+            if (avatarColor) {
+                avatarColor.addEventListener("input", refreshSubmitState);
+            }
+            if (avatarImage) {
+                avatarImage.addEventListener("change", refreshSubmitState);
+            }
             refreshSubmitState();
         })();
     </script>

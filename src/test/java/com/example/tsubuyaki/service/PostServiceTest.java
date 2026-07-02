@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostLikeRepository postLikeRepository;
 
     @InjectMocks
     private PostService postService;
@@ -60,13 +65,32 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("投稿検索_本文部分一致_全角半角を区別せず検索する")
+    void searchPage_keyword_matchesBodyIgnoringFullHalfWidth() {
+        Post matchingPost = new Post("alice", "ＡＢＣを含む本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post otherPost = new Post("bob", "別の本文", Instant.parse("2026-05-23T09:00:00Z"));
+        given(postRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(List.of(matchingPost, otherPost));
+
+        Page<Post> result = postService.searchPage("abc", 0);
+
+        assertThat(result.getContent()).containsExactly(matchingPost);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(postRepository).findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+    }
+
+    @Test
     @DisplayName("投稿作成_正常値_Entityに詰め替えてDB保存する")
     void create_validValues_savesPostEntity() {
-        postService.create("alice", "hello");
+        byte[] avatarImageData = "image".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        postService.create("alice", "hello", "#2563eb", "image/png", avatarImageData);
 
         verify(postRepository).save(argThat(post ->
                 "alice".equals(post.getAuthor())
                         && "hello".equals(post.getBody())
+                        && "#2563eb".equals(post.getAvatarColor())
+                        && "image/png".equals(post.getAvatarImageContentType())
+                        && java.util.Arrays.equals(avatarImageData, post.getAvatarImageData())
                         && post.getCreatedAt() != null));
     }
 
@@ -108,9 +132,65 @@ class PostServiceTest {
         Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
         given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(java.util.Optional.of(post));
 
-        postService.update(10L, "bob", "updated");
+        postService.update(10L, "bob", "updated", "#dc2626", null, null);
 
         assertThat(post.getAuthor()).isEqualTo("bob");
         assertThat(post.getBody()).isEqualTo("updated");
+        assertThat(post.getAvatarColor()).isEqualTo("#dc2626");
+        assertThat(post.getAvatarImageContentType()).isNull();
+        assertThat(post.getAvatarImageData()).isNull();
+    }
+
+    @Test
+    @DisplayName("投稿編集_画像アバター指定_カラーを消して画像に更新する")
+    void update_imageAvatar_updatesAvatarImage() {
+        byte[] avatarImageData = "image".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        post.setAvatarColor("#2563eb");
+        given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(java.util.Optional.of(post));
+
+        postService.update(10L, "bob", "updated", null, "image/png", avatarImageData);
+
+        assertThat(post.getAvatarColor()).isNull();
+        assertThat(post.getAvatarImageContentType()).isEqualTo("image/png");
+        assertThat(post.getAvatarImageData()).isEqualTo(avatarImageData);
+    }
+
+    @Test
+    @DisplayName("いいね_未登録clientHash_いいねを保存する")
+    void toggleLike_newClientHash_savesLike() {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(java.util.Optional.of(post));
+        given(postLikeRepository.findByPostAndClientHash(post, "abcd1234")).willReturn(java.util.Optional.empty());
+
+        postService.toggleLike(10L, "abcd1234");
+
+        verify(postLikeRepository).save(argThat(like ->
+                like.getPost().equals(post)
+                        && "abcd1234".equals(like.getClientHash())
+                        && like.getCreatedAt() != null));
+    }
+
+    @Test
+    @DisplayName("いいね_同じclientHashで再クリック_いいねを解除する")
+    void toggleLike_sameClientHash_deletesLike() {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        PostLike like = new PostLike(post, "abcd1234", Instant.parse("2026-05-23T11:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(java.util.Optional.of(post));
+        given(postLikeRepository.findByPostAndClientHash(post, "abcd1234")).willReturn(java.util.Optional.of(like));
+
+        postService.toggleLike(10L, "abcd1234");
+
+        verify(postLikeRepository).delete(like);
+        verify(postLikeRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("いいね数_投稿ID指定_Repositoryから件数を取得する")
+    void likeCount_requestsRepositoryCount() {
+        given(postLikeRepository.countByPostId(10L)).willReturn(2L);
+
+        assertThat(postService.likeCount(10L)).isEqualTo(2L);
+        verify(postLikeRepository).countByPostId(10L);
     }
 }

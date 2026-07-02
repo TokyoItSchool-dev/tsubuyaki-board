@@ -5,10 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Objects;
 
 @Entity
@@ -31,6 +33,16 @@ public class Post {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    @Column(name = "avatar_color", length = 7)
+    private String avatarColor;
+
+    @Column(name = "avatar_image_content_type", length = 100)
+    private String avatarImageContentType;
+
+    @Lob
+    @Column(name = "avatar_image_data")
+    private byte[] avatarImageData;
 
     public Post() {
         // JPA
@@ -76,6 +88,41 @@ public class Post {
 
     public void setDeletedAt(Instant deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
+    }
+
+    public String getAvatarImageContentType() {
+        return avatarImageContentType;
+    }
+
+    public void setAvatarImageContentType(String avatarImageContentType) {
+        this.avatarImageContentType = avatarImageContentType;
+    }
+
+    public byte[] getAvatarImageData() {
+        return avatarImageData;
+    }
+
+    public void setAvatarImageData(byte[] avatarImageData) {
+        this.avatarImageData = avatarImageData;
+    }
+
+    public boolean hasAvatarImage() {
+        return avatarImageContentType != null && avatarImageData != null && avatarImageData.length > 0;
+    }
+
+    public String getAvatarImageDataUri() {
+        if (!hasAvatarImage()) {
+            return "";
+        }
+        return "data:" + avatarImageContentType + ";base64," + Base64.getEncoder().encodeToString(avatarImageData);
     }
 
     @Override

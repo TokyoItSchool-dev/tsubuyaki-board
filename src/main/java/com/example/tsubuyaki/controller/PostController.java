@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.dto.PostForm;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -15,7 +16,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -39,8 +45,12 @@ public class PostController {
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
-    public String list(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
-        Page<?> postsPage = postService.latestPage(page);
+    public String list(@RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "q", required = false) String query,
+            Model model) {
+        Page<?> postsPage = isSearchableQuery(query)
+                ? postService.searchPage(query, page)
+                : postService.latestPage(page);
         int totalPages = postsPage.getTotalPages();
         List<Integer> pageNumbers = totalPages == 0
                 ? List.of()
@@ -52,25 +62,33 @@ public class PostController {
         model.addAttribute("hasPrevious", postsPage.hasPrevious());
         model.addAttribute("hasNext", postsPage.hasNext());
         model.addAttribute("pageNumbers", pageNumbers);
+        model.addAttribute("searchQuery", query == null ? "" : query);
         return "posts/list";
     }
 
     @GetMapping("/posts/new")
     public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());
-        model.addAttribute("formTitle", "新規投稿");
-        model.addAttribute("formAction", "/posts");
-        model.addAttribute("submitLabel", "投稿");
+        addNewFormAttributes(model);
         return "posts/form";
     }
 
     @PostMapping("/posts")
-    public String create(@Valid @ModelAttribute("postForm") PostForm postForm, BindingResult result) {
+    public String create(@Valid @ModelAttribute("postForm") PostForm postForm,
+            BindingResult result,
+            Model model) throws IOException {
+        validateAvatar(postForm, result);
         if (result.hasErrors()) {
+            addNewFormAttributes(model);
             return "posts/form";
         }
 
-        postService.create(postForm.getAuthor(), postForm.getContent());
+        MultipartFile avatarImage = postForm.getAvatarImage();
+        boolean hasAvatarImage = hasAvatarImage(avatarImage);
+        postService.create(postForm.getAuthor(), postForm.getContent(),
+                hasAvatarImage ? null : normalizedAvatarColor(postForm),
+                hasAvatarImage ? avatarImage.getContentType() : null,
+                hasAvatarImage ? avatarImage.getBytes() : null);
         return "redirect:/posts";
     }
 
@@ -84,6 +102,7 @@ public class PostController {
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("post", postService.findVisibleById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("likeCount", postService.likeCount(id));
         return "posts/detail";
     }
 
@@ -94,11 +113,9 @@ public class PostController {
         PostForm postForm = new PostForm();
         postForm.setAuthor(post.getAuthor());
         postForm.setBody(post.getBody());
+        postForm.setAvatarColor(post.getAvatarColor());
         model.addAttribute("postForm", postForm);
-        model.addAttribute("postId", id);
-        model.addAttribute("formTitle", "投稿編集");
-        model.addAttribute("formAction", "/posts/" + id + "/edit");
-        model.addAttribute("submitLabel", "更新");
+        addEditFormAttributes(model, id);
         return "posts/form";
     }
 
@@ -107,16 +124,19 @@ public class PostController {
             @Valid @ModelAttribute("postForm") PostForm postForm,
             BindingResult result,
             Model model,
-            HttpSession session) {
+            HttpSession session) throws IOException {
+        validateAvatar(postForm, result);
         if (result.hasErrors()) {
-            model.addAttribute("postId", id);
-            model.addAttribute("formTitle", "投稿編集");
-            model.addAttribute("formAction", "/posts/" + id + "/edit");
-            model.addAttribute("submitLabel", "更新");
+            addEditFormAttributes(model, id);
             return "posts/form";
         }
 
-        postService.update(id, postForm.getAuthor(), postForm.getContent())
+        MultipartFile avatarImage = postForm.getAvatarImage();
+        boolean hasAvatarImage = hasAvatarImage(avatarImage);
+        postService.update(id, postForm.getAuthor(), postForm.getContent(),
+                hasAvatarImage ? null : normalizedAvatarColor(postForm),
+                hasAvatarImage ? avatarImage.getContentType() : null,
+                hasAvatarImage ? avatarImage.getBytes() : null)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         session.setAttribute(EDITED_POST_ID, id);
         return "redirect:/posts/" + id;
@@ -128,5 +148,67 @@ public class PostController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         session.setAttribute(DELETED_POST_ID, id);
         return "redirect:/posts";
+    }
+
+    @PostMapping("/posts/{id}/likes")
+    public String toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        postService.toggleLike(id, clientHash(request))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return "redirect:/posts/" + id;
+    }
+
+    private static String clientHash(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent") == null ? "" : request.getHeader("User-Agent");
+        return sha256First8(request.getRemoteAddr() + userAgent);
+    }
+
+    private static String sha256First8(String value) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder builder = new StringBuilder();
+            for (byte b : hash) {
+                builder.append(String.format("%02x", b));
+            }
+            return builder.substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static boolean isSearchableQuery(String query) {
+        return query != null && !query.strip().isEmpty() && !query.contains("<") && !query.contains(">");
+    }
+
+    private static void addNewFormAttributes(Model model) {
+        model.addAttribute("formTitle", "新規投稿");
+        model.addAttribute("formAction", "/posts");
+        model.addAttribute("submitLabel", "投稿");
+    }
+
+    private static void addEditFormAttributes(Model model, Long id) {
+        model.addAttribute("postId", id);
+        model.addAttribute("formTitle", "投稿編集");
+        model.addAttribute("formAction", "/posts/" + id + "/edit");
+        model.addAttribute("submitLabel", "更新");
+    }
+
+    private static void validateAvatar(PostForm postForm, BindingResult result) {
+        boolean hasColor = normalizedAvatarColor(postForm) != null;
+        boolean hasImage = hasAvatarImage(postForm.getAvatarImage());
+        if (hasColor && hasImage) {
+            result.rejectValue("avatarColor", "avatar.exclusive", "カラーと画像は同時に選択できません");
+        }
+        if (!hasColor && !hasImage) {
+            result.rejectValue("avatarColor", "avatar.required", "画像をアップロードしない場合はカラーを選択してください");
+        }
+    }
+
+    private static String normalizedAvatarColor(PostForm postForm) {
+        String avatarColor = postForm.getAvatarColor();
+        return avatarColor == null || avatarColor.isBlank() ? null : avatarColor;
+    }
+
+    private static boolean hasAvatarImage(MultipartFile avatarImage) {
+        return avatarImage != null && !avatarImage.isEmpty();
     }
 }

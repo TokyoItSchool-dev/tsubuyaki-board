@@ -37,6 +37,10 @@
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
 
             <div class="post-actions">
+                <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                    <button type="submit">Like</button>
+                </form>
+                <span class="like-count" th:text="|いいね数: ${likeCount}|">いいね数: 0</span>
                 <a class="button-link" th:href="@{/posts/{id}/edit(id=${post.id})}">編集</a>
                 <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
                     <button class="button-danger" type="submit">削除</button>

@@ -82,8 +82,31 @@ button:focus-visible {
 
 .toolbar {
     display: flex;
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
     margin: 0 0 1rem;
+}
+
+.search-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.search-form__label {
+    font-weight: 700;
+}
+
+.search-form input {
+    width: min(18rem, 100%);
+    min-height: 2.5rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+    font: inherit;
 }
 
 .toolbar button {
@@ -94,6 +117,13 @@ button:focus-visible {
     background: var(--color-accent);
     color: white;
     cursor: pointer;
+}
+
+.toolbar button:disabled {
+    border-color: var(--color-border);
+    background: var(--color-border);
+    color: var(--color-muted);
+    cursor: not-allowed;
 }
 
 .posts {
@@ -145,6 +175,22 @@ button:focus-visible {
 
 .post__author {
     font-weight: 600;
+}
+
+.post__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.post__avatar {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .post__id {
@@ -213,7 +259,13 @@ button:focus-visible {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
+    align-items: center;
     margin-top: 1rem;
+}
+
+.like-count {
+    color: var(--color-muted);
+    font-weight: 700;
 }
 
 .button-link,
@@ -278,6 +330,28 @@ button:focus-visible {
 .form-field textarea {
     min-height: calc(1.6em * 4 + 1.3rem + 2px);
     resize: vertical;
+}
+
+.avatar-field input[type="color"] {
+    width: 4rem;
+    height: 2.5rem;
+    padding: 0.2rem;
+    cursor: pointer;
+}
+
+.avatar-field input[type="color"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.avatar-field input[type="file"] {
+    cursor: pointer;
+}
+
+.form-help {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
 }
 
 .back-to-top {

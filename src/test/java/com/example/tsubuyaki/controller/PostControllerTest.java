@@ -13,17 +13,24 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -66,6 +73,62 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_検索ボックス_一覧画面上部に表示する")
+    void list_searchBox_existsInToolbar() throws Exception {
+        given(postService.latestPage(0)).willReturn(pageOf(List.of(), 0, 0));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"searchQuery\"")))
+                .andExpect(content().string(containsString("name=\"q\"")))
+                .andExpect(content().string(containsString("id=\"searchSubmit\"")))
+                .andExpect(content().string(containsString("disabled")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_キーワード検索_GET_posts_qで本文検索結果を表示する")
+    void list_searchKeyword_displaysSearchResults() throws Exception {
+        List<Post> posts = List.of(postWithId(10L, "alice", "検索対象の本文", Instant.parse("2026-05-23T10:15:00Z")));
+        given(postService.searchPage("検索", 0)).willReturn(pageOf(posts, 0, 1));
+
+        mockMvc.perform(get("/posts").param("q", "検索"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("searchQuery", "検索"))
+                .andExpect(content().string(containsString("value=\"検索\"")));
+
+        verify(postService).searchPage("検索", 0);
+    }
+
+    @Test
+    @DisplayName("投稿一覧_空白のみ検索_検索せず通常一覧を表示する")
+    void list_blankSearchQuery_usesLatestPage() throws Exception {
+        given(postService.latestPage(0)).willReturn(pageOf(List.of(), 0, 0));
+
+        mockMvc.perform(get("/posts").param("q", " 　"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("searchQuery", " 　"))
+                .andExpect(content().string(containsString("id=\"searchSubmit\"")))
+                .andExpect(content().string(containsString("disabled")));
+
+        verify(postService).latestPage(0);
+        verify(postService, never()).searchPage(anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("投稿一覧_検索ボックス_空文字空白タグ疑い文字では検索ボタンを非活性にする")
+    void list_searchBox_disablesSubmitForBlankOrSuspiciousInput() throws Exception {
+        given(postService.latestPage(0)).willReturn(pageOf(List.of(), 0, 0));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("const unsafeSearchPattern = /[<>]/;")))
+                .andExpect(content().string(containsString("searchSubmit.disabled")))
+                .andExpect(content().string(containsString("!searchQuery.value.trim()")))
+                .andExpect(content().string(containsString("unsafeSearchPattern.test(searchQuery.value)")));
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿あり_投稿者内容投稿日の順に表示する")
     void list_withPost_displaysAuthorBodyCreatedAtInOrder() throws Exception {
         Post post = postWithId(10L, "alice", "本文です", Instant.parse("2026-05-23T10:15:00Z"));
@@ -91,6 +154,33 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("href=\"/posts/10\"")))
                 .andExpect(content().string(containsString("ID 10")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿あり_円形のアバター表示箇所を持つ")
+    void list_withPost_displaysAvatarSlot() throws Exception {
+        Post post = postWithId(10L, "alice", "本文です", Instant.parse("2026-05-23T10:15:00Z"));
+        post.setAvatarColor("#2563eb");
+        given(postService.latestPage(0)).willReturn(pageOf(List.of(post), 0, 1));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("post__avatar")))
+                .andExpect(content().string(containsString("background-color: #2563eb")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_画像アバターあり_円形箇所に画像を表示する")
+    void list_withImageAvatar_displaysAvatarImage() throws Exception {
+        Post post = postWithId(10L, "alice", "本文です", Instant.parse("2026-05-23T10:15:00Z"));
+        post.setAvatarImageContentType("image/png");
+        post.setAvatarImageData("image".getBytes(StandardCharsets.UTF_8));
+        given(postService.latestPage(0)).willReturn(pageOf(List.of(post), 0, 1));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<img class=\"post__avatar\"")))
+                .andExpect(content().string(containsString("src=\"data:image/png;base64,aW1hZ2U=\"")));
     }
 
     @Test
@@ -191,7 +281,10 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("本文を入力してください")));
 
         verify(postService, never()).create(org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.anyString());
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -229,11 +322,11 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿作成_正常最小値_登録してpostsへリダイレクトする")
     void create_minLength_redirectsPosts() throws Exception {
-        mockMvc.perform(post("/posts").param("author", "a").param("body", "b"))
+        mockMvc.perform(post("/posts").param("author", "a").param("body", "b").param("avatarColor", "#2563eb"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("a", "b");
+        verify(postService).create("a", "b", "#2563eb", null, null);
     }
 
     @Test
@@ -242,11 +335,43 @@ class PostControllerTest {
         String author = "a".repeat(30);
         String body = "b".repeat(280);
 
-        mockMvc.perform(post("/posts").param("author", author).param("body", body))
+        mockMvc.perform(post("/posts").param("author", author).param("body", body).param("avatarColor", "#2563eb"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create(author, body);
+        verify(postService).create(author, body, "#2563eb", null, null);
+    }
+
+    @Test
+    @DisplayName("投稿作成_画像アップロード_カラーなしで登録できる")
+    void create_imageAvatarWithoutColor_redirectsPosts() throws Exception {
+        MockMultipartFile avatarImage = new MockMultipartFile(
+                "avatarImage", "avatar.png", "image/png", "image".getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(multipart("/posts")
+                        .file(avatarImage)
+                        .param("author", "alice")
+                        .param("body", "本文"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "本文", null, "image/png", "image".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("投稿作成_カラーと画像を同時指定_エラーでフォームを再表示する")
+    void create_colorAndImage_redisplaysForm() throws Exception {
+        MockMultipartFile avatarImage = new MockMultipartFile(
+                "avatarImage", "avatar.png", "image/png", "image".getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(multipart("/posts")
+                        .file(avatarImage)
+                        .param("author", "alice")
+                        .param("body", "本文")
+                        .param("avatarColor", "#2563eb"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(content().string(containsString("カラーと画像は同時に選択できません")));
     }
 
     @Test
@@ -263,6 +388,7 @@ class PostControllerTest {
     void detail_existingId_showsPostDetail() throws Exception {
         Post post = postWithId(10L, "alice", "本文の全文です", Instant.parse("2026-05-23T10:15:00Z"));
         given(postService.findVisibleById(10L)).willReturn(Optional.of(post));
+        given(postService.likeCount(10L)).willReturn(3L);
 
         mockMvc.perform(get("/posts/10"))
                 .andExpect(status().isOk())
@@ -272,13 +398,38 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("本文の全文です")))
                 .andExpect(content().string(containsString("2026-05-23 19:15")))
                 .andExpect(content().string(containsString("href=\"/posts/10/edit\"")))
-                .andExpect(content().string(containsString("action=\"/posts/10/delete\"")));
+                .andExpect(content().string(containsString("action=\"/posts/10/delete\"")))
+                .andExpect(content().string(containsString("いいね数: 3")))
+                .andExpect(content().string(containsString("action=\"/posts/10/likes\"")))
+                .andExpect(content().string(containsString("Like")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいねボタン_同じIPとUAからclientHashを作ってトグルする")
+    void like_sameClientHash_togglesLike() throws Exception {
+        String remoteAddress = "192.0.2.10";
+        String userAgent = "JUnit Browser";
+        String expectedClientHash = sha256First8(remoteAddress + userAgent);
+        Post post = postWithId(10L, "alice", "本文です", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.toggleLike(10L, expectedClientHash)).willReturn(Optional.of(post));
+
+        mockMvc.perform(post("/posts/10/likes")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .header("User-Agent", userAgent))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/10"));
+
+        verify(postService).toggleLike(10L, expectedClientHash);
     }
 
     @Test
     @DisplayName("投稿詳細_編集ボタン_対象投稿の編集フォームへ遷移できる")
     void editForm_existingId_showsOnlyTargetPostForm() throws Exception {
         Post post = postWithId(10L, "alice", "本文です", Instant.parse("2026-05-23T10:15:00Z"));
+        post.setAvatarColor("#2563eb");
         given(postService.findVisibleById(10L)).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/10/edit"))
@@ -286,6 +437,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postId", 10L))
                 .andExpect(content().string(containsString("value=\"alice\"")))
+                .andExpect(content().string(containsString("value=\"#2563eb\"")))
                 .andExpect(content().string(containsString("本文です")))
                 .andExpect(content().string(containsString("action=\"/posts/10/edit\"")));
     }
@@ -344,14 +496,37 @@ class PostControllerTest {
     @DisplayName("投稿編集_正常値_対象投稿だけ更新して詳細へリダイレクトする")
     void update_validValues_updatesTargetPost() throws Exception {
         Post post = postWithId(10L, "bob", "更新本文", Instant.parse("2026-05-23T10:15:00Z"));
-        given(postService.update(10L, "bob", "更新本文")).willReturn(Optional.of(post));
+        given(postService.update(10L, "bob", "更新本文", "#dc2626", null, null)).willReturn(Optional.of(post));
 
-        mockMvc.perform(post("/posts/10/edit").param("author", "bob").param("body", "更新本文"))
+        mockMvc.perform(post("/posts/10/edit")
+                        .param("author", "bob")
+                        .param("body", "更新本文")
+                        .param("avatarColor", "#dc2626"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts/10"))
                 .andExpect(request().sessionAttribute("editedPostId", 10L));
 
-        verify(postService).update(10L, "bob", "更新本文");
+        verify(postService).update(10L, "bob", "更新本文", "#dc2626", null, null);
+    }
+
+    @Test
+    @DisplayName("投稿編集_画像アップロード_アバター画像を更新できる")
+    void update_imageAvatar_updatesTargetPost() throws Exception {
+        MockMultipartFile avatarImage = new MockMultipartFile(
+                "avatarImage", "avatar.png", "image/png", "image".getBytes(StandardCharsets.UTF_8));
+        Post post = postWithId(10L, "bob", "更新本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.update(10L, "bob", "更新本文", null, "image/png",
+                "image".getBytes(StandardCharsets.UTF_8))).willReturn(Optional.of(post));
+
+        mockMvc.perform(multipart("/posts/10/edit")
+                        .file(avatarImage)
+                        .param("author", "bob")
+                        .param("body", "更新本文"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/10"));
+
+        verify(postService).update(10L, "bob", "更新本文", null, "image/png",
+                "image".getBytes(StandardCharsets.UTF_8));
     }
 
     private static Page<Post> pageOf(List<Post> posts, int page, long total) {
@@ -369,5 +544,19 @@ class PostControllerTest {
         Post post = new Post(author, body, createdAt);
         ReflectionTestUtils.setField(post, "id", id);
         return post;
+    }
+
+    private static String sha256First8(String value) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder builder = new StringBuilder();
+            for (byte b : hash) {
+                builder.append(String.format("%02x", b));
+            }
+            return builder.substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
