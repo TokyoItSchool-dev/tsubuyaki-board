@@ -6,6 +6,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -34,7 +36,8 @@ class SamplePostControllerTest {
     @Test
     @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")
     void getPosts_rendersListView() throws Exception {
-        given(postService.latest()).willReturn(Collections.emptyList());
+        given(postService.latestPage(0, 10))
+                .willReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0));
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())

@@ -8,24 +8,57 @@
 </head>
 <body>
 <main>
-    <h1>社内つぶやきボード</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧</a>
-        |
-        <a th:href="@{/posts/new}">新規投稿</a>
-    </nav>
+    <header class="page-header">
+        <div>
+            <h1>社内つぶやきボード</h1>
+            <nav>
+                <a th:href="@{/posts}">一覧</a>
+                |
+                <a th:href="@{/posts/new}">新規投稿</a>
+            </nav>
+        </div>
+        <form th:action="@{/posts/}" method="get">
+            <button type="submit">更新</button>
+        </form>
+    </header>
+
+    <form class="search-form" th:action="@{/posts}" method="get">
+        <label for="q">本文検索</label>
+        <input type="search" id="q" name="q" th:value="${query}" placeholder="キーワード">
+        <button type="submit">検索</button>
+    </form>
+
+    <h2 class="tag-heading" th:if="${tagName != null}" th:text="|#${tagName}|">#tag</h2>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
+        <p class="empty-message" th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">
             <header>
+                <span class="avatar"
+                      th:classappend="|avatar--${#strings.toLowerCase(post.avatarColor)}|"
+                      aria-hidden="true"></span>
                 <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
             </header>
-            <p class="post__body" th:text="${post.body}">本文</p>
+            <p class="post__body" th:title="${post.body}">
+                <th:block th:each="segment : ${T(com.example.tsubuyaki.web.HashtagLinkifier).linkify(post.body)}">
+                    <a th:if="${segment.hashtag}"
+                       th:href="@{/tags/{name}(name=${segment.tagName})}"
+                       th:text="${segment.text}">#tag</a>
+                    <span th:unless="${segment.hashtag}" th:text="${segment.text}">本文</span>
+                </th:block>
+            </p>
+            <time class="post__created-at" th:datetime="${post.createdAt}" th:text="${post.createdAt}">2026-05-23T09:00:00</time>
+            <p><a th:href="@{/posts/{id}(id=${post.id})}">詳細</a></p>
         </article>
     </section>
+
+    <nav class="pagination" th:if="${totalPages > 1}" aria-label="投稿一覧ページ">
+        <a th:if="${hasPreviousPage}"
+           th:href="${tagName == null} ? @{/posts(page=${previousPage}, q=${query})} : @{/tags/{name}(name=${tagName}, page=${previousPage})}">前へ</a>
+        <span th:text="|${currentPage} / ${totalPages}|">1 / 1</span>
+        <a th:if="${hasNextPage}"
+           th:href="${tagName == null} ? @{/posts(page=${nextPage}, q=${query})} : @{/tags/{name}(name=${tagName}, page=${nextPage})}">次へ</a>
+    </nav>
 </main>
 </body>
 </html>
