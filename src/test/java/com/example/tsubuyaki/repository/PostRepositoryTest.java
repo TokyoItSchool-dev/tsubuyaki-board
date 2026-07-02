@@ -35,7 +35,7 @@ class PostRepositoryTest {
                 .toList();
         postRepository.saveAll(posts);
 
-        List<Post> latestPosts = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> latestPosts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         List<String> expectedBodies = IntStream.iterate(55, number -> number - 1)
                 .limit(50)
@@ -67,10 +67,20 @@ class PostRepositoryTest {
         Post savedPost = postRepository.saveAndFlush(
                 new Post("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z")));
 
-        assertThat(postRepository.findById(savedPost.getId()))
+        assertThat(postRepository.findByIdAndDeletedAtIsNull(savedPost.getId()))
                 .get()
                 .extracting(Post::getAuthor, Post::getBody, Post::getCreatedAt)
                 .containsExactly("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
+    }
+
+    @Test
+    @DisplayName("Repository_投稿詳細_削除済み投稿を取得しない")
+    void 投稿詳細_削除済み投稿のid指定_空を返す() {
+        Post deletedPost = new Post("alice", "削除済み詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        deletedPost.delete(Instant.parse("2026-06-26T12:00:00Z"));
+        Post savedPost = postRepository.saveAndFlush(deletedPost);
+
+        assertThat(postRepository.findByIdAndDeletedAtIsNull(savedPost.getId())).isEmpty();
     }
 
     @Test
@@ -81,7 +91,7 @@ class PostRepositoryTest {
         postRepository.save(new Post("carol", "検索フォームを実装", Instant.parse("2026-06-26T11:00:00Z")));
         postRepository.flush();
 
-        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索");
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索");
 
         assertThat(posts)
                 .extracting(Post::getBody)
@@ -102,10 +112,61 @@ class PostRepositoryTest {
         postRepository.saveAll(List.of(oldPost, otherPost, newPost));
         postRepository.flush();
 
-        List<Post> posts = postRepository.findTop50DistinctByTagsNameOrderByCreatedAtDesc("java");
+        List<Post> posts = postRepository.findTop50DistinctByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc("java");
 
         assertThat(posts)
                 .extracting(Post::getBody)
                 .containsExactly("#java の新しい投稿", "#java の古い投稿");
+    }
+
+    @Test
+    @DisplayName("Repository_投稿一覧_削除済み投稿を除外する")
+    void 投稿一覧_削除済み投稿があるとき_未削除投稿だけを返す() {
+        Post activePost = new Post("alice", "表示される投稿", Instant.parse("2026-06-26T10:00:00Z"));
+        Post deletedPost = new Post("bob", "削除済み投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        deletedPost.delete(Instant.parse("2026-06-26T12:00:00Z"));
+        postRepository.saveAll(List.of(activePost, deletedPost));
+        postRepository.flush();
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("表示される投稿");
+    }
+
+    @Test
+    @DisplayName("Repository_キーワード検索_削除済み投稿を除外する")
+    void キーワード検索_削除済み投稿が一致するとき_未削除投稿だけを返す() {
+        Post activePost = new Post("alice", "検索できる投稿", Instant.parse("2026-06-26T10:00:00Z"));
+        Post deletedPost = new Post("bob", "検索できない削除済み投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        deletedPost.delete(Instant.parse("2026-06-26T12:00:00Z"));
+        postRepository.saveAll(List.of(activePost, deletedPost));
+        postRepository.flush();
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索");
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("検索できる投稿");
+    }
+
+    @Test
+    @DisplayName("Repository_タグ別一覧_削除済み投稿を除外する")
+    void タグ別一覧_削除済み投稿が一致するとき_未削除投稿だけを返す() {
+        Tag javaTag = tagRepository.save(new Tag("java"));
+        Post activePost = new Post("alice", "#java 表示される投稿", Instant.parse("2026-06-26T10:00:00Z"));
+        activePost.addTag(javaTag);
+        Post deletedPost = new Post("bob", "#java 削除済み投稿", Instant.parse("2026-06-26T11:00:00Z"));
+        deletedPost.addTag(javaTag);
+        deletedPost.delete(Instant.parse("2026-06-26T12:00:00Z"));
+        postRepository.saveAll(List.of(activePost, deletedPost));
+        postRepository.flush();
+
+        List<Post> posts = postRepository.findTop50DistinctByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc("java");
+
+        assertThat(posts)
+                .extracting(Post::getBody)
+                .containsExactly("#java 表示される投稿");
     }
 }

@@ -36,7 +36,7 @@ class PostLikeServiceTest {
     @DisplayName("Service_いいね_未いいねなら保存してtrueを返す")
     void いいね_未いいねなら保存してtrueを返す() {
         Post post = new Post("alice", "S1 の投稿", Instant.parse("2026-06-26T12:00:00Z"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
         given(postLikeRepository.existsByPostIdAndClientHash(1L, "a1b2c3d4")).willReturn(false);
 
         Optional<Boolean> result = postService.toggleLike(1L, "a1b2c3d4");
@@ -53,7 +53,7 @@ class PostLikeServiceTest {
     @DisplayName("Service_いいね_同じclientHashなら削除してfalseを返す")
     void いいね_同じclientHashなら削除してfalseを返す() {
         Post post = new Post("alice", "S1 の投稿", Instant.parse("2026-06-26T12:00:00Z"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
         given(postLikeRepository.existsByPostIdAndClientHash(1L, "a1b2c3d4")).willReturn(true);
 
         Optional<Boolean> result = postService.toggleLike(1L, "a1b2c3d4");

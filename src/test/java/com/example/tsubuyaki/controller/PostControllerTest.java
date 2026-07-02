@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -200,6 +201,7 @@ class PostControllerTest {
     @DisplayName("Controller_投稿詳細_存在するid_投稿をmodelに渡す")
     void 投稿詳細_存在するid_投稿をmodelに渡す() throws Exception {
         Post post = new Post("alice", "M4 の詳細投稿", "purple", Instant.parse("2026-06-26T11:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 1L);
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postService.countLikes(1L)).willReturn(2L);
 
@@ -210,6 +212,8 @@ class PostControllerTest {
                 .andExpect(model().attribute("likeCount", 2L))
                 .andExpect(content().string(containsString("いいね 2")))
                 .andExpect(content().string(containsString("Like")))
+                .andExpect(content().string(containsString("action=\"/posts/1/delete\"")))
+                .andExpect(content().string(containsString("削除")))
                 .andExpect(content().string(containsString("post__avatar--purple")))
                 .andExpect(content().string(containsString("アバター色 purple")))
                 .andExpect(content().string(containsString("M4 の詳細投稿")));
@@ -255,6 +259,29 @@ class PostControllerTest {
                         })
                         .header("User-Agent", "JUnit UA"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Controller_投稿削除POST_存在するid_論理削除して一覧へリダイレクトする")
+    void 投稿削除POST_存在するid_論理削除して一覧へリダイレクトする() throws Exception {
+        given(postService.delete(1L)).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(1L);
+    }
+
+    @Test
+    @DisplayName("Controller_投稿削除POST_存在しないid_404を返す")
+    void 投稿削除POST_存在しないid_404を返す() throws Exception {
+        given(postService.delete(999L)).willReturn(false);
+
+        mockMvc.perform(post("/posts/999/delete"))
+                .andExpect(status().isNotFound());
+
+        verify(postService).delete(999L);
     }
 
     private static String clientHash(String ipAddress, String userAgent) {

@@ -43,12 +43,12 @@ class PostServiceTest {
         List<Post> repositoryResult = List.of(
                 new Post("alice", "新しい投稿", Instant.parse("2026-06-26T10:00:00Z")),
                 new Post("bob", "古い投稿", Instant.parse("2026-06-26T09:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(repositoryResult);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(repositoryResult);
 
         List<Post> latestPosts = postService.latest();
 
         assertThat(latestPosts).isSameAs(repositoryResult);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
@@ -56,14 +56,14 @@ class PostServiceTest {
     void search_キーワードあり_body検索結果を返す() {
         List<Post> repositoryResult = List.of(
                 new Post("alice", "検索フォーム", Instant.parse("2026-06-26T10:00:00Z")));
-        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索"))
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索"))
                 .willReturn(repositoryResult);
 
         List<Post> posts = postService.search(" 検索 ");
 
         assertThat(posts).isSameAs(repositoryResult);
-        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("検索");
-        verify(postRepository, never()).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索");
+        verify(postRepository, never()).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
@@ -71,13 +71,13 @@ class PostServiceTest {
     void search_空文字_通常一覧を返す() {
         List<Post> repositoryResult = List.of(
                 new Post("alice", "通常一覧", Instant.parse("2026-06-26T10:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(repositoryResult);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(repositoryResult);
 
         List<Post> posts = postService.search("   ");
 
         assertThat(posts).isSameAs(repositoryResult);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
-        verify(postRepository, never()).findTop50ByBodyContainingOrderByCreatedAtDesc(any());
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+        verify(postRepository, never()).findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(any());
     }
 
     @Test
@@ -117,22 +117,46 @@ class PostServiceTest {
     @DisplayName("Service_findById_id指定でRepositoryの投稿を返す")
     void findById_id指定でRepositoryの投稿を返す() {
         Post post = new Post("alice", "M4 の詳細投稿", Instant.parse("2026-06-26T11:00:00Z"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
 
         Optional<Post> foundPost = postService.findById(1L);
 
         assertThat(foundPost).containsSame(post);
-        verify(postRepository).findById(1L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(1L);
     }
 
     @Test
     @DisplayName("Service_findById_存在しないid_空を返す")
     void findById_存在しないid_空を返す() {
-        given(postRepository.findById(999L)).willReturn(Optional.empty());
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
 
         Optional<Post> foundPost = postService.findById(999L);
 
         assertThat(foundPost).isEmpty();
-        verify(postRepository).findById(999L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(999L);
+    }
+
+    @Test
+    @DisplayName("Service_delete_存在するid_deletedAtを設定してtrueを返す")
+    void delete_存在するid_deletedAtを設定してtrueを返す() {
+        Post post = new Post("alice", "削除対象", Instant.parse("2026-06-26T11:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+
+        boolean deleted = postService.delete(1L);
+
+        assertThat(deleted).isTrue();
+        assertThat(post.getDeletedAt()).isNotNull();
+        verify(postRepository).findByIdAndDeletedAtIsNull(1L);
+    }
+
+    @Test
+    @DisplayName("Service_delete_存在しないid_falseを返す")
+    void delete_存在しないid_falseを返す() {
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
+
+        boolean deleted = postService.delete(999L);
+
+        assertThat(deleted).isFalse();
+        verify(postRepository).findByIdAndDeletedAtIsNull(999L);
     }
 }

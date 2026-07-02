@@ -36,7 +36,7 @@
                 </span>
             </header>
             <p class="post__body" th:text="${post.body}">本文</p>
-            <p class="post__tags" th:if="${!#lists.isEmpty(post.tags)}">
+            <p class="post__tags" th:if="${!#sets.isEmpty(post.tags)}">
                 <a th:each="tag : ${post.tags}"
                    th:href="@{/tags/{name}(name=${tag.name})}"
                    th:text="|#${tag.name}|">#tag</a>

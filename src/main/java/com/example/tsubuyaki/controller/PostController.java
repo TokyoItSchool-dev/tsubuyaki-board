@@ -87,6 +87,14 @@ public class PostController {
         return "redirect:/posts/" + id;
     }
 
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        if (!postService.delete(id)) {
+            throw new ResponseStatusException(NOT_FOUND);
+        }
+        return "redirect:/posts";
+    }
+
     private static String clientHash(String ipAddress, String userAgent) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

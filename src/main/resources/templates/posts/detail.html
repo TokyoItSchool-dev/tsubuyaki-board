@@ -27,7 +27,7 @@
             </span>
         </header>
         <p class="post__body" th:text="${post.body}">本文</p>
-        <p class="post__tags" th:if="${!#lists.isEmpty(post.tags)}">
+        <p class="post__tags" th:if="${!#sets.isEmpty(post.tags)}">
             <a th:each="tag : ${post.tags}"
                th:href="@{/tags/{name}(name=${tag.name})}"
                th:text="|#${tag.name}|">#tag</a>
@@ -40,6 +40,13 @@
                        th:name="${_csrf.parameterName}"
                        th:value="${_csrf.token}">
                 <button type="submit">Like</button>
+            </form>
+            <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+                <input type="hidden"
+                       th:if="${_csrf != null}"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}">
+                <button type="submit">削除</button>
             </form>
         </footer>
     </article>

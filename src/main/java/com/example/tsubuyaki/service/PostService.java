@@ -39,7 +39,7 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     public List<Post> search(String keyword) {
@@ -47,15 +47,15 @@ public class PostService {
         if (trimmedKeyword.isEmpty()) {
             return latest();
         }
-        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(trimmedKeyword);
+        return repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(trimmedKeyword);
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findByIdAndDeletedAtIsNull(id);
     }
 
     public List<Post> findByTagName(String tagName) {
-        return repository.findTop50DistinctByTagsNameOrderByCreatedAtDesc(normalizeTagName(tagName));
+        return repository.findTop50DistinctByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc(normalizeTagName(tagName));
     }
 
     public long countLikes(Long id) {
@@ -64,7 +64,7 @@ public class PostService {
 
     @Transactional
     public Optional<Boolean> toggleLike(Long id, String clientHash) {
-        Optional<Post> post = repository.findById(id);
+        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(id);
         if (post.isEmpty()) {
             return Optional.empty();
         }
@@ -90,6 +90,17 @@ public class PostService {
                 .map(this::findOrCreateTag)
                 .forEach(post::addTag);
         return repository.save(post);
+    }
+
+    @Transactional
+    public boolean delete(Long id) {
+        Optional<Post> post = repository.findByIdAndDeletedAtIsNull(id);
+        if (post.isEmpty()) {
+            return false;
+        }
+
+        post.get().delete(Instant.now());
+        return true;
     }
 
     private Tag findOrCreateTag(String tagName) {

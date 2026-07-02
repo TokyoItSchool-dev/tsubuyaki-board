@@ -2,6 +2,7 @@ package com.example.tsubuyaki.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -39,7 +40,10 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @ManyToMany
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "post_tags",
             joinColumns = @JoinColumn(name = "post_id"),
@@ -81,12 +85,20 @@ public class Post {
         return createdAt;
     }
 
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
     public Set<Tag> getTags() {
         return tags;
     }
 
     public void addTag(Tag tag) {
         tags.add(tag);
+    }
+
+    public void delete(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Override
