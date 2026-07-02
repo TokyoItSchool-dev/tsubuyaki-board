@@ -3,7 +3,7 @@ package com.example.tsubuyaki.domain;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -12,7 +12,7 @@ class PostTest {
     @Test
     @DisplayName("Post_生成したとき_投稿者_本文_アバター色_投稿日を取得できる")
     void Post_生成したとき_投稿者_本文_アバター色_投稿日を取得できる() {
-        Instant createdAt = Instant.parse("2026-05-23T10:00:00Z");
+        LocalDateTime createdAt = LocalDateTime.parse("2026-05-23T10:00:00");
         Post post = new Post("alice", "hello", "#3366cc", createdAt);
 
         assertThat(post.getAuthor()).isEqualTo("alice");
@@ -25,7 +25,7 @@ class PostTest {
     @Test
     @DisplayName("Post_アバター色未指定で生成したとき_デフォルト色を取得できる")
     void Post_アバター色未指定で生成したとき_デフォルト色を取得できる() {
-        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "hello", LocalDateTime.parse("2026-05-23T10:00:00"));
 
         assertThat(post.getAvatarColor()).isEqualTo("#cccccc");
     }
@@ -33,7 +33,7 @@ class PostTest {
     @Test
     @DisplayName("Post_equals_IDが未採番の別インスタンス同士_同じ値として扱う")
     void Post_equals_IDが未採番の別インスタンス同士_同じ値として扱う() {
-        Instant createdAt = Instant.parse("2026-05-23T10:00:00Z");
+        LocalDateTime createdAt = LocalDateTime.parse("2026-05-23T10:00:00");
         Post post = new Post("alice", "hello", createdAt);
         Post other = new Post("alice", "hello", createdAt);
 

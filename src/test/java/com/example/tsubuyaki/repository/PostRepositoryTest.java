@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -25,7 +25,7 @@ class PostRepositoryTest {
     @Test
     @DisplayName("投稿一覧_投稿が55件あるとき_新着順で最大50件を返す")
     void 投稿一覧_投稿が55件あるとき_新着順で最大50件を返す() {
-        Instant base = Instant.parse("2026-05-23T00:00:00Z");
+        LocalDateTime base = LocalDateTime.parse("2026-05-23T00:00:00");
         IntStream.rangeClosed(1, 55)
                 .mapToObj(index -> new Post("user" + index, "body" + index, base.plusSeconds(index)))
                 .forEach(postRepository::save);
@@ -45,9 +45,9 @@ class PostRepositoryTest {
     @Test
     @DisplayName("投稿検索_本文にキーワードを含む投稿だけを新着順で返す")
     void 投稿検索_本文にキーワードを含む投稿だけを新着順で返す() {
-        postRepository.save(new Post("alice", "Springの古い話題", Instant.parse("2026-05-23T09:00:00Z")));
-        postRepository.save(new Post("bob", "Javaの話題", Instant.parse("2026-05-23T10:00:00Z")));
-        postRepository.save(new Post("carol", "Springの新しい話題", Instant.parse("2026-05-23T11:00:00Z")));
+        postRepository.save(new Post("alice", "Springの古い話題", LocalDateTime.parse("2026-05-23T09:00:00")));
+        postRepository.save(new Post("bob", "Javaの話題", LocalDateTime.parse("2026-05-23T10:00:00")));
+        postRepository.save(new Post("carol", "Springの新しい話題", LocalDateTime.parse("2026-05-23T11:00:00")));
         postRepository.flush();
 
         List<Post> posts = postRepository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc("Spring");
@@ -60,7 +60,7 @@ class PostRepositoryTest {
     @DisplayName("投稿保存_アバター色を指定したとき_指定色を永続化する")
     void 投稿保存_アバター色を指定したとき_指定色を永続化する() {
         Post savedPost = postRepository.saveAndFlush(
-                new Post("alice", "色つき投稿", "#3366cc", Instant.parse("2026-05-23T09:00:00Z")));
+                new Post("alice", "色つき投稿", "#3366cc", LocalDateTime.parse("2026-05-23T09:00:00")));
 
         Post foundPost = postRepository.findById(savedPost.getId()).orElseThrow();
 

@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -32,20 +32,20 @@ public class Post {
     private String avatarColor;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "deleted_at")
-    private Instant deletedAt;
+    private LocalDateTime deletedAt;
 
     protected Post() {
         // JPA
     }
 
-    public Post(String author, String body, Instant createdAt) {
+    public Post(String author, String body, LocalDateTime createdAt) {
         this(author, body, DEFAULT_AVATAR_COLOR, createdAt);
     }
 
-    public Post(String author, String body, String avatarColor, Instant createdAt) {
+    public Post(String author, String body, String avatarColor, LocalDateTime createdAt) {
         this.author = author;
         this.body = body;
         this.avatarColor = avatarColor;
@@ -68,15 +68,15 @@ public class Post {
         return avatarColor;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public Instant getDeletedAt() {
+    public LocalDateTime getDeletedAt() {
         return deletedAt;
     }
 
-    public void markDeleted(Instant deletedAt) {
+    public void markDeleted(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
     }
 

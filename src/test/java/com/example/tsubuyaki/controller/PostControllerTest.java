@@ -10,7 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -70,7 +70,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_キーワード指定ありのとき_本文に含む投稿だけを表示する")
     void 投稿一覧_キーワード指定ありのとき_本文に含む投稿だけを表示する() throws Exception {
-        Post matchPost = new Post("alice", "Springの話題", Instant.parse("2026-05-23T10:00:00Z"));
+        Post matchPost = new Post("alice", "Springの話題", LocalDateTime.parse("2026-05-23T10:00:00"));
         List<Post> searchResults = List.of(matchPost);
         given(postService.search("Spring")).willReturn(searchResults);
 
@@ -92,8 +92,8 @@ class PostControllerTest {
     @DisplayName("投稿一覧_キーワード空文字のとき_全件を表示する")
     void 投稿一覧_キーワード空文字のとき_全件を表示する() throws Exception {
         List<Post> posts = List.of(
-                new Post("alice", "Springの話題", Instant.parse("2026-05-23T10:00:00Z")),
-                new Post("bob", "Javaの話題", Instant.parse("2026-05-23T09:00:00Z")));
+                new Post("alice", "Springの話題", LocalDateTime.parse("2026-05-23T10:00:00")),
+                new Post("bob", "Javaの話題", LocalDateTime.parse("2026-05-23T09:00:00")));
         given(postService.search("")).willReturn(posts);
 
         mockMvc.perform(get("/posts").param("q", ""))
@@ -222,7 +222,7 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿詳細_存在するIDのとき_投稿をビューに渡して表示する")
     void 投稿詳細_存在するIDのとき_投稿をビューに渡して表示する() throws Exception {
-        Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:00:00"));
         given(postService.findById(1L)).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/1"))
@@ -267,7 +267,7 @@ class PostControllerTest {
     @DisplayName("投稿一覧_投稿があるとき_投稿者_内容_投稿日の順に表示する")
     void 投稿一覧_投稿があるとき_投稿者_内容_投稿日の順に表示する() throws Exception {
         List<Post> posts = List.of(
-                new Post("alice", "長い本文が折り返される", Instant.parse("2026-05-23T10:00:00Z")));
+                new Post("alice", "長い本文が折り返される", LocalDateTime.parse("2026-05-23T10:00:00")));
         given(postService.search(null)).willReturn(posts);
 
         mockMvc.perform(get("/posts"))
@@ -275,13 +275,13 @@ class PostControllerTest {
                 .andExpect(model().attribute("posts", posts))
                 .andExpect(content().string(containsString("alice")))
                 .andExpect(content().string(containsString("長い本文が折り返される")))
-                .andExpect(content().string(containsString("2026-05-23 19:00")))
+                .andExpect(content().string(containsString("2026-05-23 10:00")))
                 .andExpect(content().string(containsString("post__body")))
                 .andExpect(result -> {
                     String html = result.getResponse().getContentAsString();
                     assertThat(html.indexOf("alice")).isLessThan(html.indexOf("長い本文が折り返される"));
                     assertThat(html.indexOf("長い本文が折り返される"))
-                            .isLessThan(html.indexOf("2026-05-23 19:00"));
+                            .isLessThan(html.indexOf("2026-05-23 10:00"));
                 });
     }
 }

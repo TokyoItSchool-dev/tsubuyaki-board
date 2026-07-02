@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +44,7 @@ public class PostService {
 
     @Transactional
     public Post create(String author, String body, String avatarColor) {
-        return repository.save(new Post(author, body, avatarColor, Instant.now()));
+        return repository.save(new Post(author, body, avatarColor, LocalDateTime.now()));
     }
 
     public Optional<Post> findById(Long id) {
@@ -58,7 +59,7 @@ public class PostService {
     public boolean delete(Long id) {
         return repository.findByIdAndDeletedAtIsNull(id)
                 .map(post -> {
-                    post.markDeleted(Instant.now());
+                    post.markDeleted(LocalDateTime.now());
                     return true;
                 })
                 .orElse(false);

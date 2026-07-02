@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,7 +35,7 @@ class PostServiceTest {
     @DisplayName("投稿一覧_取得するとき_Repositoryの新着50件を返す")
     void 投稿一覧_取得するとき_Repositoryの新着50件を返す() {
         List<Post> expectedPosts = List.of(
-                new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+                new Post("alice", "hello", LocalDateTime.parse("2026-05-23T10:00:00")));
         given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(expectedPosts);
 
         List<Post> posts = postService.latest();
@@ -48,7 +48,7 @@ class PostServiceTest {
     @DisplayName("投稿検索_キーワード指定ありのとき_本文部分一致検索結果を返す")
     void 投稿検索_キーワード指定ありのとき_本文部分一致検索結果を返す() {
         List<Post> expectedPosts = List.of(
-                new Post("alice", "Springの話題", Instant.parse("2026-05-23T10:00:00Z")));
+                new Post("alice", "Springの話題", LocalDateTime.parse("2026-05-23T10:00:00")));
         given(postRepository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc("Spring"))
                 .willReturn(expectedPosts);
 
@@ -62,7 +62,7 @@ class PostServiceTest {
     @DisplayName("投稿検索_キーワード空白のとき_新着50件を返す")
     void 投稿検索_キーワード空白のとき_新着50件を返す() {
         List<Post> expectedPosts = List.of(
-                new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z")));
+                new Post("alice", "hello", LocalDateTime.parse("2026-05-23T10:00:00")));
         given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(expectedPosts);
 
         List<Post> posts = postService.search("   ");
@@ -89,7 +89,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿詳細_取得するとき_Repositoryの検索結果を返す")
     void 投稿詳細_取得するとき_Repositoryの検索結果を返す() {
-        Post post = new Post("alice", "詳細本文", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "詳細本文", LocalDateTime.parse("2026-05-23T10:00:00"));
         given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
 
         Optional<Post> foundPost = postService.findById(1L);
@@ -101,7 +101,7 @@ class PostServiceTest {
     @Test
     @DisplayName("投稿削除_存在するIDのとき_deletedAtを設定してtrueを返す")
     void 投稿削除_存在するIDのとき_deletedAtを設定してtrueを返す() {
-        Post post = new Post("alice", "削除対象", Instant.parse("2026-05-23T10:00:00Z"));
+        Post post = new Post("alice", "削除対象", LocalDateTime.parse("2026-05-23T10:00:00"));
         given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
 
         boolean deleted = postService.delete(1L);

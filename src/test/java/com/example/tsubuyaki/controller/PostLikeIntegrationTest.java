@@ -13,7 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -113,9 +113,9 @@ class PostLikeIntegrationTest {
     @DisplayName("投稿一覧_論理削除済み投稿があるとき_一覧のモデルに含めない")
     void 投稿一覧_論理削除済み投稿があるとき_一覧のモデルに含めない() throws Exception {
         Post activePost = postRepository.saveAndFlush(
-                new Post("alice", "表示する本文", Instant.parse("2026-05-23T10:00:00Z")));
+                new Post("alice", "表示する本文", LocalDateTime.parse("2026-05-23T10:00:00")));
         Post deletedPost = postRepository.saveAndFlush(
-                new Post("bob", "削除済み本文", Instant.parse("2026-05-23T11:00:00Z")));
+                new Post("bob", "削除済み本文", LocalDateTime.parse("2026-05-23T11:00:00")));
         jdbcTemplate.update("UPDATE posts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?", deletedPost.getId());
 
         mockMvc.perform(get("/posts"))
@@ -133,7 +133,7 @@ class PostLikeIntegrationTest {
 
     private Post savePost() {
         return postRepository.saveAndFlush(
-                new Post("alice", "いいね対象の本文", Instant.parse("2026-05-23T10:00:00Z")));
+                new Post("alice", "いいね対象の本文", LocalDateTime.parse("2026-05-23T10:00:00")));
     }
 
     private void toggleLike(Post post) throws Exception {
