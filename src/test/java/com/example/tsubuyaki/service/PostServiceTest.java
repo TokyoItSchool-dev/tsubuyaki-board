@@ -72,16 +72,17 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("投稿登録_有効な値のとき_Postを保存する")
-    void 投稿登録_有効な値のとき_Postを保存する() {
+    @DisplayName("投稿登録_有効な値とアバター色のとき_Postを保存する")
+    void 投稿登録_有効な値とアバター色のとき_Postを保存する() {
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
 
-        postService.create("alice", "こんにちは");
+        postService.create("alice", "こんにちは", "#3366cc");
 
         verify(postRepository).save(postCaptor.capture());
         Post savedPost = postCaptor.getValue();
         assertThat(savedPost.getAuthor()).isEqualTo("alice");
         assertThat(savedPost.getBody()).isEqualTo("こんにちは");
+        assertThat(savedPost.getAvatarColor()).isEqualTo("#3366cc");
         assertThat(savedPost.getCreatedAt()).isNotNull();
     }
 

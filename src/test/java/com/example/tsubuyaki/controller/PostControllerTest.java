@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -115,11 +116,25 @@ class PostControllerTest {
     void 投稿登録_有効な値のとき_保存して一覧へリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "こんにちは"))
+                        .param("body", "こんにちは")
+                        .param("avatarColor", "#ff8800"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "こんにちは");
+        verify(postService).create("alice", "こんにちは", "#ff8800");
+    }
+
+    @Test
+    @DisplayName("投稿登録_アバター色を指定したとき_指定色で保存して一覧へリダイレクトする")
+    void 投稿登録_アバター色を指定したとき_指定色で保存して一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "こんにちは")
+                        .param("avatarColor", "#3366cc"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).create("alice", "こんにちは", "#3366cc");
     }
 
     @Test
@@ -132,7 +147,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"));
 
-        verify(postService, never()).create("", "こんにちは");
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -145,7 +160,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"));
 
-        verify(postService, never()).create("   ", "こんにちは");
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -160,7 +175,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "author"));
 
-        verify(postService, never()).create(author, "こんにちは");
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -173,7 +188,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"));
 
-        verify(postService, never()).create("alice", "");
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -186,7 +201,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"));
 
-        verify(postService, never()).create("alice", "   ");
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -201,7 +216,7 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attributeHasFieldErrors("postForm", "body"));
 
-        verify(postService, never()).create("alice", body);
+        verify(postService, never()).create(anyString(), anyString(), anyString());
     }
 
     @Test

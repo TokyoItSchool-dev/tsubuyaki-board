@@ -48,6 +48,21 @@ h1 {
     margin-right: 0.5rem;
 }
 
+.post__author-row {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.post__avatar {
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 1.5rem;
+    width: 1.5rem;
+}
+
 .post__created-at {
     color: var(--color-muted);
     font-size: 0.85rem;
