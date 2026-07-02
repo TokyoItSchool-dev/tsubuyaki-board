@@ -27,7 +27,7 @@ class PostTest {
     void Post_アバター色未指定で生成したとき_デフォルト色を取得できる() {
         Post post = new Post("alice", "hello", LocalDateTime.parse("2026-05-23T10:00:00"));
 
-        assertThat(post.getAvatarColor()).isEqualTo("#cccccc");
+        assertThat(post.getAvatarColor()).isEqualTo("#ffffff");
     }
 
     @Test

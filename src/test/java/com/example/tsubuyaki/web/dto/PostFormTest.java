@@ -26,6 +26,6 @@ class PostFormTest {
     void PostForm_生成したとき_アバター色の初期値を持つ() {
         PostForm form = new PostForm();
 
-        assertThat(form.getAvatarColor()).isEqualTo("#cccccc");
+        assertThat(form.getAvatarColor()).isEqualTo("#ffffff");
     }
 }

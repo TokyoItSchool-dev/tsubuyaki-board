@@ -15,7 +15,7 @@ import java.util.Objects;
 @Table(name = "posts")
 public class Post {
 
-    public static final String DEFAULT_AVATAR_COLOR = "#cccccc";
+    public static final String DEFAULT_AVATAR_COLOR = "#ffffff";
 
     @Id
     @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)

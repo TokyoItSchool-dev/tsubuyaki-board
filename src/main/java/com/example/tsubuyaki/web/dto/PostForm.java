@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 
 public class PostForm {
 
-    public static final String DEFAULT_AVATAR_COLOR = "#cccccc";
+    public static final String DEFAULT_AVATAR_COLOR = "#ffffff";
 
     @NotBlank(message = "投稿者名を入力してください")
     @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
@@ -17,7 +17,8 @@ public class PostForm {
     private String body;
 
     @NotBlank(message = "アバター色を選択してください")
-    @Pattern(regexp = "#[0-9a-fA-F]{6}", message = "アバター色は #RRGGBB 形式で指定してください")
+    @Pattern(regexp = "#(ff0000|0000ff|008000|ffff00|ffffff)",
+            message = "アバター色は赤、青、緑、黄色、白から選択してください")
     private String avatarColor = DEFAULT_AVATAR_COLOR;
 
     public PostForm() {

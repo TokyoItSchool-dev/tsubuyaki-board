@@ -109,7 +109,14 @@ class PostControllerTest {
         mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form.html"))
-                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)));
+                .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
+                .andExpect(content().string(containsString("type=\"radio\"")))
+                .andExpect(content().string(containsString("value=\"#ff0000\"")))
+                .andExpect(content().string(containsString("value=\"#0000ff\"")))
+                .andExpect(content().string(containsString("value=\"#008000\"")))
+                .andExpect(content().string(containsString("value=\"#ffff00\"")))
+                .andExpect(content().string(containsString("value=\"#ffffff\"")))
+                .andExpect(content().string(containsString("checked=\"checked\"")));
     }
 
     @Test
@@ -118,11 +125,11 @@ class PostControllerTest {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
                         .param("body", "こんにちは")
-                        .param("avatarColor", "#ff8800"))
+                        .param("avatarColor", "#ff0000"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "こんにちは", "#ff8800");
+        verify(postService).create("alice", "こんにちは", "#ff0000");
     }
 
     @Test
@@ -131,11 +138,11 @@ class PostControllerTest {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
                         .param("body", "こんにちは")
-                        .param("avatarColor", "#3366cc"))
+                        .param("avatarColor", "#0000ff"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
-        verify(postService).create("alice", "こんにちは", "#3366cc");
+        verify(postService).create("alice", "こんにちは", "#0000ff");
     }
 
     @Test
