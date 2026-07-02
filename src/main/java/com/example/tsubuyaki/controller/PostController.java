@@ -2,6 +2,8 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.service.ClientHashGenerator;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.service.UpdatePostResult;
+import com.example.tsubuyaki.web.dto.PostEditForm;
 import com.example.tsubuyaki.web.dto.PostForm;
 import com.example.tsubuyaki.web.dto.PostView;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +28,7 @@ public class PostController {
     private static final String RETURN_TO_LIST = "list";
     private static final String RETURN_TO_DETAIL = "detail";
     private static final String DELETE_ERROR_MESSAGE = "この投稿は削除できません。";
+    private static final String EDIT_ERROR_MESSAGE = "この投稿は編集できません。";
     private static final String NOT_FOUND_MESSAGE = "投稿が見つかりません。";
 
     private final PostService postService;
@@ -70,6 +73,57 @@ public class PostController {
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, HttpServletRequest request, Model model) {
         return showDetail(id, clientHash(request), model, null);
+    }
+
+    @GetMapping("/posts/{id}/edit")
+    public String editForm(@PathVariable Long id, HttpServletRequest request, Model model) {
+        String clientHash = clientHash(request);
+        Optional<PostView> editablePost = postService.findEditableById(id, clientHash);
+        if (editablePost.isPresent()) {
+            model.addAttribute("post", editablePost.get());
+            model.addAttribute("postEditForm", PostEditForm.from(editablePost.get()));
+            return "posts/edit";
+        }
+
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isEmpty()) {
+            return showDetail(id, clientHash, model, null);
+        }
+        model.addAttribute("post", post.get());
+        model.addAttribute("detailError", EDIT_ERROR_MESSAGE);
+        return "posts/detail";
+    }
+
+    @PostMapping("/posts/{id}/edit")
+    public String edit(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("postEditForm") PostEditForm postEditForm,
+            BindingResult bindingResult,
+            HttpServletRequest request,
+            Model model) {
+        String clientHash = clientHash(request);
+        Optional<PostView> post = postService.findById(id, clientHash);
+        if (post.isEmpty()) {
+            return showDetail(id, clientHash, model, null);
+        }
+        model.addAttribute("post", post.get());
+        if (bindingResult.hasErrors()) {
+            return "posts/edit";
+        }
+
+        UpdatePostResult result = postService.update(
+                id,
+                postEditForm.getBody(),
+                postEditForm.getBackgroundColor(),
+                clientHash);
+        return switch (result) {
+            case UPDATED -> "redirect:/posts/" + id;
+            case FORBIDDEN -> {
+                model.addAttribute("editError", EDIT_ERROR_MESSAGE);
+                yield "posts/edit";
+            }
+            case NOT_FOUND -> showDetail(id, clientHash, model, null);
+        };
     }
 
     @GetMapping("/posts/{id}/delete-confirm")

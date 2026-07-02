@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>投稿編集 - 社内つぶやきボード</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main>
+    <h1>投稿編集</h1>
+    <nav>
+        <a th:href="@{/posts/{id}(id=${post.id})}">詳細に戻る</a>
+    </nav>
+
+    <p class="error" th:if="${editError != null}" th:text="${editError}">エラー</p>
+
+    <section class="post-edit-summary">
+        <p>投稿者: <span th:text="${post.author}">投稿者</span></p>
+    </section>
+
+    <form class="post-form" th:action="@{/posts/{id}/edit(id=${post.id})}"
+          th:object="${postEditForm}" method="post">
+        <div class="post-form__field">
+            <label for="body">本文 (280 文字まで)</label>
+            <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
+            <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
+        </div>
+        <fieldset class="color-palette">
+            <legend>背景色</legend>
+            <label class="color-palette__item" th:each="color : ${postEditForm.backgroundColors}">
+                <input class="color-palette__input" type="radio" th:field="*{backgroundColor}" th:value="${color}">
+                <span class="color-palette__swatch" th:style="|background-color: ${color};|"></span>
+            </label>
+        </fieldset>
+        <button type="submit">更新する</button>
+        <a th:href="@{/posts/{id}(id=${post.id})}">キャンセル</a>
+    </form>
+</main>
+</body>
+</html>

@@ -38,6 +38,9 @@ public class Post {
     @Column(name = "deleted_at", nullable = false)
     private int deletedAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     protected Post() {
         // JPA
     }
@@ -87,12 +90,26 @@ public class Post {
         return deletedAt;
     }
 
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
     public boolean canDelete(String currentClientHash) {
+        return canModify(currentClientHash);
+    }
+
+    public boolean canModify(String currentClientHash) {
         return clientHash != null && clientHash.equals(currentClientHash);
     }
 
     public void markDeleted() {
         this.deletedAt = 1;
+    }
+
+    public void updateBodyAndBackgroundColor(String body, String backgroundColor, LocalDateTime updatedAt) {
+        this.body = body;
+        this.backgroundColor = backgroundColor;
+        this.updatedAt = updatedAt;
     }
 
     @Override

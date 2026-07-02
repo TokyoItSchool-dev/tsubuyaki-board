@@ -59,6 +59,11 @@ public class PostService {
                 .map(post -> toView(post, clientHash));
     }
 
+    public Optional<PostView> findEditableById(Long id, String clientHash) {
+        return findById(id, clientHash)
+                .filter(PostView::isCanEdit);
+    }
+
     public boolean existsDeletedById(Long id) {
         return repository.existsByIdAndDeletedAt(id, 1);
     }
@@ -91,11 +96,26 @@ public class PostService {
         return true;
     }
 
+    @Transactional
+    public UpdatePostResult update(Long postId, String body, String backgroundColor, String clientHash) {
+        Optional<Post> post = repository.findByIdAndDeletedAt(postId, NOT_DELETED);
+        if (post.isEmpty()) {
+            return UpdatePostResult.NOT_FOUND;
+        }
+        if (!post.get().canModify(clientHash)) {
+            return UpdatePostResult.FORBIDDEN;
+        }
+        post.get().updateBodyAndBackgroundColor(body, backgroundColor, LocalDateTime.now());
+        repository.flush();
+        return UpdatePostResult.UPDATED;
+    }
+
     private PostView toView(Post post) {
         return toView(post, null);
     }
 
     private PostView toView(Post post, String clientHash) {
+        boolean canModify = post.canModify(clientHash);
         return new PostView(
                 post.getId(),
                 post.getAuthor(),
@@ -103,7 +123,9 @@ public class PostService {
                 post.getCreatedAt(),
                 likeRepository.countByPostId(post.getId()),
                 post.getBackgroundColor(),
-                post.canDelete(clientHash));
+                canModify,
+                canModify,
+                post.getUpdatedAt());
     }
 
     private List<PostView> toViews(List<Post> posts) {

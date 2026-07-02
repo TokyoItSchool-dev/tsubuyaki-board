@@ -31,6 +31,8 @@
                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button class="post__like-button" type="submit">いいね！</button>
             </form>
+            <a class="post__edit-link" th:if="${post.canEdit}"
+               th:href="@{/posts/{id}/edit(id=${post.id})}">編集</a>
             <a class="post__delete-link" th:if="${post.canDelete}"
                th:href="@{/posts/{id}/delete-confirm(id=${post.id})}">削除</a>
         </div>
