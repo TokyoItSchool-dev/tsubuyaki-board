@@ -1350,6 +1350,220 @@ UXの観点から、投稿編集機能は必須。
 
 ## プロンプト 16
 
+**フェーズ**:UI/UX改善
+一通り機能の実装が終わったため、UI/UXの改善案をCodexと壁打ち、実装を行う。
+
+**プロンプト本文**:
+
+```
+現在の「社内つぶやきボード」について、JavaScript と外部CDNを使わず、Thymeleaf + CSS + サーバー側状態のみで UI/UX改善を TDD で実装してください。
+
+ ## 方針
+
+ - すべて日本語で応答すること。
+ - AGENTS.md と .codex/instructions.md を最優先で守ること。
+ - RED → GREEN → REFACTOR を 1 改善単位で回すこと。
+ - 失敗テストに @Disabled を付けて通すことは禁止。
+ - JavaScript は追加しない。
+ - 外部CDN、外部フォント、外部アイコンライブラリは使わない。
+ - Thymeleaf の出力は XSS 対策として th:text を使い、th:utext は使わない。
+ - 既存のテスト雛形 src/test/java/com/example/tsubuyaki/sample/** は削除しない。
+ - 実装後に ./mvnw -B -Ph2 verify を実行し、結果を報告すること。
+ -  ./mvnw -B -Ph2 verify後、Conventional Commits でコミットすること (`feat(<scope>): <要約>`)。
+
+ ## 対象ファイル候補
+
+ - src/main/resources/templates/posts/list.html
+ - src/main/resources/templates/posts/detail.html
+ - src/main/resources/templates/posts/form.html
+ - src/main/resources/templates/posts/edit.html
+ - src/main/resources/templates/posts/delete-confirm.html
+ - src/main/resources/static/css/app.css
+ - 必要に応じて Controller / DTO / Service / Test
+
+ ## 実装したい UI/UX 改善
+
+ ### 1. 全画面のレイアウト統一
+
+ 一覧画面だけでなく、詳細・新規投稿・編集・削除確認画面にも共通の app-shell / app-header / app-nav 相当のレイアウ
+ トを適用してください。
+
+ 受入基準:
+ - 詳細画面に「社内つぶやきボード」の共通ヘッダーが表示される。
+ - 新規投稿画面に共通ヘッダーが表示される。
+ - 編集画面に共通ヘッダーが表示される。
+ - 削除確認画面に共通ヘッダーが表示される。
+ - 一覧へ戻る導線、新規投稿導線が画面間で一貫している。
+ - モバイル幅でも主要ボタンやリンクがはみ出さない。
+
+ TDD:
+ - まず Controller Feature Test / WebMvcTest 相当で、各画面の HTML に共通ヘッダー用 class または文言が含まれること
+ を検証する失敗テストを書く。
+ - その後、テンプレートと CSS を最小修正して通す。
+
+ ### 2. 検索中の状態と解除導線の表示
+
+ 投稿一覧で検索している場合、現在の検索語と検索解除リンクを表示してください。
+
+ 受入基準:
+ - /posts?q=xxx のとき、「検索: xxx」または同等の検索中表示が出る。
+ - 検索解除リンクが /posts を指す。
+ - q が空白のみの場合は検索中扱いにしない。
+ - 検索語は th:text で表示する。
+
+ TDD:
+ - /posts?q=検索語 のレスポンスに検索中表示と /posts への解除リンクが含まれるテストを書く。
+ - /posts?q=  または空白のみでは検索中表示が出ないテストを書く。
+
+ ### 3. 投稿カードに詳細導線を追加
+
+ 一覧の投稿カードで、投稿者名リンクだけでなく「詳細を見る」リンクを表示してください。
+
+ 受入基準:
+ - 各投稿カードに /posts/{id} への「詳細を見る」リンクがある。
+ - いいねボタン、いいね数、投稿日時と干渉しない。
+ - モバイル幅でもアクション領域が崩れない。
+
+ TDD:
+ - 一覧画面の HTML に投稿詳細 URL と「詳細を見る」が含まれるテストを書く。
+
+ ### 4. フォームの入力支援とアクセシビリティ改善
+
+ JavaScriptなしで、新規投稿・編集フォームの入力制約とエラー表示を分かりやすくしてください。
+
+ 受入基準:
+ - 投稿者名は必須・30文字以内であることが画面上で分かる。
+ - 本文は必須・280文字以内であることが画面上で分かる。
+ - 入力欄に aria-describedby を付け、補足文またはエラー文と関連付ける。
+ - バリデーションエラー時、エラー文が入力欄直下に表示される。
+ - 既存の Bean Validation を壊さない。
+
+ TDD:
+ - 新規投稿画面に必須・文字数上限の補足テキストが出るテストを書く。
+ - バリデーションエラー時にエラー文が表示される既存テストがあれば維持し、必要なら aria-describedby の検証を追加す
+ る。
+ - 編集画面にも本文の補足テキストが出るテストを書く。
+
+ ### 5. 削除確認画面の危険操作表現を改善
+
+ 削除確認画面を、誤操作しにくい見た目と文言にしてください。
+
+ 受入基準:
+ - 削除対象の投稿が明確に表示される。
+ - 「この操作は取り消せません」または同等の注意文が表示される。
+ - キャンセル導線が明確にある。
+ - 削除実行ボタンは danger 用 class を持つ。
+ - CSRF トークンは維持する。
+
+ TDD:
+ - 削除確認画面に注意文、キャンセルリンク、danger class が含まれるテストを書く。
+ - 削除 POST の既存挙動が壊れていないことを確認する。
+
+ ### 6. 編集済み表示
+
+ PostView の updatedAt を使い、編集済み投稿には更新日時または「編集済み」表示を出してください。
+
+ 受入基準:
+ - updatedAt が null でない投稿には「編集済み」または更新日時が表示される。
+ - updatedAt が null の投稿には編集済み表示を出さない。
+ - 一覧画面と詳細画面の両方で表示する。
+ - 日時フォーマットは既存の createdAt と合わせる。
+
+ TDD:
+ - updatedAt ありの投稿で一覧に編集済み表示が出るテストを書く。
+ - updatedAt なしの投稿では編集済み表示が出ないテストを書く。
+ - 詳細画面でも同様に検証する。
+
+ ### 7. ボタン・リンクの役割別スタイル整理
+
+ CSSで primary / secondary / danger / ghost 相当のボタンスタイルを整理し、テンプレート側で使い分けてください。
+
+ 受入基準:
+ - 投稿・更新など主操作は primary。
+ - 検索解除・戻る・キャンセルなど補助操作は secondary または ghost。
+ - 削除実行は danger。
+ - 既存の button / app-nav / post__actions と矛盾しない。
+ - モバイルでボタンテキストがはみ出さない。
+
+ TDD:
+ - CSS に button--danger など必要 class が存在することを確認するテストが既にある場合は追加する。
+ - テンプレートに各 class が適用されていることを Controller Feature Test で検証する。
+
+ ## 実装順序
+
+ 1. 既存テストを確認し、UI関連の Feature Test の書き方を把握する。
+ 2. 改善 1 から順に、1改善ごとに RED → GREEN → REFACTOR を回す。
+ 3. 各改善の差分が大きくなりすぎる場合は、テストと実装を小さく分割する。
+ 4. 最後に ./mvnw -B -Ph2 verify を実行する。
+ 5. 変更したファイル、追加したテスト、確認結果を日本語で簡潔に報告する。
+
+ ## 完了条件
+
+ - 上記 1〜7 の改善が実装されている。
+ - JavaScript と外部CDNを追加していない。
+ - th:utext を使っていない。
+ - ./mvnw -B -Ph2 verify が成功している。
+ - 失敗した場合は、原文エラーと日本語要約、次に見るべきファイル/行を報告する。
+
+```
+
+**結果**: 効いた
+主な変更
+
+  - 全投稿画面に共通ヘッダー / ナビを適用
+    src/main/resources/templates/posts/detail.html, src/main/resources/templates/posts/form.html, src/main/
+    resources/templates/posts/edit.html, src/main/resources/templates/posts/delete-confirm.html
+
+  - 一覧に検索中表示・検索解除リンク・「詳細を見る」導線・編集済み表示を追加
+    src/main/resources/templates/posts/list.html
+
+  - 新規投稿 / 編集フォームに入力補足と aria-describedby を追加
+  - 削除確認画面に取り消し不可の注意文、dangerボタン、明確なキャンセル導線を追加
+  - primary / secondary / danger / ghost 系ボタンと各UI状態のCSSを追加
+    src/main/resources/static/css/app.css
+
+  - TDD用の受入テストを既存Feature Testへ追加
+    src/test/java/com/example/tsubuyaki/controller/PostListFeatureTest.java, src/test/java/com/example/tsubuyaki/
+    controller/PostDetailFeatureTest.java, src/test/java/com/example/tsubuyaki/controller/
+    PostNewFormFeatureTest.java, src/test/java/com/example/tsubuyaki/controller/PostEditFeatureTest.java, src/test/
+    java/com/example/tsubuyaki/controller/PostDeleteFeatureTest.java
+
+  確認結果
+
+  - ./mvnw -B -Ph2
+    -Dtest=PostListFeatureTest,PostDetailFeatureTest,PostNewFormFeatureTest,PostEditFeatureTest,PostDeleteFeatureTe
+    st test 成功
+
+  - ./mvnw -B -Ph2 verify 成功
+  - rg で <script> / onsubmit / th:utext / CDN追加なしを確認済み
+  
+  - コミット: 1ac32ab feat(ui): 投稿画面のUI/UXを改善する
+
+**振り返り**:
+UI/UXの改善が実装出来た。
+ソースについても、当該箇所の実装、WEBアプリも動いていることが確認出来た。
+「順序」に記載の手順にて、TDDを用いた実装が走ることを確認した。
+また、Codexと壁打ちし、仕様の詳細化を実施した
+
+
+## プロンプト 16
+
+**フェーズ**:
+
+**プロンプト本文**:
+
+```
+
+```
+
+**結果**: 効いた / 部分的に効いた / 効かなかった
+
+**振り返り**:
+
+
+
+## プロンプト 16
+
 **フェーズ**:
 
 **プロンプト本文**:
