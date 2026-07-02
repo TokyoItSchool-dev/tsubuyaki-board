@@ -19,7 +19,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atMostOnce;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,48 +45,49 @@ class PostServiceTest {
         List<Post> posts = List.of(
                 new Post("alice", "new", LocalDateTime.parse("2026-05-23T10:00:00")),
                 new Post("bob", "old", LocalDateTime.parse("2026-05-23T09:00:00")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> latestPosts = postService.latest();
 
         assertThat(latestPosts).isEqualTo(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
     @DisplayName("投稿検索_q未指定_新着50件を取得する")
     void 投稿検索_q未指定_新着50件を取得する() {
         List<Post> posts = List.of(new Post("alice", "new", LocalDateTime.parse("2026-05-23T10:00:00")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> foundPosts = postService.search(null);
 
         assertThat(foundPosts).isEqualTo(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
     @DisplayName("投稿検索_q空文字_新着50件を取得する")
     void 投稿検索_q空文字_新着50件を取得する() {
         List<Post> posts = List.of(new Post("alice", "new", LocalDateTime.parse("2026-05-23T10:00:00")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(posts);
 
         List<Post> foundPosts = postService.search("   ");
 
         assertThat(foundPosts).isEqualTo(posts);
-        verify(postRepository).findTop50ByOrderByCreatedAtDesc();
+        verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     @Test
     @DisplayName("投稿検索_q指定_body部分一致を新着順で最大50件取得する")
     void 投稿検索_q指定_body部分一致を新着順で最大50件取得する() {
         List<Post> posts = List.of(new Post("alice", "研修メモ", LocalDateTime.parse("2026-05-23T10:00:00")));
-        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("研修")).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("研修"))
+                .willReturn(posts);
 
         List<Post> foundPosts = postService.search("  研修  ");
 
         assertThat(foundPosts).isEqualTo(posts);
-        verify(postRepository).findTop50ByBodyContainingOrderByCreatedAtDesc("研修");
+        verify(postRepository).findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("研修");
     }
 
     @Test
@@ -164,23 +167,47 @@ class PostServiceTest {
     @DisplayName("投稿詳細_取得するとき_RepositoryからIDで検索する")
     void 投稿詳細_取得するとき_RepositoryからIDで検索する() {
         Post post = new Post("tanaka", "本文", LocalDateTime.parse("2026-05-23T09:00:00"));
-        given(postRepository.findById(1L)).willReturn(Optional.of(post));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
 
         Optional<Post> foundPost = postService.findById(1L);
 
         assertThat(foundPost).contains(post);
-        verify(postRepository).findById(1L);
+        verify(postRepository).findByIdAndDeletedAtIsNull(1L);
     }
 
     @Test
     @DisplayName("タグ別投稿一覧_タグ名指定_小文字化してRepositoryから取得する")
     void タグ別投稿一覧_タグ名指定_小文字化してRepositoryから取得する() {
         List<Post> posts = List.of(new Post("alice", "#java", LocalDateTime.parse("2026-05-23T10:00:00")));
-        given(postRepository.findTop50ByTagsNameOrderByCreatedAtDesc("java")).willReturn(posts);
+        given(postRepository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc("java")).willReturn(posts);
 
         List<Post> foundPosts = postService.findByTag(" Java ");
 
         assertThat(foundPosts).isEqualTo(posts);
-        verify(postRepository).findTop50ByTagsNameOrderByCreatedAtDesc("java");
+        verify(postRepository).findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc("java");
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在するID_deletedAtを設定し物理削除しない")
+    void 投稿削除_存在するID_deletedAtを設定し物理削除しない() {
+        Post post = new Post("tanaka", "削除対象", LocalDateTime.parse("2026-05-23T09:00:00"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+
+        boolean deleted = postService.delete(1L);
+
+        assertThat(deleted).isTrue();
+        assertThat(post.getDeletedAt()).isNotNull();
+        verify(postRepository, never()).delete(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在しないID_falseを返す")
+    void 投稿削除_存在しないID_falseを返す() {
+        given(postRepository.findByIdAndDeletedAtIsNull(999L)).willReturn(Optional.empty());
+
+        boolean deleted = postService.delete(999L);
+
+        assertThat(deleted).isFalse();
+        verify(postRepository, never()).delete(any(Post.class));
     }
 }

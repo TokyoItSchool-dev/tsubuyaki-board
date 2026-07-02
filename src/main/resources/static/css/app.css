@@ -36,6 +36,8 @@ h1 {
 }
 
 .toolbar__refresh button,
+.post-delete button,
+.post-like button,
 .post-search button,
 .post-search__clear {
     padding: 0.4rem 0.8rem;

@@ -41,6 +41,10 @@ public class Post {
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP(6)")
     private LocalDateTime createdAt;
 
+    @JdbcType(TimestampJdbcType.class)
+    @Column(name = "deleted_at", columnDefinition = "TIMESTAMP(6)")
+    private LocalDateTime deletedAt;
+
     @ManyToMany
     @JoinTable(
             name = "post_tags",
@@ -81,6 +85,18 @@ public class Post {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public void markDeleted(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     public Set<Tag> getTags() {

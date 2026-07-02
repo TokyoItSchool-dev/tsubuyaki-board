@@ -33,7 +33,7 @@ class PostRepositoryTest {
             postRepository.save(new Post("user-" + i, "body-" + i, base.plusSeconds(i)));
         }
 
-        List<Post> posts = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(posts).hasSize(50);
         assertThat(posts.get(0).getAuthor()).isEqualTo("user-51");
@@ -50,7 +50,7 @@ class PostRepositoryTest {
             postRepository.save(new Post("user-" + i, "検索対象の本文-" + i, base.plusSeconds(i + 1)));
         }
 
-        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("検索対象");
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索対象");
 
         assertThat(posts).hasSize(50);
         assertThat(posts.get(0).getBody()).isEqualTo("検索対象の本文-51");
@@ -85,10 +85,60 @@ class PostRepositoryTest {
         postRepository.save(oldTagged);
         postRepository.save(newTagged);
 
-        List<Post> posts = postRepository.findTop50ByTagsNameOrderByCreatedAtDesc("java");
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc("java");
 
         assertThat(posts)
                 .extracting(Post::getAuthor)
                 .containsExactly("bob", "alice");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_削除済み投稿あり_削除されていない投稿だけを返す")
+    void findTop50ByDeletedAtIsNullOrderByCreatedAtDesc_deletedPost_excludesDeleted() {
+        Post active = postRepository.save(new Post(
+                "active",
+                "表示する本文",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        Post deleted = new Post("deleted", "表示しない本文", LocalDateTime.parse("2026-05-23T11:00:00"));
+        deleted.markDeleted(LocalDateTime.parse("2026-05-23T12:00:00"));
+        postRepository.save(deleted);
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(posts).containsExactly(active);
+    }
+
+    @Test
+    @DisplayName("投稿検索_削除済み投稿あり_削除されていない一致投稿だけを返す")
+    void findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc_deletedPost_excludesDeleted() {
+        Post active = postRepository.save(new Post(
+                "active",
+                "検索対象の本文",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        Post deleted = new Post("deleted", "検索対象の削除済み本文", LocalDateTime.parse("2026-05-23T11:00:00"));
+        deleted.markDeleted(LocalDateTime.parse("2026-05-23T12:00:00"));
+        postRepository.save(deleted);
+
+        List<Post> posts = postRepository
+                .findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("検索対象");
+
+        assertThat(posts).containsExactly(active);
+    }
+
+    @Test
+    @DisplayName("タグ別投稿一覧_削除済み投稿あり_削除されていないタグ投稿だけを返す")
+    void findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc_deletedPost_excludesDeleted() {
+        Tag java = tagRepository.save(new Tag("java"));
+        Post active = new Post("active", "#java 表示", LocalDateTime.parse("2026-05-23T10:00:00"));
+        active.addTag(java);
+        Post deleted = new Post("deleted", "#java 非表示", LocalDateTime.parse("2026-05-23T11:00:00"));
+        deleted.addTag(java);
+        deleted.markDeleted(LocalDateTime.parse("2026-05-23T12:00:00"));
+        postRepository.save(deleted);
+        postRepository.save(active);
+
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc("java");
+
+        assertThat(posts).containsExactly(active);
     }
 }

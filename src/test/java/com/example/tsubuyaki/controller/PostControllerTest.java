@@ -283,6 +283,7 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("2026-05-23 09:00")))
                 .andExpect(content().string(containsString("いいね 3")))
                 .andExpect(content().string(containsString("action=\"/posts/1/likes\"")))
+                .andExpect(content().string(containsString("action=\"/posts/1/delete\"")))
                 .andExpect(content().string(containsString("href=\"/tags/java\"")))
                 .andExpect(content().string(containsString("#java")))
                 .andExpect(content().string(containsString("method=\"post\"")));
@@ -328,6 +329,27 @@ class PostControllerTest {
         given(postService.findById(999L)).willReturn(Optional.empty());
 
         mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_論理削除して一覧へリダイレクトする")
+    void delete_existingPost_redirectsToPosts() throws Exception {
+        given(postService.delete(1L)).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(1L);
+    }
+
+    @Test
+    @DisplayName("投稿削除_POST_存在しない投稿ID_404を返す")
+    void delete_missingPost_returnsNotFound() throws Exception {
+        given(postService.delete(999L)).willReturn(false);
+
+        mockMvc.perform(post("/posts/999/delete"))
                 .andExpect(status().isNotFound());
     }
 

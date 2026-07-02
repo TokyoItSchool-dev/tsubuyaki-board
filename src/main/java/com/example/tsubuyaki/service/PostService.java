@@ -38,18 +38,18 @@ public class PostService {
     }
 
     public List<Post> latest() {
-        return repository.findTop50ByOrderByCreatedAtDesc();
+        return repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
     }
 
     public List<Post> search(String q) {
         if (q == null || q.trim().isEmpty()) {
             return latest();
         }
-        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(q.trim());
+        return repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(q.trim());
     }
 
     public Optional<Post> findById(Long id) {
-        return repository.findById(id);
+        return repository.findByIdAndDeletedAtIsNull(id);
     }
 
     public List<Post> findByTag(String name) {
@@ -57,7 +57,7 @@ public class PostService {
         if (normalized.isEmpty()) {
             return List.of();
         }
-        return repository.findTop50ByTagsNameOrderByCreatedAtDesc(normalized);
+        return repository.findTop50ByDeletedAtIsNullAndTagsNameOrderByCreatedAtDesc(normalized);
     }
 
     public long countLikes(Long postId) {
@@ -72,9 +72,19 @@ public class PostService {
             return;
         }
 
-        Post post = repository.findById(postId)
+        Post post = repository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId));
         postLikeRepository.save(new PostLike(post, clientHash, LocalDateTime.now()));
+    }
+
+    @Transactional
+    public boolean delete(Long id) {
+        return repository.findByIdAndDeletedAtIsNull(id)
+                .map(post -> {
+                    post.markDeleted(LocalDateTime.now());
+                    return true;
+                })
+                .orElse(false);
     }
 
     @Transactional

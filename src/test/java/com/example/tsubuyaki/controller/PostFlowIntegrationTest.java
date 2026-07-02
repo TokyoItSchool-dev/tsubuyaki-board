@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -103,5 +104,40 @@ class PostFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("tag-user")))
                 .andExpect(content().string(containsString("#Java #java #spring_3 を試す")));
+    }
+
+    @Test
+    @DisplayName("投稿削除_論理削除後_データは残り一覧検索タグ詳細から除外される")
+    void 投稿削除_論理削除後_データは残り一覧検索タグ詳細から除外される() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "delete-user")
+                        .param("body", "#java 削除対象の検索本文")
+                        .param("avatarColor", "green"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        Long postId = postRepository.findAll().get(0).getId();
+
+        mockMvc.perform(post("/posts/" + postId + "/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        assertThat(postRepository.findAll()).hasSize(1);
+        assertThat(postRepository.findAll().get(0).getDeletedAt()).isNotNull();
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("delete-user"))));
+
+        mockMvc.perform(get("/posts").param("q", "検索本文"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("削除対象の検索本文"))));
+
+        mockMvc.perform(get("/tags/java"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("delete-user"))));
+
+        mockMvc.perform(get("/posts/" + postId))
+                .andExpect(status().isNotFound());
     }
 }

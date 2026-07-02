@@ -35,6 +35,9 @@
             <form class="post-like" th:action="@{/posts/{id}/likes(id=${postId})}" method="post">
                 <button type="submit" th:text="|いいね ${likeCount}|">いいね 0</button>
             </form>
+            <form class="post-delete" th:action="@{/posts/{id}/delete(id=${postId})}" method="post">
+                <button type="submit">削除</button>
+            </form>
         </div>
     </article>
 </main>
