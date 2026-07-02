@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.TimeZone;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,6 +25,20 @@ class TsubuyakiApplicationTests {
     @Test
     void contextLoads() {
         // Spring コンテキストが h2 プロファイルで起動できることだけを確認する。
+    }
+
+    @Test
+    void 起動時タイムゾーン_東京に固定する() {
+        TimeZone original = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
+            TsubuyakiApplication.configureDefaultTimeZone();
+
+            assertThat(TimeZone.getDefault().getID()).isEqualTo("Asia/Tokyo");
+        } finally {
+            TimeZone.setDefault(original);
+        }
     }
 
     @Test
