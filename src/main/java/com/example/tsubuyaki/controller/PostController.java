@@ -50,6 +50,23 @@ public class PostController {
         return "posts/detail";
     }
 
+    @GetMapping("/tags/{name}")
+    public String tag(@PathVariable String name, Model model) {
+        model.addAttribute("posts", postService.findByTag(name));
+        model.addAttribute("q", "");
+        model.addAttribute("tag", "");
+        return "posts/list";
+    }
+
+    @GetMapping("/tags")
+    public String tagSearch(@RequestParam(name = "tag", required = false) String tag, Model model) {
+        String keyword = normalizeKeyword(tag);
+        model.addAttribute("posts", keyword.isEmpty() ? postService.latest() : postService.searchByTag(keyword));
+        model.addAttribute("q", "");
+        model.addAttribute("tag", keyword);
+        return "posts/list";
+    }
+
     @GetMapping("/posts/new")
     public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());

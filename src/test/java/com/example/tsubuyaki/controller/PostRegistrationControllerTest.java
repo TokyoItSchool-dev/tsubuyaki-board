@@ -2,6 +2,8 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.TagRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,8 +33,21 @@ class PostRegistrationControllerTest {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private TagRepository tagRepository;
+
     @BeforeEach
     void setUp() {
+        clearTables();
+    }
+
+    @AfterEach
+    void tearDown() {
+        clearTables();
+    }
+
+    private void clearTables() {
+        tagRepository.deleteAll();
         postRepository.deleteAll();
     }
 
@@ -52,6 +67,24 @@ class PostRegistrationControllerTest {
         assertThat(posts.getFirst().getBody()).isEqualTo("本文です");
         assertThat(posts.getFirst().getAvatarColor()).isEqualTo("blue");
         assertThat(posts.getFirst().getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿登録_本文にタグ_POST_postsでTagを作成しPostに関連付ける")
+    void 投稿登録_本文にタグ_POST_postsでTagを作成しPostに関連付ける() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "本文です #Java #SpringBoot #Java"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        Post post = postRepository.findAll().getFirst();
+        assertThat(tagRepository.findByNameOrderByPostCreatedAtDesc("Java"))
+                .singleElement()
+                .satisfies(tag -> assertThat(tag.getPost().getId()).isEqualTo(post.getId()));
+        assertThat(tagRepository.findByNameOrderByPostCreatedAtDesc("SpringBoot"))
+                .singleElement()
+                .satisfies(tag -> assertThat(tag.getPost().getId()).isEqualTo(post.getId()));
     }
 
     @Test

@@ -103,6 +103,37 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("タグ一覧_GET_tags_name_指定タグの投稿のみビューに渡す")
+    void タグ一覧_GET_tags_name_指定タグの投稿のみビューに渡す() throws Exception {
+        List<Post> posts = List.of(new Post("alice", "#Java の投稿です",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postService.findByTag("Java")).willReturn(posts);
+
+        mockMvc.perform(get("/tags/Java"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", ""))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("#Java の投稿です")));
+    }
+
+    @Test
+    @DisplayName("タグ検索_GET_tags_tag指定_タグ名LIKEで関連投稿一覧を表示する")
+    void タグ検索_GET_tags_tag指定_タグ名Likeで関連投稿一覧を表示する() throws Exception {
+        List<Post> posts = List.of(new Post("alice", "#Java の投稿です",
+                LocalDateTime.parse("2026-05-23T10:00:00")));
+        given(postService.searchByTag("ava")).willReturn(posts);
+
+        mockMvc.perform(get("/tags").param("tag", " ava "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", sameInstance(posts)))
+                .andExpect(model().attribute("q", ""))
+                .andExpect(model().attribute("tag", "ava"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("#Java の投稿です")));
+    }
+
+    @Test
     @DisplayName("投稿一覧_更新ボタン_押すとpostsスラッシュへGETする")
     void 投稿一覧_更新ボタン_押すとpostsスラッシュへGETする() throws Exception {
         given(postService.latest()).willReturn(Collections.emptyList());
@@ -116,6 +147,9 @@ class PostControllerTest {
         assertThat(html).contains("更新");
         assertThat(html).contains("method=\"get\"");
         assertThat(html).contains("action=\"/posts/\"");
+        assertThat(html).contains("class=\"search-row\"");
+        assertThat(html).contains("action=\"/tags\"");
+        assertThat(html).contains("name=\"tag\"");
 
         mockMvc.perform(get("/posts/"))
                 .andExpect(status().isOk())
@@ -149,7 +183,7 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("post--avatar-blue")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "href=\"/css/app.css?v=avatar-color-2\"")));
+                        "href=\"/css/app.css?v=search-row-1\"")));
     }
 
     @Test
@@ -202,7 +236,7 @@ class PostControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("blue")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("post--avatar-blue")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "href=\"/css/app.css?v=avatar-color-2\"")))
+                        "href=\"/css/app.css?v=search-row-1\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("like")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1/likes\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"post\"")));
