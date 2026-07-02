@@ -6,7 +6,9 @@
     <title>新規投稿 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body>
+<body class="page"
+      th:classappend="${themeColor.isBlank()} ? '' : |page--theme-${themeColor}|"
+      th:style="${themeBackgroundColor.isBlank()} ? '' : |background-color: ${themeBackgroundColor}|">
 <main>
     <h1>新規投稿</h1>
     <nav>
@@ -18,6 +20,16 @@
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
+        </div>
+        <div>
+            <label for="avatarColor">投稿者名の色</label>
+            <select id="avatarColor" th:field="*{avatarColor}">
+                <option value="blue">青</option>
+                <option value="green">緑</option>
+                <option value="pink">ピンク</option>
+                <option value="gray">グレー</option>
+            </select>
+            <p class="error" th:if="${#fields.hasErrors('avatarColor')}" th:errors="*{avatarColor}">エラー</p>
         </div>
         <div>
             <label for="body">本文 (280 文字まで)</label>

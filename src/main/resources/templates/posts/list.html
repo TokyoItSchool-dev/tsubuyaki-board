@@ -6,24 +6,54 @@
     <title>投稿一覧 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body>
+<body class="page"
+      th:classappend="${themeColor.isBlank()} ? '' : |page--theme-${themeColor}|"
+      th:style="${themeBackgroundColor.isBlank()} ? '' : |background-color: ${themeBackgroundColor}|">
 <main>
-    <h1>社内つぶやきボード</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧</a>
-        |
-        <a th:href="@{/posts/new}">新規投稿</a>
-    </nav>
+    <div class="page__header">
+        <div>
+            <h1>社内つぶやきボード</h1>
+            <nav>
+                <a th:href="@{/posts}">一覧</a>
+                |
+                <a th:href="@{/posts/new}">新規投稿</a>
+            </nav>
+        </div>
+        <form class="theme-selector" th:action="@{/posts}" method="get">
+            <input type="hidden" name="q" th:if="${!q.isBlank()}" th:value="${q}">
+            <label for="themeColor">テーマカラー</label>
+            <select id="themeColor" name="themeColor">
+                <option value="" th:selected="${themeColor.isBlank()}">なし</option>
+                <option th:each="option : ${themeColorOptions}"
+                        th:value="${option.value}"
+                        th:selected="${themeColor == option.value}"
+                        th:text="${option.label}">青</option>
+            </select>
+            <button type="submit">設定</button>
+        </form>
+    </div>
+
+    <form th:action="@{/posts}" method="get">
+        <input type="hidden" name="themeColor" th:if="${!themeColor.isBlank()}" th:value="${themeColor}">
+        <label for="q">本文検索</label>
+        <input type="search" id="q" name="q" th:value="${q}" maxlength="280">
+        <button type="submit">検索</button>
+    </form>
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
         <article class="post" th:each="post : ${posts}">
             <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
+                <span class="post__author"
+                      th:style="|color: ${post.avatarColor}|"
+                      th:text="${post.author}">投稿者</span>
                 <span class="post__created-at"
                       th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
             </header>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <footer>
+                <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+            </footer>
         </article>
     </section>
 </main>
