@@ -29,10 +29,18 @@ public class PostService {
     }
 
     public List<Post> searchByBody(String keyword) {
-        if (!StringUtils.hasText(keyword)) {
+        String normalizedKeyword = normalizeKeyword(keyword);
+        if (!StringUtils.hasText(normalizedKeyword)) {
             return latest();
         }
-        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(keyword.trim());
+        return repository.findTop50ByBodyContainingOrderByCreatedAtDesc(normalizedKeyword);
+    }
+
+    public String normalizeKeyword(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return "";
+        }
+        return keyword.strip();
     }
 
     public Optional<Post> findById(Long id) {

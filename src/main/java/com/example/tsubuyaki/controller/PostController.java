@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
+import org.springframework.web.util.UriUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,14 +35,16 @@ public class PostController {
 
     @GetMapping({ "/", "/posts", "/posts/" })
     public String list(@RequestParam(name = "q", required = false) String q, Model model) {
-        model.addAttribute("posts", postService.searchByBody(q));
-        model.addAttribute("q", q);
+        String keyword = postService.normalizeKeyword(q);
+        model.addAttribute("posts", postService.searchByBody(keyword));
+        model.addAttribute("q", keyword);
         return "posts/list";
     }
 
     @GetMapping("/posts/form")
-    public String newForm(Model model) {
+    public String newForm(@RequestParam(name = "q", required = false) String q, Model model) {
         model.addAttribute("postForm", new PostForm());
+        model.addAttribute("q", postService.normalizeKeyword(q));
         return "posts/form";
     }
 
@@ -53,11 +57,17 @@ public class PostController {
     }
 
     @PostMapping("/posts")
-    public String create(@Valid PostForm postForm, BindingResult bindingResult) {
+    public String create(@Valid PostForm postForm, BindingResult bindingResult,
+            @RequestParam(name = "q", required = false) String q, Model model) {
+        String keyword = postService.normalizeKeyword(q);
         if (bindingResult.hasErrors()) {
+            model.addAttribute("q", keyword);
             return "posts/form";
         }
         postService.create(postForm.getAuthor(), postForm.getBody());
+        if (StringUtils.hasText(keyword)) {
+            return "redirect:/posts?q=" + UriUtils.encodeQueryParam(keyword, StandardCharsets.UTF_8);
+        }
         return "redirect:/posts";
     }
 

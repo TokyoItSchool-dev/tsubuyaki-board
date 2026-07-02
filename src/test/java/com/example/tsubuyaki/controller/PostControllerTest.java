@@ -79,7 +79,7 @@ class PostControllerTest {
         Post matched = new Post("alice", "今日の共有です", Instant.parse("2026-05-23T10:00:00Z"));
         given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("共有")).willReturn(List.of(matched));
 
-        mockMvc.perform(get("/posts").param("q", "共有"))
+        mockMvc.perform(get("/posts").param("q", "　共有　"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", List.of(matched)))
@@ -149,6 +149,27 @@ class PostControllerTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", instanceOf(PostForm.class)))
                 .andExpect(content().string(matchesPattern("(?s).*<form[^>]*action=\"/posts\"[^>]*method=\"post\"[^>]*>.*")));
+    }
+
+    @Test
+    @DisplayName("投稿作成_検索中に新規投稿した場合_検索条件を維持して一覧へ戻る")
+    void 投稿作成_検索中に新規投稿した場合_検索条件を維持して一覧へ戻る() throws Exception {
+        mockMvc.perform(get("/posts").param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(matchesPattern(
+                        "(?s).*<a[^>]*href=\"/posts/form\\?q=%E5%85%B1%E6%9C%89\"[^>]*>\\s*新規投稿\\s*</a>.*")));
+
+        mockMvc.perform(get("/posts/form").param("q", "共有"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("q", "共有"))
+                .andExpect(content().string(matchesPattern("(?s).*<input[^>]*type=\"hidden\"[^>]*name=\"q\"[^>]*value=\"共有\"[^>]*>.*")));
+
+        mockMvc.perform(post("/posts")
+                        .param("q", "共有")
+                        .param("author", "alice")
+                        .param("body", "共有したい内容です"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts?q=%E5%85%B1%E6%9C%89"));
     }
 
     @Test
