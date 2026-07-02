@@ -35,6 +35,22 @@ h1 {
     margin: 1rem 0;
 }
 
+.tag-sort {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    color: var(--color-muted);
+    font-size: 0.95rem;
+}
+
+.tag-sort a {
+    color: var(--color-accent);
+}
+
+.tag-sort__link--active {
+    font-weight: 700;
+}
+
 .search-form {
     display: flex;
     gap: 0.5rem;

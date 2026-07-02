@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>投稿一覧 - 社内つぶやきボード</title>
+    <title th:text="${tagName != null} ? |#${tagName} - 社内つぶやきボード| : '投稿一覧 - 社内つぶやきボード'">投稿一覧 - 社内つぶやきボード</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
 <main>
-    <h1>社内つぶやきボード</h1>
+    <h1 th:text="${tagName != null} ? |#${tagName}| : '社内つぶやきボード'">社内つぶやきボード</h1>
     <nav>
         <a th:href="@{/posts}">一覧</a>
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
-    <form class="search-form" th:action="@{/posts}" method="get">
+    <form class="search-form" th:if="${tagName == null}" th:action="@{/posts}" method="get">
         <input type="search" name="q" th:value="${q}" placeholder="本文を検索">
         <button type="submit">検索</button>
     </form>
-    <form class="refresh-form" th:action="@{/posts/}" method="get">
+    <form class="refresh-form" th:if="${tagName == null}" th:action="@{/posts/}" method="get">
         <button type="submit">更新</button>
     </form>
+    <nav class="tag-sort" th:if="${tagName != null}" aria-label="タグ一覧の並び替え">
+        <a th:href="@{/tags/{name}(name=${tagName},sort='latest')}"
+           th:classappend="${sort == 'latest'} ? ' tag-sort__link--active'">最新ポスト</a>
+        |
+        <a th:href="@{/tags/{name}(name=${tagName},sort='popular')}"
+           th:classappend="${sort == 'popular'} ? ' tag-sort__link--active'">人気ポスト</a>
+    </nav>
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
