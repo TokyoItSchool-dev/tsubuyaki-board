@@ -279,6 +279,29 @@ class PostControllerTest {
         assertThat(html).contains(">#java<");
     }
 
+    @Test
+    @DisplayName("タグUI_一覧と詳細でタグリンクをバッジ表示できる")
+    void tagUi_一覧と詳細でタグリンクをバッジ表示できる() throws Exception {
+        Post post = postWithId(10L, "alice", "タグ付き投稿です", BASE_TIME.plusSeconds(1));
+        post.addTag(new Tag("java", BASE_TIME));
+        given(postService.findLatest50()).willReturn(List.of(post));
+        given(postService.findById(10L)).willReturn(Optional.of(post));
+
+        String listHtml = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String detailHtml = mockMvc.perform(get("/posts/10"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(listHtml).contains("class=\"post__tag-link\"");
+        assertThat(detailHtml).contains("class=\"post__tag-link\"");
+    }
+
 
     @Test
     @DisplayName("投稿詳細_存在しないIDのとき_404を返す")
