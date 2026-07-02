@@ -10,6 +10,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     List<Post> findTop50ByOrderByCreatedAtDesc();
 
+    List<Post> findTop50ByBodyContainingOrderByCreatedAtDesc(String body);
+
     @Query("SELECT COALESCE(MAX(p.id), 0) FROM Post p")
     Long findMaxId();
 }

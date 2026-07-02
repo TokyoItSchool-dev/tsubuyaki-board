@@ -33,6 +33,15 @@ public class PostService {
 
     public List<PostView> latest() {
         List<Post> posts = repository.findTop50ByOrderByCreatedAtDesc();
+        return toPostViews(posts);
+    }
+
+    public List<PostView> searchByBody(String query) {
+        List<Post> posts = repository.findTop50ByBodyContainingOrderByCreatedAtDesc(query);
+        return toPostViews(posts);
+    }
+
+    private List<PostView> toPostViews(List<Post> posts) {
         Map<Long, Long> likeCounts = likeCounts(posts.stream().map(Post::getId).toList());
         return posts.stream()
                 .map(post -> new PostView(post, likeCounts.getOrDefault(post.getId(), 0L)))
