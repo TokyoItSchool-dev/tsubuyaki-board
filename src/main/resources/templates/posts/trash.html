@@ -20,6 +20,12 @@
         <a class="nav__link" th:href="@{/posts/new}">新規投稿</a>
     </nav>
 
+    <div class="toolbar">
+        <form th:action="@{/posts/trash/empty}" method="post">
+            <button class="button-danger" type="submit">ごみ箱を空にする</button>
+        </form>
+    </div>
+
     <section class="posts">
         <p class="empty-message" th:if="${#lists.isEmpty(posts)}">ごみ箱は空です。</p>
         <article class="post" th:each="post : ${posts}">
@@ -29,10 +35,22 @@
             <time class="post__created-at"
                   th:datetime="${post.createdAt}"
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+            <div class="post-actions">
+                <form th:action="@{/posts/{id}/restore(id=${post.id})}" method="post">
+                    <button type="submit">一覧へ戻す</button>
+                </form>
+            </div>
         </article>
     </section>
 
     <a class="back-to-top" href="#top" aria-label="TOPへ戻る">TOP</a>
 </main>
+<p id="trashEmptyMessage" th:if="${trashEmptyMessage != null}" th:text="${trashEmptyMessage}" hidden>
+    すでにごみ箱は空です
+</p>
+<script th:if="${trashEmptyMessage != null}">
+    const message = document.getElementById("trashEmptyMessage");
+    alert(message.textContent);
+</script>
 </body>
 </html>

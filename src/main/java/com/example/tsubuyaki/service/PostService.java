@@ -58,6 +58,23 @@ public class PostService {
         return repository.findAllByDeletedAtIsNotNullOrderByDeletedAtDesc();
     }
 
+    @Transactional
+    public Optional<Post> restoreFromTrash(Long id) {
+        Optional<Post> post = repository.findByIdAndDeletedAtIsNotNull(id);
+        post.ifPresent(target -> target.setDeletedAt(null));
+        return post;
+    }
+
+    @Transactional
+    public long emptyTrash() {
+        long trashedPostCount = repository.countByDeletedAtIsNotNull();
+        if (trashedPostCount > 0) {
+            likeRepository.deleteAllByPostDeletedAtIsNotNull();
+            repository.deleteAllByDeletedAtIsNotNull();
+        }
+        return trashedPostCount;
+    }
+
     public long likeCount(Long postId) {
         return likeRepository.countByPostId(postId);
     }

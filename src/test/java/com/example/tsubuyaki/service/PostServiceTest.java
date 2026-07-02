@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.verify;
@@ -50,6 +51,17 @@ class PostServiceTest {
         assertThat(result).hasSize(50);
         assertThat(result).isSameAs(latestFifty);
         verify(postRepository).findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+    }
+
+    @Test
+    @DisplayName("投稿一覧_Repository例外_例外を上位へ伝搬する")
+    void latest_repositoryThrows_propagatesException() {
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc())
+                .willThrow(new IllegalStateException("db error"));
+
+        assertThatThrownBy(() -> postService.latest())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("db error");
     }
 
     @Test
@@ -124,6 +136,35 @@ class PostServiceTest {
 
         assertThat(postService.trashedPosts()).isSameAs(posts);
         verify(postRepository).findAllByDeletedAtIsNotNullOrderByDeletedAtDesc();
+    }
+
+    @Test
+    @DisplayName("ごみ箱_一覧へ戻す_削除日時を消して通常一覧へ戻す")
+    void restoreFromTrash_deletedPost_clearsDeletedAt() {
+        Post post = new Post("alice", "hello", Instant.parse("2026-05-23T10:00:00Z"));
+        post.setDeletedAt(Instant.parse("2026-05-23T11:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNotNull(10L)).willReturn(java.util.Optional.of(post));
+
+        assertThat(postService.restoreFromTrash(10L)).contains(post);
+        assertThat(post.getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("ごみ箱_空にする_削除済み投稿数を返して完全削除する")
+    void emptyTrash_deletedPosts_deletesAllDeletedPosts() {
+        given(postRepository.countByDeletedAtIsNotNull()).willReturn(2L);
+
+        assertThat(postService.emptyTrash()).isEqualTo(2L);
+        verify(postRepository).deleteAllByDeletedAtIsNotNull();
+    }
+
+    @Test
+    @DisplayName("ごみ箱_空の状態で空にする_削除を実行せず0件を返す")
+    void emptyTrash_alreadyEmpty_doesNotDelete() {
+        given(postRepository.countByDeletedAtIsNotNull()).willReturn(0L);
+
+        assertThat(postService.emptyTrash()).isZero();
+        verify(postRepository, never()).deleteAllByDeletedAtIsNotNull();
     }
 
     @Test

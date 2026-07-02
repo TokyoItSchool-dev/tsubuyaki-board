@@ -18,5 +18,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     Optional<Post> findByIdAndDeletedAtIsNull(Long id);
 
+    Optional<Post> findByIdAndDeletedAtIsNotNull(Long id);
+
     List<Post> findAllByDeletedAtIsNotNullOrderByDeletedAtDesc();
+
+    long countByDeletedAtIsNotNull();
+
+    void deleteAllByDeletedAtIsNotNull();
 }

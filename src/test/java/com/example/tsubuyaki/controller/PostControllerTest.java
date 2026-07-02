@@ -471,6 +471,70 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("ごみ箱_削除された投稿_投稿ごとに一覧へ戻すボタンを表示する")
+    void trash_deletedPost_showsRestoreButtonPerPost() throws Exception {
+        Post deletedPost = postWithId(10L, "alice", "削除済み本文", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.trashedPosts()).willReturn(List.of(deletedPost));
+
+        mockMvc.perform(get("/posts/trash"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("action=\"/posts/10/restore\"")))
+                .andExpect(content().string(containsString("一覧へ戻す")));
+    }
+
+    @Test
+    @DisplayName("ごみ箱_一覧へ戻す_対象投稿を復元して一覧へ戻る")
+    void restore_deletedPost_restoresPostAndRedirectsList() throws Exception {
+        Post restoredPost = postWithId(10L, "alice", "本文です", Instant.parse("2026-05-23T10:15:00Z"));
+        given(postService.restoreFromTrash(10L)).willReturn(Optional.of(restoredPost));
+
+        mockMvc.perform(post("/posts/10/restore"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).restoreFromTrash(10L);
+    }
+
+    @Test
+    @DisplayName("ごみ箱_空にするボタン_ごみ箱画面に表示する")
+    void trash_showsEmptyTrashButton() throws Exception {
+        given(postService.trashedPosts()).willReturn(List.of());
+
+        mockMvc.perform(get("/posts/trash"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("action=\"/posts/trash/empty\"")))
+                .andExpect(content().string(containsString("ごみ箱を空にする")));
+    }
+
+    @Test
+    @DisplayName("ごみ箱_空にする_削除済み投稿を完全削除してごみ箱へ戻る")
+    void emptyTrash_withDeletedPosts_deletesTrashAndRedirectsTrash() throws Exception {
+        given(postService.emptyTrash()).willReturn(2L);
+
+        mockMvc.perform(post("/posts/trash/empty"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/trash"));
+
+        verify(postService).emptyTrash();
+    }
+
+    @Test
+    @DisplayName("ごみ箱_空の状態で空にする_ポップアップメッセージを表示する")
+    void emptyTrash_alreadyEmpty_showsPopupMessage() throws Exception {
+        given(postService.emptyTrash()).willReturn(0L);
+
+        mockMvc.perform(post("/posts/trash/empty"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/trash"))
+                .andExpect(request().sessionAttribute("trashEmptyMessage", "すでにごみ箱は空です"));
+
+        mockMvc.perform(get("/posts/trash").sessionAttr("trashEmptyMessage", "すでにごみ箱は空です"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("すでにごみ箱は空です")))
+                .andExpect(content().string(containsString("alert(message.textContent)")));
+    }
+
+    @Test
     @DisplayName("投稿一覧_通知欄_編集削除された投稿IDを表示する")
     void list_flashNotice_showsEditedAndDeletedPostIds() throws Exception {
         given(postService.latestPage(0)).willReturn(pageOf(List.of(), 0, 0));

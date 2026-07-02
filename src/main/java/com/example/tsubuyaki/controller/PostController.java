@@ -32,6 +32,8 @@ public class PostController {
 
     private static final String DELETED_POST_ID = "deletedPostId";
 
+    private static final String TRASH_EMPTY_MESSAGE = "trashEmptyMessage";
+
     private final PostService postService;
 
     public PostController(PostService postService) {
@@ -42,6 +44,8 @@ public class PostController {
     public void addNoticeIds(Model model, HttpSession session) {
         model.addAttribute(EDITED_POST_ID, session.getAttribute(EDITED_POST_ID));
         model.addAttribute(DELETED_POST_ID, session.getAttribute(DELETED_POST_ID));
+        model.addAttribute(TRASH_EMPTY_MESSAGE, session.getAttribute(TRASH_EMPTY_MESSAGE));
+        session.removeAttribute(TRASH_EMPTY_MESSAGE);
     }
 
     @GetMapping({ "/", "/posts", "/posts/" })
@@ -98,6 +102,14 @@ public class PostController {
         return "posts/trash";
     }
 
+    @PostMapping("/posts/trash/empty")
+    public String emptyTrash(HttpSession session) {
+        if (postService.emptyTrash() == 0) {
+            session.setAttribute(TRASH_EMPTY_MESSAGE, "すでにごみ箱は空です");
+        }
+        return "redirect:/posts/trash";
+    }
+
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("post", postService.findVisibleById(id)
@@ -147,6 +159,13 @@ public class PostController {
         postService.moveToTrash(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         session.setAttribute(DELETED_POST_ID, id);
+        return "redirect:/posts";
+    }
+
+    @PostMapping("/posts/{id}/restore")
+    public String restore(@PathVariable Long id) {
+        postService.restoreFromTrash(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return "redirect:/posts";
     }
 

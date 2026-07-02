@@ -11,4 +11,6 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     Optional<PostLike> findByPostAndClientHash(Post post, String clientHash);
 
     long countByPostId(Long postId);
+
+    void deleteAllByPostDeletedAtIsNotNull();
 }
