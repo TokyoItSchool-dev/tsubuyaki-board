@@ -23,9 +23,12 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
-    <!-- Spring Controller のコンストラクタ注入は DI コンテナ管理の Bean 参照保持として許容 -->
+    <!-- Spring Bean のコンストラクタ注入は DI コンテナ管理の Bean 参照保持として許容 -->
     <Match>
-        <Class name="~.*\.controller\..*"/>
+        <Or>
+            <Class name="~.*\.controller\..*"/>
+            <Class name="~.*\.service\..*"/>
+        </Or>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 

@@ -20,6 +20,7 @@
             <input type="text" name="q" th:value="${q}">
             <button type="submit">検索</button>
         </form>
+        <p class="tag-heading" th:if="${tagName != null}" th:text="|タグ：${tagName}|">タグ：java</p>
 
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
         <article class="post" th:each="post : ${posts}">

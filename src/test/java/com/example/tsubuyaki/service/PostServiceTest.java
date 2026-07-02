@@ -2,8 +2,12 @@ package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.domain.PostTag;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
+import com.example.tsubuyaki.repository.PostTagRepository;
+import com.example.tsubuyaki.repository.TagRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,6 +35,12 @@ class PostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private TagRepository tagRepository;
+
+    @Mock
+    private PostTagRepository postTagRepository;
 
     @InjectMocks
     private PostService postService;
@@ -105,6 +116,20 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("タグ一覧_タグ名指定_PostTagRepositoryのタグ別投稿一覧を返す")
+    void findByTagName_returnsRepositoryResult() {
+        List<Post> posts = List.of(
+                new Post("alice", "#java 本文です", Instant.parse("2026-05-23T01:00:00Z"))
+        );
+        given(postTagRepository.findPostsByTagName("java")).willReturn(posts);
+
+        List<Post> actual = postService.findByTagName("java");
+
+        assertThat(actual).isSameAs(posts);
+        verify(postTagRepository).findPostsByTagName("java");
+    }
+
+    @Test
     @DisplayName("投稿編集_存在するid_アバター色を含む投稿を更新してRepositoryへ保存する")
     void update_whenPostExists_updatesAndSavesPostWithAvatarColor() {
         Post post = new Post("alice", "更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
@@ -118,6 +143,43 @@ class PostServiceTest {
         assertThat(post.getAvatarColor()).isEqualTo("green");
         verify(postRepository).findByIdAndDeletedAtIsNull(42L);
         verify(postRepository).save(post);
+    }
+
+    @Test
+    @DisplayName("投稿作成_本文にタグあり_TagとPostTagを保存する")
+    void create_whenBodyHasTags_savesTagsAndPostTags() {
+        Tag java = new Tag("java");
+        Tag spring = new Tag("spring-boot");
+        given(tagRepository.findByName("java")).willReturn(Optional.of(java));
+        given(tagRepository.findByName("spring-boot")).willReturn(Optional.empty());
+        given(tagRepository.save(org.mockito.ArgumentMatchers.any(Tag.class))).willReturn(spring);
+
+        postService.create("alice", "#java #spring-boot #java 本文です", "purple");
+
+        ArgumentCaptor<PostTag> captor = ArgumentCaptor.forClass(PostTag.class);
+        verify(postTagRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(postTag -> postTag.getTag().getName())
+                .containsExactly("java", "spring-boot");
+    }
+
+    @Test
+    @DisplayName("投稿編集_本文のタグ変更_既存PostTagを削除して新しいタグを保存する")
+    void update_whenBodyTagsChanged_recreatesPostTags() {
+        Post post = new Post("alice", "#java 更新前本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        ReflectionTestUtils.setField(post, "id", 42L);
+        Tag spring = new Tag("spring");
+        given(postRepository.findByIdAndDeletedAtIsNull(42L)).willReturn(Optional.of(post));
+        given(tagRepository.findByName("spring")).willReturn(Optional.of(spring));
+
+        Optional<Post> actual = postService.update(42L, "alice", "#spring 更新後本文です", "blue");
+
+        assertThat(actual).containsSame(post);
+        verify(postTagRepository).deleteByPostId(42L);
+        ArgumentCaptor<PostTag> captor = ArgumentCaptor.forClass(PostTag.class);
+        verify(postTagRepository).save(captor.capture());
+        assertThat(captor.getValue().getPost()).isSameAs(post);
+        assertThat(captor.getValue().getTag().getName()).isEqualTo("spring");
     }
 
     @Test

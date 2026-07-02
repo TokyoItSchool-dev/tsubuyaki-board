@@ -26,6 +26,11 @@
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <p class="post__tags" th:if="${tags != null and !#lists.isEmpty(tags)}">
+            <a th:each="tag : ${tags}"
+               th:href="@{/tags/{name}(name=${tag.name})}"
+               th:text="|#${tag.name}|">#java</a>
+        </p>
         <div class="post__likes">
             <span th:text="|いいね ${likeCount}|">いいね 0</span>
             <form class="post__like-form"

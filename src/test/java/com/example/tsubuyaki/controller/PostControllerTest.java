@@ -1,6 +1,7 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.Tag;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -112,6 +113,23 @@ class PostControllerTest {
 
         verify(postService).latest();
         verify(postService, never()).search(anyString());
+    }
+
+    @Test
+    @DisplayName("タグ一覧_GET_tags_name_タグに紐づく投稿一覧とタグ名を表示する")
+    void tagList_whenTagNamePresent_showsTaggedPostsAndTagHeading() throws Exception {
+        Post post = new Post("alice", "#java 本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findByTagName("java")).willReturn(List.of(post));
+
+        mockMvc.perform(get("/tags/java"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", List.of(post)))
+                .andExpect(model().attribute("tagName", "java"))
+                .andExpect(content().string(containsString("タグ：java")))
+                .andExpect(content().string(containsString("#java 本文です")));
+
+        verify(postService).findByTagName("java");
     }
 
     @Test
@@ -341,6 +359,22 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("green")))
                 .andExpect(content().string(containsString("詳細本文です")))
                 .andExpect(content().string(containsString("2026-05-23 10:00")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_タグあり_タグ一覧とタグ別一覧リンクを表示する")
+    void detail_whenPostHasTags_showsTagLinks() throws Exception {
+        Post post = new Post("alice", "#java #spring 本文です", Instant.parse("2026-05-23T01:00:00Z"));
+        given(postService.findById(42L)).willReturn(Optional.of(post));
+        given(postService.findTagsByPostId(42L)).willReturn(List.of(new Tag("java"), new Tag("spring")));
+
+        mockMvc.perform(get("/posts/42"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("tags"))
+                .andExpect(content().string(containsString("#java")))
+                .andExpect(content().string(containsString("#spring")))
+                .andExpect(content().string(containsString("href=\"/tags/java\"")))
+                .andExpect(content().string(containsString("href=\"/tags/spring\"")));
     }
 
     @Test

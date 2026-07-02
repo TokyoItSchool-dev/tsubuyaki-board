@@ -78,11 +78,23 @@ h1 {
     font-size: 0.85rem;
 }
 
+.tag-heading {
+    color: var(--color-muted);
+    font-weight: 600;
+}
+
 .post__body {
     margin-top: 0.5rem;
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
+}
+
+.post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0;
 }
 
 .post__likes {

@@ -39,6 +39,14 @@ public class PostController {
         return "posts/list";
     }
 
+    @GetMapping("/tags/{name}")
+    public String tagList(@PathVariable String name, Model model) {
+        model.addAttribute("posts", postService.findByTagName(name));
+        model.addAttribute("q", "");
+        model.addAttribute("tagName", name);
+        return "posts/list";
+    }
+
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
         Post post = postService.findById(id)
@@ -50,6 +58,7 @@ public class PostController {
         model.addAttribute("post", post);
         model.addAttribute("likeCount", postService.countLikes(id));
         model.addAttribute("likedByClient", postService.likedBy(id, clientHash));
+        model.addAttribute("tags", postService.findTagsByPostId(id));
         return "posts/detail";
     }
 
