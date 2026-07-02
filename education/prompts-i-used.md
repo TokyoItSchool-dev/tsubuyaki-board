@@ -58,36 +58,254 @@ CI検証は成功しているが、実際に画面表示の確認はできてい
 
 ## プロンプト 2
 
-**フェーズ**:
+**フェーズ**:M4: 投稿詳細 GET /posts/{id} 用スクリプト
 
 **プロンプト本文**:
 
 ```
+Spring Boot（Java）で、投稿詳細表示機能を実装してください。
 
+制約:
+- GET /posts/{id} をハンドリングするコントローラメソッドを作成すること
+- ビュー posts/detail.html を返すこと
+- 指定された id の Post が存在しない場合は 404 を返すこと
+- 追加の機能（編集リンク、コメント表示など）は実装しないこと
+
+テスト:
+- 正常系: 存在する id を指定したとき、200 が返り、model に該当 Post が設定されること
+- 異常系: 存在しない id を指定したとき、404 が返ること
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**:  部分的に効いた 
+
+• 実装しました。
+
+  差分
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java:31: GET /posts/{id} を追加し、存在しない場合は
+    404 を返すようにしました。
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java:26: findById を追加しました。
+  - src/main/resources/templates/posts/detail.html:1: posts/detail.html を追加しました。追加機能は入れず、投稿者・本文・
+    投稿日時のみ表示します。
+
+  - src/test/java/com/example/tsubuyaki/controller/PostControllerTest.java:93: 正常系と 404 系の Controller テストを追加
+    しました。
+
+  検証
+
+  - ./mvnw -B -Ph2 -Dtest=PostControllerTest test 成功
+  - ./mvnw -B -Ph2 verify 成功
+
+  補足: 作業前から作業対象外の未コミット変更が複数ありました。今回の変更対象には触れていません。
 
 **振り返り**:
+
+実装後起動時に「Whitelabel Error Page」が出てしまった。
+AIへの命令時に created_at が Oracle 側ではタイムゾーンなし日時として扱われる一方、Java 側が Instant でタイムゾーン前提の型になっている点を考慮できていなかったことが原因
+エラー修正をAIに投げた後正常に動くこと確認済み
 
 ---
 
 ## プロンプト 3
 
-**フェーズ**:
+**フェーズ**:M5: ヘルスチェック確認用スクリプト
+
+**プロンプト本文**:
+
+```
+Spring Boot Actuator のヘルスチェックが壊れていないことを確認するためのテストを作成してください。
+
+制約:
+- 既に /actuator/health が有効になっている前提で、追加の設定は行わないこと
+- WebTestClient または MockMvc を用いて /actuator/health に GET し、
+  ステータス 200 と、レスポンス JSON に "status": "UP" が含まれることを確認するテストを作成すること
+- Actuator の他のエンドポイントは触らないこと
+
+テスト:
+- /actuator/health が 200 かつ status=UP を返すことを確認する単一テスト
+```
+
+**結果**: 効いた 
+
+• Actuator のヘルスチェック確認テストを追加しました。
+
+  追加ファイル:
+
+  - src/test/java/com/example/tsubuyaki/ActuatorHealthTest.java:15
+
+  内容は MockMvc で GET /actuator/health を実行し、200 OK と JSON の $.status == "UP" だけを確認する単一テストです。追加
+  設定や他の Actuator エンドポイント変更はしていません。
+
+  検証:
+
+  - ./mvnw -B -Ph2 -Dtest=ActuatorHealthTest test 成功
+  - ./mvnw -B -Ph2 verify 成功
+
+  作業前からある setup 系スクリプトの未コミット変更には触れていません。
+
+**振り返り**:
+
+テストケースも問題なく起動できておりJSONテストも「$.status == "UP"」が出ること確認済み
+
+---
+
+---
+
+## プロンプト 4 
+
+**フェーズ**:S1: いいね 用スクリプト
+
+**プロンプト本文**:
+
+```
+Spring Boot（Java）で、投稿に対する「いいね」トグル機能を実装してください。
+
+制約:
+- POST /posts/{id}/likes をハンドリングするコントローラメソッドを作成すること
+- clientHash は「IP + User-Agent」を連結した文字列を SHA-256 でハッシュし、先頭 8 文字を使用すること
+- 同じ clientHash が同じ投稿に対して再度リクエストした場合は、いいねを解除するトグル動作にすること
+- 詳細画面（posts/detail.html）で、いいね数と Like ボタンを表示できるようにすること
+- 追加の機能（ユーザ認証、複雑なレート制限など）は実装しないこと
+
+テスト:
+- Service テスト: 初回リクエストでいいねが追加され、2回目の同じ clientHash で解除されること
+- Controller テスト: POST /posts/{id}/likes で適切に Service が呼ばれ、リダイレクトまたは詳細画面に戻ること
+- いいね数が正しくカウントされることを確認するテスト
+
+```
+
+**結果**: 効いた 
+
+• 実装しました。
+
+  差分
+
+  - src/main/java/com/example/tsubuyaki/domain/PostLike.java:14: post_likes 用 Entity を追加。
+  - src/main/java/com/example/tsubuyaki/repository/PostLikeRepository.java:8: postId + clientHash 検索と投稿別カウントを
+    追加。
+
+  - src/main/resources/db/migration/V2__create_post_likes.sql:6: post_likes テーブル、sequence、外部キー、一意制約を追
+    加。
+
+  - src/main/java/com/example/tsubuyaki/service/PostService.java:35: countLikes と toggleLike を追加。初回は追加、同じ
+    clientHash の再リクエストは削除します。
+
+  - src/main/java/com/example/tsubuyaki/controller/PostController.java:63: POST /posts/{id}/likes を追加。IP + User-
+    Agent を SHA-256 化し、先頭 8 文字を Service に渡して、/posts/{id} へリダイレクトします。
+
+  - src/main/resources/templates/posts/detail.html:24: いいね数と Like ボタンを追加。_csrf がある場合だけ hidden token
+    も出します。
+
+  テスト
+
+  - src/test/java/com/example/tsubuyaki/service/PostServiceTest.java:71: 同じ clientHash の 1 回目で追加、2 回目で解除を
+    確認。
+
+  - src/test/java/com/example/tsubuyaki/controller/PostControllerTest.java:123: POST 時に計算済み clientHash で Service
+    が呼ばれ、詳細へ戻ることを確認。
+
+  - src/test/java/com/example/tsubuyaki/repository/PostLikeRepositoryTest.java:27: いいね数が投稿別に正しくカウントされ
+    ることを確認。
+
+  検証
+
+  - ./mvnw -B -Ph2 -Dtest=PostServiceTest,PostControllerTest,PostLikeRepositoryTest test 成功
+  - ./mvnw -B -Ph2 verify 成功
+
+  作業対象外の setup 系スクリプトと education/prompts-i-used.md の未コミット変更には触れていません。
+
+**振り返り**:
+
+詳細画面にlikeボタンが出て、押せること確認済み。
+Spring Bootの責務分離も見直し弱い箇所を修正。
+
+---
+
+**フェーズ５**: ブラッシュアップ
 
 **プロンプト本文**:
 
 ```
 
+高優先
+
+  - avatarColor の入力値を制限する
+    src/main/java/com/example/tsubuyaki/web/dto/PostForm.java:16 は任意文字列を受けられるため、直接 POST で
+    avatarColor=evil のような値が保存できます。表示側では post--avatar-${value} になるので、7色以外は拒否または無視する
+    のが安全です。
+
+  - 論理削除の二重削除を明確化する
+    src/main/java/com/example/tsubuyaki/service/PostService.java:135 は削除済み投稿にも再度 deletedAt を上書きできます。
+    仕様として「削除済みなら何もしない」「404にする」のどちらかに寄せると挙動が安定します。
+
+  - タグ検索 LIKE の % / _ エスケープ
+    src/main/java/com/example/tsubuyaki/repository/TagRepository.java:47 で %keyword% を作っていますが、検索語に % や _
+    が入るとワイルドカード扱いになります。ユーザー入力を LIKE パターンとして扱うなら escape 処理をサービス側に寄せると堅
+    いです。
+
+  中優先
+
+  - LocalDateTime.now() を Clock 注入にする
+    src/main/java/com/example/tsubuyaki/service/PostService.java:115 と src/main/java/com/example/tsubuyaki/service/
+    PostService.java:138 が現在時刻に直接依存しています。Clock を注入すると削除日時・作成日時のテストが厳密になります。
+
+    src/main/java/com/example/tsubuyaki/service/PostService.java:21 の repository は postRepository の方が読みやすいで
+    す。タグリポジトリと並ぶので、初見の理解が上がります。
+
+  - 削除ボタンに確認 UI を付ける
+
+  - 詳細画面の like 表記を日本語化する
+    src/main/resources/templates/posts/detail.html:32 は like のままです。既に「いいね 3」と表示しているので、ボタンも
+
+  - タグ検索の default メソッドにコメントを追加する
+    src/main/java/com/example/tsubuyaki/repository/TagRepository.java:50 の内部クエリ findPostsByNameLike... は、H2/
+    Oracle 対応で escape '\\' を入れている背景があります。短い Javadoc を足すと後から消されにくいです。
+
+  - CSS バージョン文字列を定数化できないか検討する
+    logical-delete-1 が src/main/resources/templates/posts/list.html:7、src/main/resources/templates/posts/
+    detail.html:7、form.html に重複しています。今の規模なら許容ですが、テンプレート共通 fragment 化すると変更漏れを防げ
+    ます。
+
+  - Post#equals の未永続 ID 扱いを検討する
+    src/main/java/com/example/tsubuyaki/domain/Post.java:96 は id == null 同士だと等価になり得ます。テストでは問題化して
+    いませんが、Entity の同一性としては id != null && Objects.equals(id, other.id) の方が安全です。```
+
+高優先と中優先を実装してください。実装後にCSS を変えたのに app.css のクエリバージョンが以前のままで、ブラウザが古い
+  CSS を使う可能性がある点を確認してつぶしておいてください
+
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+
+• 高優先・中優先のブラッシュアップを実装しました。
+
+  主な対応:
+
+  - avatarColor を7色または空文字だけ許可する validation に変更
+  - 不正な avatarColor のフォームエラー表示を追加
+  - 削除済み投稿を再削除した場合は 404 扱いに変更
+  - タグ LIKE 検索で % / _ / \ をエスケープ
+  - LocalDateTime.now() を Clock 注入に変更し、作成日時・削除日時をテストで固定可能に変更
+  - PostService の repository を postRepository にリネーム
+  - 削除ボタンに確認ダイアログを追加
+  - 詳細画面の like ボタン表記を いいね に変更
+
+  CSS は今回変更していません。念のため確認し、app.css のクエリは全テンプレートで logical-delete-1 のまま揃っており、古い
+  search-row-1 / avatar-color-2 は残っていません。
+
+  確認済みです。
+
+  ./mvnw -B -Ph2
+  -Dtest=PostFormTest,PostServiceTest,PostRepositoryTest,PostControllerTest,PostRegistrationControllerTest test
+  ./mvnw -B clean -Ph2 verify
+
+  結果: BUILD SUCCESS、テスト51件成功、Checkstyle 0、SpotBugs 0、JaCoCo OK。
+
+
+```
 
 **振り返り**:
 
----
-
-## プロンプト 4 以降
-
-3 件目以降も追加可能。書ければ書くほど良い。
+アバターカラーに余計なものが入らないように制限を追加し、2重削除を抑制、削除ボタンに確認ダイアログを追加など細かく気になったところを修正。詳細画面の like ボタンの表記はEXERCISES.mdには Like ボタン表示とあるが数の表示が日本語なので日本語に統一した。
+今回は修正点をAIに精査させたが次は、人に見てもらい、感じた違和感を修正していきたい

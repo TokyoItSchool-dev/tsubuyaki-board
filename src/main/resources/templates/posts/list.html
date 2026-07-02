@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>投稿一覧 - 社内つぶやきボード</title>
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='logical-delete-1')}">
 </head>
 <body>
 <main>
@@ -14,16 +14,35 @@
         |
         <a th:href="@{/posts/new}">新規投稿</a>
     </nav>
+    <form class="refresh-form" th:action="@{/posts/}" method="get">
+        <button type="submit">更新</button>
+    </form>
+    <div class="search-row">
+        <form class="search-form" th:action="@{/posts}" method="get">
+            <label for="q">検索</label>
+            <input type="search" id="q" name="q" th:value="${q}">
+            <button type="submit">検索</button>
+        </form>
+        <form class="tag-search-form" th:action="@{/tags}" method="get">
+            <label for="tag">タグ検索</label>
+            <input type="search" id="tag" name="tag" th:value="${tag}">
+            <button type="submit">検索</button>
+        </form>
+    </div>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
-        <article class="post" th:each="post : ${posts}">
+        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
+        <article class="post" th:each="post : ${posts}"
+                 th:classappend="${#strings.isEmpty(post.avatarColor) ? '' : 'post--avatar-' + post.avatarColor}">
             <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
+                <a class="post__author"
+                   th:href="@{/posts/{id}(id=${post.id})}"
+                   th:text="${post.author}">投稿者</a>
             </header>
             <p class="post__body" th:text="${post.body}">本文</p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
         </article>
     </section>
 </main>

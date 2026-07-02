@@ -1,6 +1,8 @@
 package com.example.tsubuyaki.sample;
 
 import com.example.tsubuyaki.controller.PostController;
+import com.example.tsubuyaki.service.ClientHashService;
+import com.example.tsubuyaki.service.PostLikeService;
 import com.example.tsubuyaki.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,12 @@ class SamplePostControllerTest {
 
     @MockitoBean
     private PostService postService;
+
+    @MockitoBean
+    private PostLikeService postLikeService;
+
+    @MockitoBean
+    private ClientHashService clientHashService;
 
     @Test
     @DisplayName("Controller_投稿一覧_GET_/posts_は posts/list ビューを返す")
