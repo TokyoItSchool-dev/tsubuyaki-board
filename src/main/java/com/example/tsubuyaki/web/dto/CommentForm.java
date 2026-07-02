@@ -3,7 +3,7 @@ package com.example.tsubuyaki.web.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public class PostForm {
+public class CommentForm {
 
     private String avatarColor = "blue";
 
@@ -11,12 +11,9 @@ public class PostForm {
     @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
     private String author;
 
-    @NotBlank(message = "本文を入力してください")
-    @Size(max = 280, message = "本文は 280 文字以内で入力してください")
+    @NotBlank(message = "コメント本文を入力してください")
+    @Size(max = 280, message = "コメント本文は 280 文字以内で入力してください")
     private String body;
-
-    public PostForm() {
-    }
 
     public String getAvatarColor() {
         return avatarColor;

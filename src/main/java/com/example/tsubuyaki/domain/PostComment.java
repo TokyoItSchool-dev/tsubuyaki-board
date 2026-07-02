@@ -9,18 +9,18 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
-import java.util.Objects;
 
 @Entity
-@Table(name = "posts")
-public class Post {
-
-    public static final String DEFAULT_AVATAR_COLOR = "blue";
+@Table(name = "post_comments")
+public class PostComment {
 
     @Id
-    @SequenceGenerator(name = "posts_seq_gen", sequenceName = "posts_seq", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "posts_seq_gen")
+    @SequenceGenerator(name = "post_comments_seq_gen", sequenceName = "post_comments_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "post_comments_seq_gen")
     private Long id;
+
+    @Column(name = "post_id", nullable = false)
+    private Long postId;
 
     @Column(name = "author", length = 30, nullable = false)
     private String author;
@@ -34,18 +34,12 @@ public class Post {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
-
-    protected Post() {
+    protected PostComment() {
         // JPA
     }
 
-    public Post(String author, String body, Instant createdAt) {
-        this(author, body, DEFAULT_AVATAR_COLOR, createdAt);
-    }
-
-    public Post(String author, String body, String avatarColor, Instant createdAt) {
+    public PostComment(Long postId, String author, String body, String avatarColor, Instant createdAt) {
+        this.postId = postId;
         this.author = author;
         this.body = body;
         this.avatarColor = avatarColor;
@@ -54,6 +48,10 @@ public class Post {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getPostId() {
+        return postId;
     }
 
     public String getAuthor() {
@@ -70,29 +68,5 @@ public class Post {
 
     public Instant getCreatedAt() {
         return createdAt;
-    }
-
-    public Instant getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void markDeleted(Instant deletedAt) {
-        this.deletedAt = deletedAt;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Post other)) {
-            return false;
-        }
-        return Objects.equals(id, other.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
     }
 }
