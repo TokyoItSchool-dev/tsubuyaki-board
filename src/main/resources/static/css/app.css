@@ -100,6 +100,16 @@ h1 {
     resize: vertical;
 }
 
+.post-form__tag-list,
+.post-form__tag-field {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.post-form__tag-list {
+    gap: 0.75rem;
+}
+
 .post-form__choices {
     display: flex;
     flex-wrap: wrap;
@@ -114,6 +124,17 @@ h1 {
     border: 1px solid var(--color-border);
     border-radius: 6px;
     background: var(--color-bg);
+}
+
+.post-form__add-tag {
+    justify-self: start;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 0.5rem 0.8rem;
+    font: inherit;
+    color: var(--color-accent);
+    background: white;
+    cursor: pointer;
 }
 
 .post-form__actions {

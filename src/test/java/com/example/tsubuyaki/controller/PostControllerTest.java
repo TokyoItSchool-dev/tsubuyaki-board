@@ -326,7 +326,7 @@ class PostControllerTest {
                         .param("author", "alice")
                         .param("body", "本日の共有です")
                         .param("avatarColor", "green")
-                        .param("tagNames", "java spring"))
+                        .param("tagNames", "java", "spring"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
@@ -362,6 +362,21 @@ class PostControllerTest {
         assertThat(html).contains("value=\"blue\"");
         assertThat(html).contains("value=\"green\"");
         assertThat(html).contains("value=\"pink\"");
+    }
+
+    @Test
+    @DisplayName("投稿登録フォーム_タグ追加ボタンで複数タグ入力欄を追加できる")
+    void newForm_タグ追加ボタンで複数タグ入力欄を追加できる() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString();
+        assertThat(html).contains("data-tag-list");
+        assertThat(html).contains("name=\"tagNames\"");
+        assertThat(html).contains("data-tag-add");
+        assertThat(html).contains(">+ タグ追加<");
     }
 
     @Test

@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 
 @Controller
@@ -90,11 +91,14 @@ public class PostController {
     }
 
     @PostMapping("/posts")
-    public String create(@Valid @ModelAttribute PostForm form, BindingResult result) {
+    public String create(
+            @Valid @ModelAttribute PostForm form,
+            BindingResult result,
+            @RequestParam(name = "tagNames", required = false) List<String> tagNames) {
         if (result.hasErrors()) {
             return "posts/form";
         }
-        postService.create(form.getAuthor(), form.getBody(), form.getAvatarColor(), form.getTagNames());
+        postService.create(form.getAuthor(), form.getBody(), form.getAvatarColor(), toTagNamesText(tagNames));
         return "redirect:/posts";
     }
 
@@ -124,5 +128,12 @@ public class PostController {
 
     private static String normalizeQuery(String query) {
         return query == null ? "" : query.trim();
+    }
+
+    private static String toTagNamesText(List<String> tagNames) {
+        if (tagNames == null) {
+            return "";
+        }
+        return String.join(" ", tagNames);
     }
 }

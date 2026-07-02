@@ -46,13 +46,42 @@
             <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
         </div>
         <div class="post-form__field">
-            <label class="post-form__label" for="tagNames">タグ</label>
-            <input class="post-form__input" type="text" id="tagNames" th:field="*{tagNames}">
+            <label class="post-form__label" for="tagNames">タグ1</label>
+            <div class="post-form__tag-list" data-tag-list>
+                <input class="post-form__input" type="text" id="tagNames" th:field="*{tagNames}">
+            </div>
+            <button class="post-form__add-tag" type="button" data-tag-add>+ タグ追加</button>
         </div>
         <div class="post-form__actions">
             <button class="post-form__submit" type="submit">投稿</button>
         </div>
     </form>
+    <script>
+        (() => {
+            const tagList = document.querySelector("[data-tag-list]");
+            const addButton = document.querySelector("[data-tag-add]");
+            if (!tagList || !addButton) {
+                return;
+            }
+            addButton.addEventListener("click", () => {
+                const nextIndex = tagList.querySelectorAll("input[name='tagNames']").length + 1;
+                const fieldId = `tagNames${nextIndex}`;
+                const wrapper = document.createElement("div");
+                wrapper.className = "post-form__tag-field";
+                const label = document.createElement("label");
+                label.className = "post-form__label";
+                label.htmlFor = fieldId;
+                label.textContent = `タグ${nextIndex}`;
+                const input = document.createElement("input");
+                input.className = "post-form__input";
+                input.type = "text";
+                input.id = fieldId;
+                input.name = "tagNames";
+                wrapper.append(label, input);
+                tagList.append(wrapper);
+            });
+        })();
+    </script>
 </main>
 </body>
 </html>
