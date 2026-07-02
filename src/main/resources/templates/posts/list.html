@@ -17,11 +17,13 @@
 
     <section>
         <form class="toolbar" th:action="@{/posts}" method="get">
+            <input type="hidden" name="clientHash" th:value="${clientHash}">
             <button type="submit">更新</button>
         </form>
 
         <p class="empty-message" th:if="${#lists.isEmpty(posts)}">まだ投稿はありません</p>
-        <a class="post post--link" th:each="post : ${posts}" th:href="@{/posts/{id}(id=${post.id})}">
+        <a class="post post--link" th:each="post : ${posts}"
+           th:href="@{/posts/{id}(id=${post.id},clientHash=${clientHash})}">
             <p class="post__author" th:text="${post.author}">投稿者</p>
             <p class="post__body" th:text="${post.body}">本文</p>
             <time class="post__created-at"

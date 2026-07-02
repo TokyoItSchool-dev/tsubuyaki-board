@@ -99,3 +99,39 @@ h1 {
     overflow-wrap: anywhere;
     word-break: break-word;
 }
+
+.post__likes {
+    margin-top: 0.75rem;
+}
+
+.post__likes form {
+    margin: 0;
+}
+
+.post__like-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.post__like-button:hover,
+.post__like-button--liked {
+    color: var(--color-accent);
+    background: #eff6ff;
+}
+
+.post__like-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.post__like-count {
+    min-width: 1ch;
+    text-align: right;
+}

@@ -10,7 +10,7 @@
 <main>
     <h1>投稿詳細</h1>
     <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
+        <a th:href="@{/posts(clientHash=${clientHash})}">一覧に戻る</a>
     </nav>
 
     <article class="post">
@@ -19,6 +19,19 @@
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
               th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        <div class="post__likes">
+            <form th:action="@{/posts/{id}/likes(id=${post.id})}" method="post">
+                <input type="hidden" name="clientHash" th:value="${clientHash}">
+                <button class="post__like-button"
+                        th:classappend="${liked} ? ' post__like-button--liked'"
+                        type="submit"
+                        th:attr="aria-pressed=${liked},aria-label=|いいね ${likeCount ?: 0}|">
+                    <span class="post__like-icon" aria-hidden="true" th:text="${liked} ? '♥' : '♡'">♡</span>
+                    <span class="post__like-label">いいね</span>
+                    <span class="post__like-count" th:text="${likeCount ?: 0}">0</span>
+                </button>
+            </form>
+        </div>
     </article>
 </main>
 </body>

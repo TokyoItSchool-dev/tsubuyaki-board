@@ -2,6 +2,7 @@ package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,8 @@ class PostControllerTest {
     private PostRepository postRepository;
 
     @BeforeEach
-    void setUp() {
+    @AfterEach
+    void cleanDatabase() {
         postRepository.deleteAll();
     }
 
@@ -111,8 +113,47 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("href=\"/posts/" + saved.getId() + "\"")))
+                .andExpect(content().string(containsString("href=\"/posts/" + saved.getId() + "?clientHash=")))
                 .andExpect(content().string(containsString("class=\"post post--link\"")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_clientHashがない場合_生成して詳細リンクと更新フォームに積む")
+    void list_whenClientHashIsMissing_generatesAndPassesClientHash() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        MvcResult result = mockMvc.perform(get("/posts")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "JUnit Browser"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("clientHash"))
+                .andReturn();
+
+        String clientHash = (String) result.getModelAndView().getModel().get("clientHash");
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(clientHash).hasSize(8);
+        assertThat(html).contains("href=\"/posts/" + saved.getId() + "?clientHash=" + clientHash + "\"");
+        assertThat(html).contains("name=\"clientHash\"");
+        assertThat(html).contains("value=\"" + clientHash + "\"");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_clientHashがある場合_その値を詳細リンクと更新フォームに引き回す")
+    void list_whenClientHashIsPresent_passesClientHash() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        MvcResult result = mockMvc.perform(get("/posts").param("clientHash", "facefeed"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("clientHash", "facefeed"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("href=\"/posts/" + saved.getId() + "?clientHash=facefeed\"");
+        assertThat(html).contains("name=\"clientHash\"");
+        assertThat(html).contains("value=\"facefeed\"");
     }
 
     @Test
@@ -124,6 +165,7 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attributeExists("post"))
+                .andExpect(model().attributeExists("clientHash"))
                 .andExpect(content().string(containsString("<title>投稿詳細 - 社内つぶやきボード</title>")))
                 .andExpect(content().string(containsString("一覧に戻る")))
                 .andExpect(content().string(containsString("alice")))
@@ -135,6 +177,87 @@ class PostControllerTest {
     void detail_whenNotFound_returns404() throws Exception {
         mockMvc.perform(get("/posts/{id}", 999999L))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("いいね_押されたら_いいね数が加算される")
+    void like_whenPressed_incrementsLikeCount() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        mockMvc.perform(post("/posts/{id}/likes", saved.getId())
+                        .param("clientHash", "facefeed"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/" + saved.getId() + "?clientHash=facefeed"));
+
+        mockMvc.perform(get("/posts/{id}", saved.getId()).param("clientHash", "facefeed"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("いいね 1")));
+    }
+
+    @Test
+    @DisplayName("いいね_同じclientHashでもう一度押されたら_いいね数が減算される")
+    void like_whenPressedAgainBySameClient_decrementsLikeCount() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        mockMvc.perform(post("/posts/{id}/likes", saved.getId())
+                        .param("clientHash", "facefeed"))
+                .andExpect(status().isFound());
+        mockMvc.perform(post("/posts/{id}/likes", saved.getId())
+                        .param("clientHash", "facefeed"))
+                .andExpect(status().isFound());
+
+        mockMvc.perform(get("/posts/{id}", saved.getId()).param("clientHash", "facefeed"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("いいね 0")));
+    }
+
+    @Test
+    @DisplayName("いいね_別clientHashパラメータで押されたら_別ユーザとして管理される")
+    void like_whenPressedWithDifferentClientHashParameters_countsSeparately() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        mockMvc.perform(post("/posts/{id}/likes", saved.getId())
+                        .param("clientHash", "facefeed"))
+                .andExpect(status().isFound());
+        mockMvc.perform(post("/posts/{id}/likes", saved.getId())
+                        .param("clientHash", "cafebabe"))
+                .andExpect(status().isFound());
+
+        mockMvc.perform(get("/posts/{id}", saved.getId()).param("clientHash", "facefeed"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("いいね 2")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_clientHashがある場合_いいねフォームと戻るリンクに引き回す")
+    void detail_whenClientHashIsPresent_passesClientHashToLikeFormAndBackLink() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        MvcResult result = mockMvc.perform(get("/posts/{id}", saved.getId()).param("clientHash", "facefeed"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("clientHash", "facefeed"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("href=\"/posts?clientHash=facefeed\"");
+        assertThat(html).contains("name=\"clientHash\"");
+        assertThat(html).contains("value=\"facefeed\"");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_いいね表示_投稿日時の下に表示する")
+    void detail_likeActions_areShownBelowCreatedAt() throws Exception {
+        Post saved = postRepository.save(new Post("alice", "hello", Instant.parse("2026-06-26T09:00:00Z")));
+
+        MvcResult result = mockMvc.perform(get("/posts/{id}", saved.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"post__likes\"")))
+                .andExpect(content().string(containsString("いいね 0")))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html.indexOf("class=\"post__created-at\"")).isLessThan(html.indexOf("class=\"post__likes\""));
+        assertThat(html.indexOf("class=\"post__likes\"")).isLessThan(html.indexOf("</article>"));
     }
 
     @Test
