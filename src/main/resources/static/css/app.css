@@ -31,6 +31,47 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.toolbar {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+
+.toolbar button,
+.toolbar input {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text);
+    padding: 0.4rem 0.8rem;
+}
+
+.toolbar button {
+    cursor: pointer;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1 1 18rem;
+}
+
+.search-form__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.search-form input {
+    min-width: 0;
+    flex: 1;
+}
+
 .post {
     padding: 1rem;
     border: 1px solid var(--color-border);
@@ -39,9 +80,20 @@ h1 {
     background: white;
 }
 
+.post__link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.post__link:focus .post,
+.post__link:hover .post {
+    border-color: var(--color-accent);
+}
+
 .post__author {
     font-weight: 600;
-    margin-right: 0.5rem;
+    margin: 0 0 0.5rem;
 }
 
 .post__created-at {
@@ -49,8 +101,33 @@ h1 {
     font-size: 0.85rem;
 }
 
+.post__likes {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+}
+
+.like-button {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+    margin: 0 0 0.5rem;
+    padding: 0.4rem 0.8rem;
+}
+
+.like-button--liked {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    color: white;
+    font-weight: 600;
+}
+
 .post__body {
-    margin-top: 0.5rem;
+    margin: 0 0 0.5rem;
+    max-width: 40rem;
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
 }
