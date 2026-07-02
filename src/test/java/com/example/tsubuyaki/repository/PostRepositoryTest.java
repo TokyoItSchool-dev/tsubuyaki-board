@@ -31,7 +31,7 @@ class PostRepositoryTest {
                 .forEach(postRepository::save);
         postRepository.flush();
 
-        List<Post> posts = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> posts = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(posts).hasSize(50);
         assertThat(posts).extracting(Post::getBody)
@@ -50,7 +50,7 @@ class PostRepositoryTest {
         postRepository.save(new Post("carol", "Springの新しい話題", Instant.parse("2026-05-23T11:00:00Z")));
         postRepository.flush();
 
-        List<Post> posts = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("Spring");
+        List<Post> posts = postRepository.findTop50ByBodyContainingAndDeletedAtIsNullOrderByCreatedAtDesc("Spring");
 
         assertThat(posts).extracting(Post::getBody)
                 .containsExactly("Springの新しい話題", "Springの古い話題");

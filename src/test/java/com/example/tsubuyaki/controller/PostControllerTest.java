@@ -228,7 +228,9 @@ class PostControllerTest {
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail.html"))
-                .andExpect(model().attribute("post", post));
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(containsString("削除")))
+                .andExpect(content().string(containsString("action=\"/posts/1/delete\"")));
     }
 
     @Test
@@ -237,6 +239,27 @@ class PostControllerTest {
         given(postService.findById(999L)).willReturn(Optional.empty());
 
         mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在するIDのとき_削除して一覧へリダイレクトする")
+    void 投稿削除_存在するIDのとき_削除して一覧へリダイレクトする() throws Exception {
+        given(postService.delete(1L)).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).delete(1L);
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在しないIDのとき_404を返す")
+    void 投稿削除_存在しないIDのとき_404を返す() throws Exception {
+        given(postService.delete(999L)).willReturn(false);
+
+        mockMvc.perform(post("/posts/999/delete"))
                 .andExpect(status().isNotFound());
     }
 

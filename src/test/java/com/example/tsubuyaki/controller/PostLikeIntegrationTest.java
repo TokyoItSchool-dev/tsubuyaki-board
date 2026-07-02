@@ -9,11 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +39,9 @@ class PostLikeIntegrationTest {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
@@ -88,6 +94,41 @@ class PostLikeIntegrationTest {
                 .andExpect(content().string(containsString("いいね数")))
                 .andExpect(content().string(containsString("Like")))
                 .andExpect(content().string(containsString("action=\"/posts/" + post.getId() + "/likes\"")));
+    }
+
+    @Test
+    @DisplayName("投稿削除_存在するIDのとき_deleted_atを設定して一覧へリダイレクトする")
+    void 投稿削除_存在するIDのとき_deleted_atを設定して一覧へリダイレクトする() throws Exception {
+        Post post = savePost();
+
+        mockMvc.perform(post("/posts/{id}/delete", post.getId()))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        Post deletedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(deletedPost.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("投稿一覧_論理削除済み投稿があるとき_一覧のモデルに含めない")
+    void 投稿一覧_論理削除済み投稿があるとき_一覧のモデルに含めない() throws Exception {
+        Post activePost = postRepository.saveAndFlush(
+                new Post("alice", "表示する本文", Instant.parse("2026-05-23T10:00:00Z")));
+        Post deletedPost = postRepository.saveAndFlush(
+                new Post("bob", "削除済み本文", Instant.parse("2026-05-23T11:00:00Z")));
+        jdbcTemplate.update("UPDATE posts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?", deletedPost.getId());
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("posts"))
+                .andExpect(result -> {
+                    Object modelPosts = result.getModelAndView().getModel().get("posts");
+                    assertThat(modelPosts).isInstanceOf(List.class);
+                    assertThat((List<?>) modelPosts)
+                            .extracting(post -> ((Post) post).getId())
+                            .containsExactly(activePost.getId())
+                            .doesNotContain(deletedPost.getId());
+                });
     }
 
     private Post savePost() {
