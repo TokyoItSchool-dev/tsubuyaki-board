@@ -21,9 +21,11 @@ class PostFormTest {
 
         form.setAuthor("alice");
         form.setBody("本文です");
+        form.setAvatarColor("blue");
 
         assertThat(form.getAuthor()).isEqualTo("alice");
         assertThat(form.getBody()).isEqualTo("本文です");
+        assertThat(form.getAvatarColor()).isEqualTo("blue");
     }
 
     @Test
@@ -41,6 +43,18 @@ class PostFormTest {
                 .contains("投稿者名を入力してください");
         assertThat(messagesOf(validator.validate(tooLongAuthor)))
                 .contains("投稿者名は 30 文字以内で入力してください");
+    }
+
+    @Test
+    @DisplayName("PostForm_avatarColorが空_エラーにならない")
+    void PostForm_avatarColorが空_エラーにならない() {
+        PostForm form = new PostForm();
+        form.setAuthor("alice");
+        form.setBody("本文です");
+        form.setAvatarColor("");
+
+        assertThat(propertyNamesOf(validator.validate(form)))
+                .doesNotContain("avatarColor");
     }
 
     @Test
@@ -63,6 +77,12 @@ class PostFormTest {
     private static Set<String> messagesOf(Set<ConstraintViolation<PostForm>> violations) {
         return violations.stream()
                 .map(ConstraintViolation::getMessage)
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
+    private static Set<String> propertyNamesOf(Set<ConstraintViolation<PostForm>> violations) {
+        return violations.stream()
+                .map(violation -> violation.getPropertyPath().toString())
                 .collect(java.util.stream.Collectors.toSet());
     }
 }

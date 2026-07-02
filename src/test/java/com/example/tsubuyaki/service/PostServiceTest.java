@@ -1,5 +1,6 @@
 package com.example.tsubuyaki.service;
 
+import com.example.tsubuyaki.domain.Post;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,5 +42,17 @@ class PostServiceTest {
         postService.search("検索");
 
         verify(postRepository).findByBodyContainingOrderByCreatedAtDesc("検索");
+    }
+
+    @Test
+    @DisplayName("投稿作成_create_avatarColorをPostに保存する")
+    void 投稿作成_create_avatarColorをPostに保存する() {
+        postService.create("alice", "本文です", "blue");
+
+        verify(postRepository).save(argThat((Post post) ->
+                "alice".equals(post.getAuthor())
+                        && "本文です".equals(post.getBody())
+                        && "blue".equals(post.getAvatarColor())
+                        && post.getCreatedAt() != null));
     }
 }

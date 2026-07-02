@@ -41,7 +41,8 @@ class PostRegistrationControllerTest {
     void 投稿登録_正しい入力_POST_postsで保存しpostsへリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
                         .param("author", "alice")
-                        .param("body", "本文です"))
+                        .param("body", "本文です")
+                        .param("avatarColor", "blue"))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrl("/posts"));
 
@@ -49,6 +50,7 @@ class PostRegistrationControllerTest {
         assertThat(posts).hasSize(1);
         assertThat(posts.getFirst().getAuthor()).isEqualTo("alice");
         assertThat(posts.getFirst().getBody()).isEqualTo("本文です");
+        assertThat(posts.getFirst().getAvatarColor()).isEqualTo("blue");
         assertThat(posts.getFirst().getCreatedAt()).isNotNull();
     }
 

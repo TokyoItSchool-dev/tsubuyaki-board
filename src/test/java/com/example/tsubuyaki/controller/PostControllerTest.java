@@ -139,17 +139,31 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿一覧_投稿あり_詳細ボタンから投稿詳細へ移動できる")
-    void 投稿一覧_投稿あり_詳細ボタンから投稿詳細へ移動できる() throws Exception {
+    @DisplayName("投稿一覧_avatarColor指定あり_投稿に薄い背景色クラスを付ける")
+    void 投稿一覧_avatarColor指定あり_投稿に薄い背景色クラスを付ける() throws Exception {
+        given(postService.latest()).willReturn(List.of(
+                new Post("alice", "本文です", LocalDateTime.parse("2026-05-23T10:00:00"),
+                        "blue")));
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("post--avatar-blue")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "href=\"/css/app.css?v=avatar-color-2\"")));
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿あり_投稿者名リンクから投稿詳細へ移動できる")
+    void 投稿一覧_投稿あり_投稿者名リンクから投稿詳細へ移動できる() throws Exception {
         Post post = new Post("alice", "本文です", LocalDateTime.parse("2026-05-23T10:00:00"));
         ReflectionTestUtils.setField(post, "id", 1L);
         given(postService.latest()).willReturn(List.of(post));
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("詳細")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"get\"")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/posts/1\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString(">詳細</button>"))));
     }
 
     @Test
@@ -159,13 +173,22 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
                 .andExpect(model().attribute("postForm", org.hamcrest.Matchers.instanceOf(PostForm.class)))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文 (280 文字まで)")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("本文 (280 文字まで)")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"avatarColor\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"red\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"orange\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"yellow\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"green\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"blue\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"purple\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"gray\"")));
     }
 
     @Test
     @DisplayName("投稿詳細_存在するid_該当Postをビューに渡す")
     void 投稿詳細_存在するid_該当Postをビューに渡す() throws Exception {
-        Post post = new Post("alice", "詳細本文です", LocalDateTime.parse("2026-05-23T10:00:00"));
+        Post post = new Post("alice", "詳細本文です", LocalDateTime.parse("2026-05-23T10:00:00"),
+                "blue");
         given(postService.findById(1L)).willReturn(Optional.of(post));
         given(postLikeService.countLikes(1L)).willReturn(3L);
 
@@ -175,6 +198,11 @@ class PostControllerTest {
                 .andExpect(model().attribute("post", sameInstance(post)))
                 .andExpect(model().attribute("likeCount", 3L))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("いいね 3")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("アバター色")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("blue")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("post--avatar-blue")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "href=\"/css/app.css?v=avatar-color-2\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("like")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/posts/1/likes\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("method=\"post\"")));
