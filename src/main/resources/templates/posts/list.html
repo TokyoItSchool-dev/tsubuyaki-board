@@ -16,15 +16,30 @@
     </nav>
 
     <section>
-        <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
-        <article class="post" th:each="post : ${posts}">
-            <header>
-                <span class="post__author" th:text="${post.author}">投稿者</span>
-                <span class="post__created-at"
-                      th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</span>
-            </header>
+        <p class="search-empty-message" th:if="${noSearchResults}">検索結果が0件です。</p>
+        <form class="search-form" th:action="@{/posts}" method="get">
+            <input type="hidden" name="clientHash" th:value="${clientHash}">
+            <input type="text" name="q" th:value="${query}" aria-label="キーワード検索">
+            <button type="submit">検索</button>
+        </form>
+
+        <form class="toolbar" th:action="@{/posts}" method="get">
+            <input type="hidden" name="clientHash" th:value="${clientHash}">
+            <input type="hidden" name="q" th:value="${query}">
+            <span class="result-count" th:text="${resultCount + '件'}">0件</span>
+            <button type="submit">更新</button>
+        </form>
+
+        <p class="empty-message" th:if="${showEmptyMessage}">まだ投稿はありません</p>
+        <a class="post post--link" th:each="post : ${posts}"
+           th:classappend="${post.avatarColorCssClass}"
+           th:href="@{/posts/{id}(id=${post.id},clientHash=${clientHash})}">
+            <p class="post__author" th:text="${post.author}">投稿者</p>
             <p class="post__body" th:text="${post.body}">本文</p>
-        </article>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        </a>
     </section>
 </main>
 </body>

@@ -31,17 +31,216 @@ h1 {
     margin-bottom: 1rem;
 }
 
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin: 1rem 0;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+}
+
+.search-form input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    font: inherit;
+}
+
+.search-form button,
+.toolbar button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.search-form button:hover,
+.toolbar button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.result-count {
+    color: var(--color-muted);
+}
+
+.empty-message {
+    color: var(--color-muted);
+}
+
+.search-empty-message {
+    color: #b91c1c;
+    margin: 1rem 0 0.25rem;
+}
+
+.form-errors {
+    margin: 1rem 0;
+}
+
+.error {
+    color: #b91c1c;
+    margin: 0 0 0.25rem;
+}
+
+.post-form {
+    margin-top: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+    margin-bottom: 0.75rem;
+}
+
+.form-row label {
+    padding-top: 0.35rem;
+    font-weight: 600;
+}
+
+.author-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.35rem;
+}
+
+.author-label-row label {
+    padding-top: 0;
+}
+
+.avatar-color-picker {
+    display: inline-flex;
+    gap: 0.35rem;
+}
+
+.avatar-color-picker__option {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.avatar-color-picker__option input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.avatar-color-picker__option span {
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.avatar-color-picker__option input:checked + span {
+    border-color: var(--color-text);
+}
+
+.avatar-color-picker__option--red span {
+    background: #ef4444;
+}
+
+.avatar-color-picker__option--blue span {
+    background: #3b82f6;
+}
+
+.avatar-color-picker__option--yellow span {
+    background: #facc15;
+}
+
+.form-row input[type="text"],
+.form-row textarea {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    font: inherit;
+}
+
+.form-row textarea {
+    resize: vertical;
+}
+
+.form-actions {
+    margin-left: calc(10rem + 0.75rem);
+}
+
+.form-actions button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.form-actions button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
 .post {
+    display: block;
     padding: 1rem;
     border: 1px solid var(--color-border);
     border-radius: 8px;
     margin-bottom: 0.75rem;
     background: white;
+    color: inherit;
+    text-decoration: none;
+}
+
+.post--link {
+    cursor: pointer;
+}
+
+.post--link:hover {
+    background: #eff6ff;
+}
+
+.post--avatar-red {
+    background: #fee2e2;
+}
+
+.post--avatar-blue {
+    background: #dbeafe;
+}
+
+.post--avatar-yellow {
+    background: #fef9c3;
+}
+
+.post--avatar-red.post--link:hover {
+    background: #fecaca;
+}
+
+.post--avatar-blue.post--link:hover {
+    background: #bfdbfe;
+}
+
+.post--avatar-yellow.post--link:hover {
+    background: #fef08a;
 }
 
 .post__author {
     font-weight: 600;
-    margin-right: 0.5rem;
+    margin: 0 0 0.5rem;
 }
 
 .post__created-at {
@@ -50,7 +249,59 @@ h1 {
 }
 
 .post__body {
-    margin-top: 0.5rem;
+    margin: 0 0 0.5rem;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
     word-break: break-word;
+}
+
+.post__likes {
+    margin-top: 0.75rem;
+}
+
+.post__likes form {
+    margin: 0;
+}
+
+.post__like-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.post__like-button:hover,
+.post__like-button--liked {
+    color: var(--color-accent);
+    background: #eff6ff;
+}
+
+.post__like-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.post__like-count {
+    min-width: 1ch;
+    text-align: right;
+}
+
+@media (max-width: 520px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+
+    .form-row label {
+        padding-top: 0;
+    }
+
+    .form-actions {
+        margin-left: 0;
+    }
 }
