@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -181,8 +182,48 @@ class PostControllerTest {
                 .andExpect(model().attribute("liked", true))
                 .andExpect(content().string(containsString("alice")))
                 .andExpect(content().string(containsString("詳細を表示する投稿")))
-                .andExpect(content().string(containsString("いいね 2")))
-                .andExpect(content().string(containsString("いいね解除")));
+                .andExpect(content().string(containsString("グット 2")))
+                .andExpect(content().string(containsString("グット取り消し")));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_未グットのとき_無色のグットボタンを表示する")
+    void 投稿詳細_未グットのとき_無色のグットボタンを表示する() throws Exception {
+        Post post = new Post("alice", "未グットの投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findDetailPost(1L)).willReturn(Optional.of(post));
+        given(postService.hasLiked(1L, clientHash("192.0.2.10", "MockBrowser/1.0"))).willReturn(false);
+
+        mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "MockBrowser/1.0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"post__good-button\"")))
+                .andExpect(content().string(containsString("aria-pressed=\"false\"")))
+                .andExpect(content().string(containsString("👍 グット")))
+                .andExpect(content().string(not(containsString("post__good-button--active"))));
+    }
+
+    @Test
+    @DisplayName("投稿詳細_グット済みのとき_黄色のグットボタンを表示する")
+    void 投稿詳細_グット済みのとき_黄色のグットボタンを表示する() throws Exception {
+        Post post = new Post("alice", "グット済みの投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postService.findDetailPost(1L)).willReturn(Optional.of(post));
+        given(postService.hasLiked(1L, clientHash("192.0.2.10", "MockBrowser/1.0"))).willReturn(true);
+
+        mockMvc.perform(get("/posts/1")
+                        .with(request -> {
+                            request.setRemoteAddr("192.0.2.10");
+                            return request;
+                        })
+                        .header("User-Agent", "MockBrowser/1.0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(
+                        "class=\"post__good-button post__good-button--active\"")))
+                .andExpect(content().string(containsString("aria-pressed=\"true\"")))
+                .andExpect(content().string(containsString("👍 グット取り消し")));
     }
 
     @Test

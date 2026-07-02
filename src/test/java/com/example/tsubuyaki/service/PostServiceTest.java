@@ -164,8 +164,8 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("いいねトグル_既にいいね済みのとき_いいねを削除する")
-    void いいねトグル_既にいいね済みのとき_いいねを削除する() {
+    @DisplayName("グット取り消し_既にグット済みのとき_既存のいいねを削除する")
+    void グット取り消し_既にグット済みのとき_既存のいいねを削除する() {
         postService = new PostService(postRepository, postLikeRepository);
         Post post = new Post("alice", "いいね解除対象の投稿", Instant.parse("2026-05-23T10:00:00Z"));
         PostLike postLike = new PostLike(post, "a1b2c3d4", Instant.parse("2026-05-23T10:01:00Z"));

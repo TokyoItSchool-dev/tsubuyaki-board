@@ -23,4 +23,42 @@ class PostListLayoutTest {
         assertThat(css).contains(".toolbar__query");
         assertThat(css).contains("min-width: 0");
     }
+
+    @Test
+    @DisplayName("グットボタン_詳細画面_レイアウトが崩れない固定寸法と横並びCSSを持つ")
+    void グットボタン_詳細画面_レイアウトが崩れない固定寸法と横並びCSSを持つ() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains(".post__good-button");
+        assertThat(css).contains("display: inline-flex");
+        assertThat(css).contains("align-items: center");
+        assertThat(css).contains("min-width: 7rem");
+        assertThat(css).contains("min-height: 2.25rem");
+        assertThat(css).contains("white-space: nowrap");
+    }
+
+    @Test
+    @DisplayName("投稿詳細アクション_グットボタン追加後も_狭い画面で折り返して表示できる")
+    void 投稿詳細アクション_グットボタン追加後も_狭い画面で折り返して表示できる() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains(".post__actions");
+        assertThat(css).contains("display: flex");
+        assertThat(css).contains("flex-wrap: wrap");
+        assertThat(css).contains(".post__like-form");
+        assertThat(css).contains("flex: 0 0 auto");
+    }
+
+    @Test
+    @DisplayName("グットボタン_グット済みのとき_黄色で表示するCSSを持つ")
+    void グットボタン_グット済みのとき_黄色で表示するCSSを持つ() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(css).contains(".post__good-button--active");
+        assertThat(css).contains("background: #facc15");
+        assertThat(css).contains("border-color: #eab308");
+    }
 }
