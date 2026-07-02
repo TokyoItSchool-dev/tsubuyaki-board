@@ -159,6 +159,65 @@ M4 投稿詳細表示機能を実装しました。
 
 ---
 
-## プロンプト 4 以降
+## プロンプト 4
 
-3 件目以降も追加可能。書ければ書くほど良い。
+**フェーズ**:S1
+
+**プロンプト本文**:
+
+```
+いいね機能を作成する。
+        - 対象は投稿詳細画面の投稿
+        - POST /posts/{id}/likes でいいねをトグルする
+        - 同一 clientHash が初回に押した場合はいいねを追加する
+        - 同一 clientHash が再度押した場合はいいねを解除する
+        - clientHash は IP + User-Agent を SHA-256 でハッシュ化し、先頭8文字を使う
+        - 投稿詳細画面でいいね数と Like ボタンが見えること
+        - いいね操作後は /posts/{id} にリダイレクトすること
+
+        以下の観点のテストを用意してから本機能の実装を行う。
+        - POST /posts/{id}/likes で対象投稿にいいねを追加できること
+        - 同一 clientHash で再度 POST /posts/{id}/likes した場合、いいねを解除できること
+        - clientHash が IP + User-Agent から SHA-256 先頭8文字で生成されること
+        - 異なる clientHash からのいいねは別ユーザーのいいねとして加算されること
+        - 存在しない投稿 id に POST /posts/{id}/likes した場合、404 を返すこと
+        - 投稿詳細 GET /posts/{id} でいいね数が model に積まれること
+        - 投稿詳細画面でいいね数と Like ボタンが表示されること
+        - いいね操作後、/posts/{id} へリダイレクトすること
+        - いいね追加後、GET /posts/{id} でいいね数が増えて表示されること
+        - いいね解除後、GET /posts/{id} でいいね数が減って表示されること
+```
+
+**結果**: 部分的に効いた
+
+```
+対応しました。テスト実行中だった ./mvnw -B -Ph2 -Pcoverage-day2 ... verify は、指示どおり停止済みです。
+
+  実装内容:
+
+  - POST /posts/{id}/likes を追加
+  - 同一 clientHash のいいね追加/解除トグルを実装
+  - IP + User-Agent を SHA-256 化し、先頭8文字を clientHash として生成
+  - 詳細画面に いいね数 と Like ボタンを表示
+  - post_likes テーブル用 Flyway migration V2__post_likes.sql を追加
+  - Repository / Service / Controller / 結合テストを追加・更新
+  - PostNotFoundException.java
+  - V2__post_likes.sql
+  - PostLikeRepositoryTest.java
+  - ClientHashGeneratorTest.java
+  確認済み:
+
+  - S1対象テストは一度 Tests run: 34, Failures: 0, Errors: 0 まで通過
+
+  未完了:
+
+  - 最後の -Pcoverage-day2 の JaCoCo 70% gate は、実行途中で停止したため最終確認未完了です。
+  - git status は /home/codex/.gitconfig の Permission denied で確認できませんでした。
+```
+
+**振り返り**:
+
+本来ボタンではなく、トグルである要件だったが、指示誤りでボタンで実装された。
+この後、別途トグルで作成してほしい旨を指示するとその通りに実装してくれた。
+
+---
