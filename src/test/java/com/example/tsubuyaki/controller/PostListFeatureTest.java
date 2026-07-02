@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -90,8 +91,6 @@ class PostListFeatureTest {
                 .andExpect(content().string(containsString("method=\"get\"")))
                 .andExpect(content().string(containsString("name=\"q\"")))
                 .andExpect(content().string(containsString("検索")))
-                .andExpect(content().string(containsString("data-empty-action=\"/posts\"")))
-                .andExpect(content().string(containsString("this.q.disabled = true")))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -109,6 +108,7 @@ class PostListFeatureTest {
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("query", ""))
                 .andExpect(model().attribute("searched", false))
+                .andExpect(content().string(not(containsString("検索:"))))
                 .andExpect(content().string(containsString("other-user")));
 
         String searchHtml = mockMvc.perform(get("/posts").param("q", "検索対象"))
@@ -121,6 +121,7 @@ class PostListFeatureTest {
                 .getContentAsString();
 
         assertThat(searchHtml).contains("match-user50", "body50", "2026-05-24 09:50");
+        assertThat(searchHtml).contains("検索:", "検索対象", "href=\"/posts\"", "検索を解除");
         assertThat(searchHtml).doesNotContain("match-user0", "body0", "other-user", "関係ない本文");
         assertThat(searchHtml).containsSubsequence("match-user50", "match-user49", "match-user48");
 
@@ -166,6 +167,8 @@ class PostListFeatureTest {
                 "class=\"composer-card\"",
                 "class=\"timeline-feed\"",
                 "class=\"post post-card\"");
+        assertThat(html).contains("詳細を見る");
+        assertThat(html).contains("class=\"post__detail-link button button--ghost\"");
         assertThat(html).containsSubsequence("composer-card", "新規投稿", "timeline-feed", "modern-user", "モダンUIの本文");
 
         String css = new ClassPathResource("static/css/app.css").getContentAsString(StandardCharsets.UTF_8);
@@ -181,8 +184,45 @@ class PostListFeatureTest {
                 ".timeline-feed {",
                 ".post-card {",
                 "border-radius: 8px;",
+                ".search-status {",
+                ".button--danger {",
+                ".button--ghost {",
                 "@media (max-width: 640px)",
                 "min(100% - 32px, 720px)",
                 ":focus-visible");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_編集済み表示_updatedAtがある投稿だけ更新日時を表示する")
+    void 投稿一覧_編集済み表示_updatedAtがある投稿だけ更新日時を表示する() throws Exception {
+        postRepository.deleteAll();
+        Post originalPost = postRepository.save(new Post(
+                "original-user",
+                "original-body",
+                LocalDateTime.of(2026, 5, 27, 10, 0)));
+        Post editedPost = postRepository.save(new Post(
+                "edited-user",
+                "edited-body",
+                LocalDateTime.of(2026, 5, 27, 11, 0)));
+        editedPost.updateBodyAndBackgroundColor(
+                "edited-body",
+                editedPost.getBackgroundColor(),
+                LocalDateTime.of(2026, 5, 27, 12, 30));
+        postRepository.flush();
+
+        String html = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(html).contains("edited-user", "編集済み", "2026-05-27 12:30");
+        assertThat(html).containsSubsequence("original-user", "original-body", "2026-05-27 10:00");
+        int originalStart = html.indexOf("original-user");
+        int originalEnd = html.indexOf("</article>", originalStart);
+        assertThat(html.substring(originalStart, originalEnd))
+                .doesNotContain("編集済み");
+        assertThat(originalPost.getUpdatedAt()).isNull();
     }
 }

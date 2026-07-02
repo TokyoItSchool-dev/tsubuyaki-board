@@ -7,35 +7,53 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<main>
-    <h1>投稿編集</h1>
-    <nav>
-        <a th:href="@{/posts/{id}(id=${post.id})}">詳細に戻る</a>
-    </nav>
-
-    <p class="error" th:if="${editError != null}" th:text="${editError}">エラー</p>
-
-    <section class="post-edit-summary">
-        <p>投稿者: <span th:text="${post.author}">投稿者</span></p>
-    </section>
-
-    <form class="post-form" th:action="@{/posts/{id}/edit(id=${post.id})}"
-          th:object="${postEditForm}" method="post">
-        <div class="post-form__field">
-            <label for="body">本文 (280 文字まで)</label>
-            <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required></textarea>
-            <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
+<main class="app-shell">
+    <header class="app-header">
+        <div>
+            <h1>社内つぶやきボード</h1>
+            <p class="app-header__lead">投稿内容を編集できます。</p>
         </div>
-        <fieldset class="color-palette">
-            <legend>背景色</legend>
-            <label class="color-palette__item" th:each="color : ${postEditForm.backgroundColors}">
-                <input class="color-palette__input" type="radio" th:field="*{backgroundColor}" th:value="${color}">
-                <span class="color-palette__swatch" th:style="|background-color: ${color};|"></span>
-            </label>
-        </fieldset>
-        <button type="submit">更新する</button>
-        <a th:href="@{/posts/{id}(id=${post.id})}">キャンセル</a>
-    </form>
+        <nav class="app-nav" aria-label="投稿メニュー">
+            <a class="app-nav__link" th:href="@{/posts}">一覧</a>
+            <a class="app-nav__link app-nav__link--primary" th:href="@{/posts/new}">新規投稿</a>
+        </nav>
+    </header>
+
+    <section class="page-section" aria-labelledby="edit-heading">
+        <div class="page-title">
+            <h2 id="edit-heading">投稿編集</h2>
+            <a class="button button--ghost" th:href="@{/posts/{id}(id=${post.id})}">詳細に戻る</a>
+        </div>
+
+        <p class="error" th:if="${editError != null}" th:text="${editError}">エラー</p>
+
+        <section class="post-edit-summary">
+            <p>投稿者: <span th:text="${post.author}">投稿者</span></p>
+        </section>
+
+        <form class="post-form" th:action="@{/posts/{id}/edit(id=${post.id})}"
+              th:object="${postEditForm}" method="post">
+            <div class="post-form__field">
+                <label class="required-label" for="body">本文</label>
+                <p id="body-help" class="form-help">本文は必須・280文字以内です。</p>
+                <textarea id="body" th:field="*{body}" maxlength="280" rows="4" required
+                          aria-describedby="body-help body-error"></textarea>
+                <p id="body-error" class="error" th:if="${#fields.hasErrors('body')}"
+                   th:errors="*{body}">エラー</p>
+            </div>
+            <fieldset class="color-palette">
+                <legend>背景色</legend>
+                <label class="color-palette__item" th:each="color : ${postEditForm.backgroundColors}">
+                    <input class="color-palette__input" type="radio" th:field="*{backgroundColor}" th:value="${color}">
+                    <span class="color-palette__swatch" th:style="|background-color: ${color};|"></span>
+                </label>
+            </fieldset>
+            <div class="form-actions">
+                <button class="button button--primary" type="submit">更新する</button>
+                <a class="button button--ghost" th:href="@{/posts/{id}(id=${post.id})}">キャンセル</a>
+            </div>
+        </form>
+    </section>
 </main>
 </body>
 </html>

@@ -7,26 +7,46 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<main>
-    <h1>投稿削除確認</h1>
-    <p class="error">この投稿を削除します。よろしいですか？</p>
+<main class="app-shell">
+    <header class="app-header">
+        <div>
+            <h1>社内つぶやきボード</h1>
+            <p class="app-header__lead">削除前に対象の投稿を確認してください。</p>
+        </div>
+        <nav class="app-nav" aria-label="投稿メニュー">
+            <a class="app-nav__link" th:href="@{/posts}">一覧</a>
+            <a class="app-nav__link app-nav__link--primary" th:href="@{/posts/new}">新規投稿</a>
+        </nav>
+    </header>
 
-    <article class="post" th:style="|background-color: ${post.backgroundColor};|">
-        <header>
-            <span class="post__author" th:text="${post.author}">投稿者</span>
-        </header>
-        <p class="post__body" th:text="${post.body}">本文</p>
-        <time class="post__created-at"
-              th:datetime="${post.createdAt}"
-              th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
-    </article>
+    <section class="page-section" aria-labelledby="delete-heading">
+        <div class="page-title">
+            <h2 id="delete-heading">投稿削除確認</h2>
+            <a class="button button--ghost" th:href="@{/posts/{id}(id=${post.id})}">詳細に戻る</a>
+        </div>
 
-    <form class="post-delete-form" method="post" th:action="@{/posts/{id}/del(id=${post.id})}">
-        <input type="hidden" th:if="${_csrf != null}"
-               th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-        <button class="post-delete-form__button" type="submit">削除実行</button>
-        <a th:href="@{/posts/{id}(id=${post.id})}">キャンセル</a>
-    </form>
+        <div class="danger-notice" role="alert">
+            <p class="error">この投稿を削除します。よろしいですか？</p>
+            <p>この操作は取り消せません。</p>
+        </div>
+
+        <article class="post" th:style="|background-color: ${post.backgroundColor};|">
+            <header>
+                <span class="post__author" th:text="${post.author}">投稿者</span>
+            </header>
+            <p class="post__body" th:text="${post.body}">本文</p>
+            <time class="post__created-at"
+                  th:datetime="${post.createdAt}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+        </article>
+
+        <form class="post-delete-form" method="post" th:action="@{/posts/{id}/del(id=${post.id})}">
+            <input type="hidden" th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button class="button button--danger post-delete-form__button" type="submit">削除実行</button>
+            <a class="button button--ghost" th:href="@{/posts/{id}(id=${post.id})}">キャンセル</a>
+        </form>
+    </section>
 </main>
 </body>
 </html>

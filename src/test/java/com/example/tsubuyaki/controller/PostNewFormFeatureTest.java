@@ -48,6 +48,16 @@ class PostNewFormFeatureTest {
                 .andExpect(view().name("posts/form"))
                 .andExpect(content().string(containsString("class=\"post-form\"")))
                 .andExpect(content().string(containsString("class=\"post-form__field\"")))
+                .andExpect(content().string(containsString("class=\"app-shell\"")))
+                .andExpect(content().string(containsString("class=\"app-header\"")))
+                .andExpect(content().string(containsString("社内つぶやきボード")))
+                .andExpect(content().string(containsString("href=\"/posts\"")))
+                .andExpect(content().string(containsString("href=\"/posts/new\"")))
+                .andExpect(content().string(containsString("投稿者名は必須・30文字以内です。")))
+                .andExpect(content().string(containsString("本文は必須・280文字以内です。")))
+                .andExpect(content().string(containsString("aria-describedby=\"author-help author-error\"")))
+                .andExpect(content().string(containsString("aria-describedby=\"body-help body-error\"")))
+                .andExpect(content().string(containsString("class=\"button button--primary\"")))
                 .andExpect(content().string(containsString("class=\"color-palette__input\"")))
                 .andExpect(content().string(containsString("class=\"color-palette__swatch\"")));
 
@@ -57,6 +67,8 @@ class PostNewFormFeatureTest {
                 ".post-form {",
                 "gap: 1rem;",
                 ".post-form__field {",
+                ".form-help {",
+                ".form-actions {",
                 ".color-palette__input {",
                 "opacity: 0;",
                 ".color-palette__input:checked + .color-palette__swatch",

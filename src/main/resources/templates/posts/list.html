@@ -32,11 +32,14 @@
             <form class="post-list__refresh" method="get" th:action="@{/posts}">
                 <button class="button button--secondary" type="submit">更新</button>
             </form>
-            <form class="post-search" method="get" th:action="@{/posts}" data-empty-action="/posts"
-                  onsubmit="if (this.q.value.trim() === '') { this.q.disabled = true; }">
+            <form class="post-search" method="get" th:action="@{/posts}">
                 <input class="post-search__input" type="search" name="q" th:value="${query}" placeholder="本文を検索">
                 <button class="post-search__button button button--secondary" type="submit">検索</button>
             </form>
+            <div class="search-status" th:if="${searched}">
+                <span>検索: <strong th:text="${query}">検索語</strong></span>
+                <a class="button button--ghost" th:href="@{/posts}">検索を解除</a>
+            </div>
         </section>
 
         <section class="timeline-feed" aria-label="投稿一覧">
@@ -50,6 +53,11 @@
                 <time class="post__created-at"
                       th:datetime="${post.createdAt}"
                       th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
+                <p class="post__updated-at" th:if="${post.updatedAt != null}">
+                    編集済み:
+                    <time th:datetime="${post.updatedAt}"
+                          th:text="${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 10:00</time>
+                </p>
                 <div class="post__actions">
                     <span class="post__like-count" th:text="|いいね ${post.likeCount}|">いいね 0</span>
                     <form class="post__like-form" method="post" th:action="@{/posts/{id}/likes(id=${post.id})}">
@@ -58,6 +66,8 @@
                                th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                         <button class="post__like-button" type="submit">いいね！</button>
                     </form>
+                    <a class="post__detail-link button button--ghost"
+                       th:href="@{/posts/{id}(id=${post.id})}">詳細を見る</a>
                 </div>
             </article>
         </section>

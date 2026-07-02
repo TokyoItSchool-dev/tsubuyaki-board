@@ -42,6 +42,12 @@ h1 {
     line-height: 1.25;
 }
 
+h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.35;
+}
+
 .app-header {
     display: flex;
     align-items: flex-start;
@@ -133,6 +139,19 @@ h1 {
     gap: 1rem;
 }
 
+.page-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
 .button,
 button {
     display: inline-flex;
@@ -165,6 +184,29 @@ button:hover {
     background: var(--surface-subtle);
 }
 
+.button--danger {
+    border-color: #b91c1c;
+    color: white;
+    background: #b91c1c;
+}
+
+.button--danger:hover,
+button.button--danger:hover {
+    border-color: #991b1b;
+    background: #991b1b;
+}
+
+.button--ghost {
+    border-color: transparent;
+    color: var(--color-accent);
+    background: transparent;
+}
+
+.button--ghost:hover {
+    color: var(--color-accent-strong);
+    background: rgb(29 78 216 / 0.08);
+}
+
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -188,6 +230,12 @@ textarea:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+}
+
+.form-help {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
 }
 
 .post-form input[type="text"],
@@ -221,6 +269,17 @@ textarea:focus-visible {
 
 .post-search__button {
     flex: 0 0 auto;
+}
+
+.search-status {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: 0.25rem;
+    color: var(--color-muted);
+    font-size: 0.95rem;
 }
 
 .color-palette {
@@ -299,6 +358,12 @@ textarea:focus-visible {
     font-size: 0.95rem;
 }
 
+.post__updated-at {
+    margin: -0.35rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
 .post__body {
     margin: 0;
     font-size: 1.08rem;
@@ -342,6 +407,10 @@ textarea:focus-visible {
     font-weight: 700;
 }
 
+.post__delete-link.button {
+    color: white;
+}
+
 .post__edit-link {
     color: var(--color-accent);
     font-size: 0.95rem;
@@ -360,6 +429,12 @@ textarea:focus-visible {
     margin: 0;
 }
 
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 .post-delete-form {
     display: flex;
     align-items: center;
@@ -373,6 +448,21 @@ textarea:focus-visible {
 
 .post-delete-form__button:hover {
     background: #991b1b;
+}
+
+.danger-notice {
+    padding: 1rem;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fef2f2;
+}
+
+.danger-notice p {
+    margin: 0;
+}
+
+.danger-notice p + p {
+    margin-top: 0.25rem;
 }
 
 .error {
@@ -404,7 +494,11 @@ textarea:focus-visible {
     }
 
     .app-nav,
-    .post-search {
+    .post-search,
+    .search-status,
+    .form-actions,
+    .post-delete-form,
+    .page-title {
         width: 100%;
     }
 
@@ -420,6 +514,14 @@ textarea:focus-visible {
 
     .post__actions {
         align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .search-status,
+    .form-actions,
+    .post-delete-form,
+    .page-title {
+        align-items: stretch;
         flex-direction: column;
     }
 }
