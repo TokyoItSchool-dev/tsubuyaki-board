@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.service;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostComment;
 import com.example.tsubuyaki.domain.PostLike;
+import com.example.tsubuyaki.repository.PostCommentRepository;
 import com.example.tsubuyaki.repository.PostLikeRepository;
 import com.example.tsubuyaki.repository.PostRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +31,9 @@ class PostServiceTest {
 
     @Mock
     private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private PostCommentRepository postCommentRepository;
 
     @InjectMocks
     private PostService postService;
@@ -75,6 +80,59 @@ class PostServiceTest {
 
         assertThat(count).isEqualTo(3L);
         then(postRepository).should().countByDeletedAtIsNull();
+    }
+
+    @Test
+    @DisplayName("コメント一覧_投稿idに対応するコメントを新しい順で返す")
+    void コメント一覧_投稿idに対応するコメントを新しい順で返す() {
+        List<PostComment> comments = List.of(
+                new PostComment(1L, "alice", "新しいコメント", "red", Instant.parse("2026-05-23T10:00:00Z")),
+                new PostComment(1L, "bob", "古いコメント", "green", Instant.parse("2026-05-23T09:00:00Z"))
+        );
+        given(postCommentRepository.findByPostIdOrderByCreatedAtDesc(1L)).willReturn(comments);
+
+        List<PostComment> foundComments = postService.findComments(1L);
+
+        assertThat(foundComments).isSameAs(comments);
+        then(postCommentRepository).should().findByPostIdOrderByCreatedAtDesc(1L);
+    }
+
+    @Test
+    @DisplayName("コメント件数_投稿idに対応するコメント件数を返す")
+    void コメント件数_投稿idに対応するコメント件数を返す() {
+        given(postCommentRepository.countByPostId(1L)).willReturn(2L);
+
+        long count = postService.countComments(1L);
+
+        assertThat(count).isEqualTo(2L);
+        then(postCommentRepository).should().countByPostId(1L);
+    }
+
+    @Test
+    @DisplayName("コメント投稿_正常な入力の場合_コメントを保存する")
+    void コメント投稿_正常な入力の場合_コメントを保存する() {
+        given(postCommentRepository.save(any(PostComment.class))).willAnswer(invocation -> invocation.getArgument(0));
+        Instant before = Instant.now();
+
+        postService.createComment(1L, "alice", "コメント本文", "purple");
+
+        Instant after = Instant.now();
+        ArgumentCaptor<PostComment> captor = ArgumentCaptor.forClass(PostComment.class);
+        then(postCommentRepository).should().save(captor.capture());
+        PostComment savedComment = captor.getValue();
+        assertThat(savedComment.getPostId()).isEqualTo(1L);
+        assertThat(savedComment.getAuthor()).isEqualTo("alice");
+        assertThat(savedComment.getBody()).isEqualTo("コメント本文");
+        assertThat(savedComment.getAvatarColor()).isEqualTo("purple");
+        assertThat(savedComment.getCreatedAt()).isBetween(before, after);
+    }
+
+    @Test
+    @DisplayName("コメント削除_コメントidに対応するコメントを削除する")
+    void コメント削除_コメントidに対応するコメントを削除する() {
+        postService.deleteComment(11L);
+
+        then(postCommentRepository).should().deleteById(11L);
     }
 
     @Test

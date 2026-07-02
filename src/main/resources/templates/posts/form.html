@@ -7,25 +7,33 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<main>
-    <h1>新規投稿</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
-    </nav>
+<main class="post-form-page">
+    <header class="page-header page-header--form">
+        <nav class="post-form-nav">
+            <a class="post-form-nav__back" th:href="@{/posts}">一覧に戻る</a>
+        </nav>
+        <h1>新規投稿</h1>
+    </header>
 
-    <form class="post-form" th:action="@{/posts}" th:object="${postForm}" method="post">
+    <form class="post-form post-form--new" th:action="@{/posts}" th:object="${postForm}" method="post">
         <div class="post-form__field">
-            <label for="author">投稿者</label>
+            <label for="author">投稿者名</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
             <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
         </div>
         <div class="post-form__field">
-            <label for="avatarColor">アバター色</label>
-            <select id="avatarColor" th:field="*{avatarColor}">
-                <option th:each="avatarColor : ${avatarColors}"
-                        th:value="${avatarColor.value}"
-                        th:text="${avatarColor.label}">青</option>
-            </select>
+            <span class="post-form__label">アバター色</span>
+            <div class="avatar-color-picker">
+                <label class="avatar-color-picker__option" th:each="avatarColor : ${avatarColors}">
+                    <input class="avatar-color-picker__input"
+                           type="radio"
+                           th:field="*{avatarColor}"
+                           th:value="${avatarColor.value}">
+                    <span class="avatar-color-picker__swatch"
+                          th:classappend="|avatar-color-picker__swatch--${avatarColor.value}|"></span>
+                    <span class="avatar-color-picker__label" th:text="${avatarColor.label}">青</span>
+                </label>
+            </div>
         </div>
         <div class="post-form__field">
             <label for="body">本文 (280 文字まで)</label>

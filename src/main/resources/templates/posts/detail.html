@@ -7,13 +7,15 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<main>
-    <h1>投稿詳細</h1>
-    <nav>
-        <a th:href="@{/posts}">一覧に戻る</a>
-    </nav>
+<main class="post-detail-page">
+    <header class="page-header page-header--detail">
+        <nav class="post-detail-nav">
+            <a class="post-detail-nav__back" th:href="@{/posts}">一覧に戻る</a>
+        </nav>
+        <h1>投稿詳細</h1>
+    </header>
 
-    <article class="post">
+    <article class="post post--detail">
         <div class="post__author-line">
             <span class="post__avatar" th:classappend="|post__avatar--${post.avatarColor}|"></span>
             <span class="post__author" th:text="${post.author}">投稿者</span>
@@ -38,6 +40,65 @@
             </div>
         </div>
     </article>
+
+    <section class="comments comments--detail">
+        <h2 class="comments__title" th:text="|💬 コメント（${#lists.size(comments)}）|">💬 コメント（0）</h2>
+        <div class="comments__list">
+            <article class="comment" th:each="comment : ${comments}">
+                <div class="comment__header">
+                    <div class="comment__author-line">
+                        <span class="post__avatar" th:classappend="|post__avatar--${comment.avatarColor}|"></span>
+                        <span class="comment__author" th:text="${comment.author}">投稿者</span>
+                    </div>
+                    <div class="comment__meta-actions">
+                        <time class="comment__created-at"
+                              th:datetime="${comment.createdAt}"
+                              th:text="${@postTimeFormatter.format(comment.createdAt)}">たった今</time>
+                        <form class="comment__delete-form"
+                              th:action="@{/posts/{postId}/comments/{commentId}/delete(postId=${post.id},commentId=${comment.id})}"
+                              method="post">
+                            <button class="comment__delete-button" type="submit" aria-label="コメントを削除">🗑</button>
+                        </form>
+                    </div>
+                </div>
+                <p class="comment__body" th:text="${comment.body}">コメント本文</p>
+            </article>
+        </div>
+
+    </section>
+
+    <form class="post-form comment-form comment-form--detail"
+          th:action="@{/posts/{id}/comments(id=${post.id})}"
+          th:object="${commentForm}"
+          method="post">
+        <div class="post-form__field">
+            <label for="author">投稿者名</label>
+            <input type="text" id="author" th:field="*{author}" maxlength="30" required>
+            <p class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">エラー</p>
+        </div>
+        <div class="post-form__field">
+            <span class="post-form__label">アバター色</span>
+            <div class="avatar-color-picker">
+                <label class="avatar-color-picker__option" th:each="avatarColor : ${avatarColors}">
+                    <input class="avatar-color-picker__input"
+                           type="radio"
+                           th:field="*{avatarColor}"
+                           th:value="${avatarColor.value}">
+                    <span class="avatar-color-picker__swatch"
+                          th:classappend="|avatar-color-picker__swatch--${avatarColor.value}|"></span>
+                    <span class="avatar-color-picker__label" th:text="${avatarColor.label}">青</span>
+                </label>
+            </div>
+        </div>
+        <div class="post-form__field">
+            <label for="body">コメント本文 (280 文字まで)</label>
+            <textarea id="body" th:field="*{body}" maxlength="280" rows="3" required></textarea>
+            <p class="error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}">エラー</p>
+        </div>
+        <div class="post-form__actions">
+            <button class="post-form__submit" type="submit">コメント</button>
+        </div>
+    </form>
 </main>
 </body>
 </html>

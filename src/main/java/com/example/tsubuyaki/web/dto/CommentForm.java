@@ -1,0 +1,41 @@
+package com.example.tsubuyaki.web.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public class CommentForm {
+
+    private String avatarColor = "blue";
+
+    @NotBlank(message = "投稿者名を入力してください")
+    @Size(max = 30, message = "投稿者名は 30 文字以内で入力してください")
+    private String author;
+
+    @NotBlank(message = "コメント本文を入力してください")
+    @Size(max = 280, message = "コメント本文は 280 文字以内で入力してください")
+    private String body;
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
+    }
+}

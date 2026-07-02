@@ -1,8 +1,10 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostComment;
 import com.example.tsubuyaki.service.PostService;
 import com.example.tsubuyaki.web.PostTimeFormatter;
+import com.example.tsubuyaki.web.dto.CommentForm;
 import com.example.tsubuyaki.web.dto.PostForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,8 +36,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -66,6 +70,7 @@ class PostControllerTest {
     void setUpClock() {
         lenient().when(clock.instant()).thenReturn(TEST_NOW.toInstant());
         lenient().when(clock.getZone()).thenReturn(TEST_ZONE);
+        lenient().when(postService.findComments(anyLong())).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -116,6 +121,114 @@ class PostControllerTest {
         assertThat(html)
                 .contains("class=\"post-count\"")
                 .contains("投稿数：3件");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_ヘッダー_タイトルと投稿数を同じ行に表示しタブ風ナビを表示する")
+    void 投稿一覧_ヘッダー_タイトルと投稿数を同じ行に表示しタブ風ナビを表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(Collections.emptyList());
+        given(postService.countActivePosts()).willReturn(3L);
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .containsSubsequence(
+                        "class=\"timeline-header__title-row\"",
+                        "<h1>社内つぶやきボード</h1>",
+                        "class=\"post-count\"",
+                        "投稿数：3件")
+                .contains("class=\"timeline-tabs\"")
+                .contains("class=\"timeline-tabs__link timeline-tabs__link--active\"")
+                .contains(">一覧</a>")
+                .contains("class=\"timeline-tabs__link\"")
+                .contains(">新規投稿</a>");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".timeline-header__title-row")
+                .contains(".post-count")
+                .contains(".timeline-tabs__link")
+                .contains(".timeline-tabs__link--active")
+                .contains(".timeline-tabs__link:not(.timeline-tabs__link--active):hover");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_ヘッダー_検索入力と検索ボタンと更新ボタンを横並びで表示する")
+    void 投稿一覧_ヘッダー_検索入力と検索ボタンと更新ボタンを横並びで表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(Collections.emptyList());
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("class=\"timeline-search\"")
+                .contains("class=\"post-search\"")
+                .contains("method=\"get\"")
+                .contains("class=\"post-search__field\"")
+                .contains("class=\"post-search__icon\"")
+                .contains(">🔍</span>")
+                .contains("type=\"search\"")
+                .contains("name=\"q\"")
+                .contains("placeholder=\"キーワードを検索...\"")
+                .contains("class=\"post-search__button\"")
+                .contains("class=\"post-refresh\"")
+                .contains("class=\"post-refresh__button\"")
+                .contains("title=\"更新\"")
+                .contains(">↺</button>");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".timeline-search")
+                .contains(".post-search__field")
+                .contains(".post-search__icon")
+                .contains(".post-search__input")
+                .contains(".post-search__button")
+                .contains(".post-refresh__button")
+                .contains("grid-template-columns")
+                .contains("border-bottom");
+    }
+
+    @Test
+    @DisplayName("投稿検索_キーワード検索時_検索語を入力欄に保持し検索中のみ検索結果を表示する")
+    void 投稿検索_キーワード検索時_検索語を入力欄に保持し検索中のみ検索結果を表示する() throws Exception {
+        List<Post> searchResults = List.of(
+                new Post("alice", "Oracle本文1", Instant.parse("2026-05-23T10:00:00Z")),
+                new Post("bob", "Oracle本文2", Instant.parse("2026-05-23T09:00:00Z"))
+        );
+        given(postService.searchPosts("Oracle")).willReturn(searchResults);
+
+        MvcResult searchResult = mockMvc.perform(get("/posts").param("q", "Oracle"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("keyword", "Oracle"))
+                .andExpect(model().attribute("searchResultCount", 2))
+                .andReturn();
+
+        String searchHtml = searchResult.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(searchHtml)
+                .contains("value=\"Oracle\"")
+                .contains("「<strong class=\"search-result__keyword\">Oracle</strong>」の検索結果")
+                .contains(">2</span>件");
+
+        given(postService.findLatestPosts()).willReturn(Collections.emptyList());
+
+        MvcResult listResult = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attributeDoesNotExist("searchResultCount"))
+                .andReturn();
+
+        String listHtml = listResult.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(listHtml).doesNotContain("の検索結果：");
+
+        then(postService).should().searchPosts("Oracle");
     }
 
     @Test
@@ -217,6 +330,24 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿一覧_ピンクの投稿があるとき_ピンクのアバター色表示要素を表示する")
+    void 投稿一覧_ピンクの投稿があるとき_ピンクのアバター色表示要素を表示する() throws Exception {
+        given(postService.findLatestPosts()).willReturn(List.of(
+                postWithIdAndAvatarColor(1L, "pink")
+        ));
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("post__avatar")
+                .contains("post__avatar--pink");
+    }
+
+    @Test
     @DisplayName("投稿一覧_投稿があるとき_各投稿の右下にハート形式のいいね数を表示する")
     void 投稿一覧_投稿があるとき_各投稿の右下にハート形式のいいね数を表示する() throws Exception {
         List<Post> posts = List.of(postWithId(1L), postWithId(2L));
@@ -242,6 +373,40 @@ class PostControllerTest {
                 .contains("post__like-number\">0")
                 .doesNotContain("action=\"/posts/1/likes\"")
                 .doesNotContain("action=\"/posts/2/likes\"");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_いいね数の右側にコメント件数を表示する")
+    void 投稿一覧_投稿があるとき_いいね数の右側にコメント件数を表示する() throws Exception {
+        List<Post> posts = List.of(postWithId(1L), postWithId(2L));
+        given(postService.findLatestPosts()).willReturn(posts);
+        given(postService.countLikes(1L)).willReturn(3L);
+        given(postService.countLikes(2L)).willReturn(0L);
+        given(postService.countComments(1L)).willReturn(2L);
+        given(postService.countComments(2L)).willReturn(0L);
+
+        MvcResult result = mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attributeExists("commentCounts"))
+                .andReturn();
+
+        @SuppressWarnings("unchecked")
+        Map<Long, Long> commentCounts = (Map<Long, Long>) result.getModelAndView().getModel().get("commentCounts");
+        assertThat(commentCounts).containsEntry(1L, 2L).containsEntry(2L, 0L);
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .containsSubsequence(
+                        "class=\"post__footer-actions\"",
+                        "class=\"post__list-like-count\"",
+                        "post__like-heart\">♥",
+                        "post__like-number\">3",
+                        "class=\"post__list-comment-count\"",
+                        "post__comment-icon\">💬",
+                        "post__comment-number\">2")
+                .contains("post__comment-number\">0")
+                .doesNotContain("コメント本文");
     }
 
     @Test
@@ -442,8 +607,8 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿作成フォーム_GET_posts_new_アバター色の選択項目を表示する")
-    void 投稿作成フォーム_GET_posts_new_アバター色の選択項目を表示する() throws Exception {
+    @DisplayName("投稿作成フォーム_GET_posts_new_アバター色を色付き丸アイコンから選択できる")
+    void 投稿作成フォーム_GET_posts_new_アバター色を色付き丸アイコンから選択できる() throws Exception {
         MvcResult result = mockMvc.perform(get("/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/form"))
@@ -452,13 +617,30 @@ class PostControllerTest {
 
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(html)
-                .contains("select")
+                .contains("class=\"avatar-color-picker\"")
+                .contains("class=\"avatar-color-picker__option\"")
+                .contains("class=\"avatar-color-picker__input\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--red\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--blue\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--green\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--yellow\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--purple\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--pink\"")
                 .contains("name=\"avatarColor\"")
+                .contains("type=\"radio\"")
+                .contains("value=\"red\"")
+                .contains("value=\"blue\"")
+                .contains("value=\"green\"")
+                .contains("value=\"yellow\"")
+                .contains("value=\"purple\"")
+                .contains("value=\"pink\"")
                 .contains("赤")
                 .contains("青")
                 .contains("緑")
                 .contains("黄")
-                .contains("紫");
+                .contains("紫")
+                .contains("ピンク")
+                .doesNotContain("<select");
     }
 
     @Test
@@ -471,13 +653,14 @@ class PostControllerTest {
 
         String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(html)
-                .contains("class=\"post-form\"")
+                .contains("class=\"post-form post-form--new\"")
                 .containsSubsequence(
                         "class=\"post-form__field\"",
                         "for=\"author\"",
                         "name=\"author\"",
                         "class=\"post-form__field\"",
-                        "for=\"avatarColor\"",
+                        "class=\"post-form__label\"",
+                        "アバター色",
                         "name=\"avatarColor\"",
                         "class=\"post-form__field\"",
                         "for=\"body\"",
@@ -494,6 +677,66 @@ class PostControllerTest {
                 .contains("max-width")
                 .contains("flex-direction: column")
                 .contains("justify-content: flex-end");
+    }
+
+    @Test
+    @DisplayName("投稿作成フォーム_レイアウト_一覧画面と同じ幅の中央寄せカードと控えめな戻るリンクを表示する")
+    void 投稿作成フォーム_レイアウト_一覧画面と同じ幅の中央寄せカードと控えめな戻るリンクを表示する() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andExpect(model().attributeExists("postForm", "avatarColors"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("<main class=\"post-form-page\">")
+                .contains("<h1>新規投稿</h1>")
+                .contains("class=\"post-form-nav\"")
+                .contains("class=\"post-form-nav__back\"")
+                .contains("href=\"/posts\"")
+                .contains(">一覧に戻る</a>")
+                .contains("class=\"post-form post-form--new\"")
+                .containsSubsequence(
+                        "投稿者名",
+                        "アバター色",
+                        "本文",
+                        "class=\"post-form__actions\"",
+                        ">投稿</button>");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".post-form-page")
+                .contains(".post-form-nav__back")
+                .contains(".post-form--new")
+                .contains("max-width: 720px")
+                .contains("border-radius: 8px")
+                .contains("box-shadow: 0 1px 3px rgb(15 23 42 / 6%)")
+                .contains("justify-content: flex-end");
+    }
+
+    @Test
+    @DisplayName("投稿作成フォーム_ヘッダー_戻るリンク_タイトル_区切り線_フォームカードの順に表示する")
+    void 投稿作成フォーム_ヘッダー_戻るリンク_タイトル_区切り線_フォームカードの順に表示する() throws Exception {
+        MvcResult result = mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/form"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .containsSubsequence(
+                        "class=\"page-header page-header--form\"",
+                        "class=\"post-form-nav\"",
+                        ">一覧に戻る</a>",
+                        "<h1>新規投稿</h1>",
+                        "class=\"post-form post-form--new\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".page-header")
+                .contains("border-bottom: 1px solid var(--color-border)")
+                .contains(".page-header h1");
     }
 
     @Test
@@ -676,6 +919,78 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿詳細_レイアウト_投稿カードとコメント一覧とコメント投稿フォームを一覧画面と統一した幅で表示する")
+    void 投稿詳細_レイアウト_投稿カードとコメント一覧とコメント投稿フォームを一覧画面と統一した幅で表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.findComments(1L)).willReturn(List.of(
+                commentWithId(11L, 1L, "alice", "コメント本文", "blue", TEST_NOW.minusMinutes(5).toInstant())
+        ));
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attributeExists("post", "comments", "commentForm"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("<main class=\"post-detail-page\">")
+                .contains("class=\"post-detail-nav\"")
+                .contains("class=\"post-detail-nav__back\"")
+                .contains("href=\"/posts\"")
+                .contains(">一覧に戻る</a>")
+                .contains("class=\"post post--detail\"")
+                .contains("class=\"comments comments--detail\"")
+                .contains("class=\"post-form comment-form comment-form--detail\"")
+                .containsSubsequence("class=\"post post--detail\"", "class=\"comments comments--detail\"",
+                        "class=\"post-form comment-form comment-form--detail\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".post-detail-page")
+                .contains(".post-detail-nav__back")
+                .contains(".post--detail")
+                .contains(".comments--detail")
+                .contains(".comment-form--detail")
+                .contains("max-width: 720px")
+                .contains("box-shadow: 0 1px 3px rgb(15 23 42 / 6%)")
+                .contains("border-radius: 8px");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_ヘッダーとカード_戻るリンク_タイトル_区切り線_投稿カード_コメントカード_フォームカードの順に表示する")
+    void 投稿詳細_ヘッダーとカード_戻るリンク_タイトル_区切り線_投稿カード_コメントカード_フォームカードの順に表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        given(postService.findComments(1L)).willReturn(List.of(
+                commentWithId(11L, 1L, "alice", "コメント本文", "blue", TEST_NOW.minusMinutes(5).toInstant())
+        ));
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .containsSubsequence(
+                        "class=\"page-header page-header--detail\"",
+                        "class=\"post-detail-nav\"",
+                        ">一覧に戻る</a>",
+                        "<h1>投稿詳細</h1>",
+                        "class=\"post post--detail\"",
+                        "class=\"comments comments--detail\"",
+                        "</section>",
+                        "class=\"post-form comment-form comment-form--detail\"");
+
+        String css = Files.readString(Path.of("src/main/resources/static/css/app.css"));
+        assertThat(css)
+                .contains(".page-header")
+                .contains(".comments--detail")
+                .contains(".comment-form--detail")
+                .contains("border-bottom: 1px solid var(--color-border)");
+    }
+
+    @Test
     @DisplayName("投稿詳細_存在するidの場合_avatarColorに応じたアバター色表示要素を表示する")
     void 投稿詳細_存在するidの場合_avatarColorに応じたアバター色表示要素を表示する() throws Exception {
         given(postService.findPost(1L)).willReturn(Optional.of(postWithIdAndAvatarColor(1L, "red")));
@@ -689,6 +1004,22 @@ class PostControllerTest {
         assertThat(html)
                 .contains("post__avatar")
                 .contains("post__avatar--red");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_ピンクの投稿の場合_ピンクのアバター色表示要素を表示する")
+    void 投稿詳細_ピンクの投稿の場合_ピンクのアバター色表示要素を表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithIdAndAvatarColor(1L, "pink")));
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("post__avatar")
+                .contains("post__avatar--pink");
     }
 
     @Test
@@ -706,6 +1037,98 @@ class PostControllerTest {
                 .contains("action=\"/posts/1/delete\"")
                 .contains("method=\"post\"")
                 .contains(">🗑 削除<");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_コメントがある場合_新しい順で投稿者名本文投稿日を表示する")
+    void 投稿詳細_コメントがある場合_新しい順で投稿者名本文投稿日を表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        List<PostComment> comments = List.of(
+                new PostComment(1L, "new-user", "新しいコメント", "pink", TEST_NOW.minusMinutes(5).toInstant()),
+                new PostComment(1L, "old-user", "古いコメント", "green", TEST_NOW.minusDays(1).toInstant())
+        );
+        given(postService.findComments(1L)).willReturn(comments);
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("comments", sameInstance(comments)))
+                .andExpect(model().attributeExists("commentForm"))
+                .andReturn();
+
+        assertThat(result.getModelAndView().getModel().get("commentForm")).isInstanceOf(CommentForm.class);
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("💬 コメント（2）")
+                .contains("post__avatar--pink")
+                .contains("post__avatar--green")
+                .containsSubsequence("new-user", "5分前", "新しいコメント",
+                        "old-user", "昨日", "古いコメント");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_コメント削除後_件数を更新し削除済みコメントを表示せず上部に削除アイコンを表示する")
+    void 投稿詳細_コメント削除後_件数を更新し削除済みコメントを表示せず上部に削除アイコンを表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+        List<PostComment> comments = List.of(
+                commentWithId(11L, 1L, "remaining-user", "残るコメント", "blue",
+                        TEST_NOW.minusMinutes(5).toInstant())
+        );
+        given(postService.findComments(1L)).willReturn(comments);
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("💬 コメント（1）")
+                .containsSubsequence(
+                        "class=\"comment__header\"",
+                        "class=\"comment__author-line\"",
+                        "remaining-user",
+                        "class=\"comment__meta-actions\"",
+                        "5分前",
+                        "action=\"/posts/1/comments/11/delete\"",
+                        "class=\"comment__delete-button\"",
+                        "🗑")
+                .doesNotContain("削除済みコメント")
+                .doesNotContain(">削除<");
+    }
+
+    @Test
+    @DisplayName("投稿詳細_コメント投稿フォーム_新規投稿画面と同じアバター色選択UIを表示する")
+    void 投稿詳細_コメント投稿フォーム_新規投稿画面と同じアバター色選択UIを表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+
+        MvcResult result = mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html)
+                .contains("action=\"/posts/1/comments\"")
+                .contains("class=\"avatar-color-picker\"")
+                .contains("class=\"avatar-color-picker__option\"")
+                .contains("class=\"avatar-color-picker__input\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--red\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--blue\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--green\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--yellow\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--purple\"")
+                .contains("class=\"avatar-color-picker__swatch avatar-color-picker__swatch--pink\"")
+                .contains("name=\"avatarColor\"")
+                .contains("type=\"radio\"")
+                .contains("value=\"red\"")
+                .contains("value=\"blue\"")
+                .contains("value=\"green\"")
+                .contains("value=\"yellow\"")
+                .contains("value=\"purple\"")
+                .contains("value=\"pink\"")
+                .contains("ピンク")
+                .doesNotContain("<select");
     }
 
     @Test
@@ -746,6 +1169,80 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("コメント削除_POST_posts_postId_comments_commentId_delete_削除後に投稿詳細へリダイレクトする")
+    void コメント削除_POST_posts_postId_comments_commentId_delete_削除後に投稿詳細へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/1/comments/11/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(postService).should().deleteComment(11L);
+    }
+
+    @Test
+    @DisplayName("コメント投稿_正常な入力の場合_コメントを登録し投稿詳細へリダイレクトする")
+    void コメント投稿_正常な入力の場合_コメントを登録し投稿詳細へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/1/comments")
+                        .param("author", "alice")
+                        .param("body", "コメント本文")
+                        .param("avatarColor", "purple"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(postService).should().createComment(1L, "alice", "コメント本文", "purple");
+    }
+
+    @Test
+    @DisplayName("コメント投稿_ピンクを選択した場合_ピンクでコメントを登録する")
+    void コメント投稿_ピンクを選択した場合_ピンクでコメントを登録する() throws Exception {
+        mockMvc.perform(post("/posts/1/comments")
+                        .param("author", "alice")
+                        .param("body", "コメント本文")
+                        .param("avatarColor", "pink"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        then(postService).should().createComment(1L, "alice", "コメント本文", "pink");
+    }
+
+    @Test
+    @DisplayName("コメント投稿_投稿者名未入力の場合_登録せず詳細画面を再表示する")
+    void コメント投稿_投稿者名未入力の場合_登録せず詳細画面を再表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+
+        MvcResult result = mockMvc.perform(post("/posts/1/comments")
+                        .param("author", "")
+                        .param("body", "コメント本文")
+                        .param("avatarColor", "blue"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attributeHasFieldErrors("commentForm", "author"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("投稿者名を入力してください");
+        then(postService).should(never()).createComment(anyLong(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("コメント投稿_本文未入力の場合_登録せず詳細画面を再表示する")
+    void コメント投稿_本文未入力の場合_登録せず詳細画面を再表示する() throws Exception {
+        given(postService.findPost(1L)).willReturn(Optional.of(postWithId(1L)));
+
+        MvcResult result = mockMvc.perform(post("/posts/1/comments")
+                        .param("author", "alice")
+                        .param("body", "")
+                        .param("avatarColor", "blue"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attributeHasFieldErrors("commentForm", "body"))
+                .andReturn();
+
+        String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(html).contains("コメント本文を入力してください");
+        then(postService).should(never()).createComment(anyLong(), any(), any(), any());
+    }
+
+    @Test
     @DisplayName("投稿登録_正常な入力の場合_投稿を登録しpostsへリダイレクトする")
     void 投稿登録_正常な入力の場合_投稿を登録しpostsへリダイレクトする() throws Exception {
         mockMvc.perform(post("/posts")
@@ -769,6 +1266,19 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts"));
 
         then(postService).should().createPost("alice", "本文です", "purple");
+    }
+
+    @Test
+    @DisplayName("投稿登録_ピンクを選択した場合_ピンクで投稿を登録する")
+    void 投稿登録_ピンクを選択した場合_ピンクで投稿を登録する() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("author", "alice")
+                        .param("body", "本文です")
+                        .param("avatarColor", "pink"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        then(postService).should().createPost("alice", "本文です", "pink");
     }
 
     @Test
@@ -871,5 +1381,12 @@ class PostControllerTest {
         Post post = new Post("alice", "詳細本文", avatarColor, Instant.parse("2026-05-23T10:00:00Z"));
         ReflectionTestUtils.setField(post, "id", id);
         return post;
+    }
+
+    private PostComment commentWithId(Long id, Long postId, String author, String body, String avatarColor,
+            Instant createdAt) {
+        PostComment comment = new PostComment(postId, author, body, avatarColor, createdAt);
+        ReflectionTestUtils.setField(comment, "id", id);
+        return comment;
     }
 }

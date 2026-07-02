@@ -8,25 +8,32 @@
 </head>
 <body>
 <main>
-    <h1>社内つぶやきボード</h1>
-    <p class="post-count" th:text="|投稿数：${postCount}件|">投稿数：0件</p>
-    <p class="search-result" th:if="${searchResultCount != null}">
-        「<strong class="search-result__keyword" th:text="${keyword}">キーワード</strong>」の検索結果：<span
-            th:text="${searchResultCount}">0</span>件
-    </p>
-    <nav>
-        <a th:href="@{/posts}">一覧</a>
-        |
-        <a th:href="@{/posts/new}">新規投稿</a>
-    </nav>
-    <form class="post-search" th:action="@{/posts}" method="get">
-        <label for="q">検索</label>
-        <input type="search" id="q" name="q" th:value="${keyword}">
-        <button type="submit">検索</button>
-    </form>
-    <form class="post-refresh" th:action="@{/posts/}" method="get">
-        <button type="submit">更新</button>
-    </form>
+    <header class="timeline-header">
+        <div class="timeline-header__title-row">
+            <h1>社内つぶやきボード</h1>
+            <p class="post-count" th:text="|投稿数：${postCount}件|">投稿数：0件</p>
+        </div>
+        <nav class="timeline-tabs" aria-label="投稿一覧ナビゲーション">
+            <a class="timeline-tabs__link timeline-tabs__link--active" th:href="@{/posts}">一覧</a>
+            <a class="timeline-tabs__link" th:href="@{/posts/new}">新規投稿</a>
+        </nav>
+        <div class="timeline-search">
+            <form class="post-search" th:action="@{/posts}" method="get">
+                <label class="visually-hidden" for="q">検索</label>
+                <div class="post-search__field">
+                    <span class="post-search__icon" aria-hidden="true">🔍</span>
+                    <input class="post-search__input" type="search" id="q" name="q"
+                           placeholder="キーワードを検索..." th:value="${keyword}">
+                </div>
+                <button class="post-search__button" type="submit">検索</button>
+            </form>
+            <form class="post-refresh" th:action="@{/posts/}" method="get">
+                <button class="post-refresh__button" type="submit" title="更新" aria-label="更新">↺</button>
+            </form>
+        </div>
+        <p class="search-result" th:if="${searchResultCount != null}">「<strong class="search-result__keyword"
+                th:text="${keyword}">キーワード</strong>」の検索結果：<span th:text="${searchResultCount}">0</span>件</p>
+    </header>
 
     <section>
         <p th:if="${#lists.isEmpty(posts)}">まだ投稿はありません。最初の一言を投稿しよう。</p>
@@ -47,6 +54,10 @@
                         <span class="post__list-like-count">
                             <span class="post__like-heart">♥</span>
                             <span class="post__like-number" th:text="${likeCounts.get(post.id) ?: 0}">0</span>
+                        </span>
+                        <span class="post__list-comment-count">
+                            <span class="post__comment-icon">💬</span>
+                            <span class="post__comment-number" th:text="${commentCounts.get(post.id) ?: 0}">0</span>
                         </span>
                     </div>
                 </div>

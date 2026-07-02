@@ -1,7 +1,9 @@
 package com.example.tsubuyaki.controller;
 
 import com.example.tsubuyaki.domain.Post;
+import com.example.tsubuyaki.domain.PostComment;
 import com.example.tsubuyaki.service.PostService;
+import com.example.tsubuyaki.web.dto.CommentForm;
 import com.example.tsubuyaki.web.dto.PostForm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -33,7 +35,8 @@ public class PostController {
             new AvatarColorOption("blue", "青"),
             new AvatarColorOption("green", "緑"),
             new AvatarColorOption("yellow", "黄"),
-            new AvatarColorOption("purple", "紫")
+            new AvatarColorOption("purple", "紫"),
+            new AvatarColorOption("pink", "ピンク")
     );
 
     private final PostService postService;
@@ -67,10 +70,7 @@ public class PostController {
 
     @GetMapping("/posts/{id}")
     public String detail(@PathVariable Long id, Model model, HttpServletRequest request) {
-        model.addAttribute("post", postService.findPost(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
-        model.addAttribute("likeCount", postService.countLikes(id));
-        model.addAttribute("liked", postService.isLiked(id, clientHash(request)));
+        addDetailAttributes(id, model, request);
         return "posts/detail";
     }
 
@@ -84,6 +84,24 @@ public class PostController {
     public String delete(@PathVariable Long id) {
         postService.deletePost(id);
         return "redirect:/posts";
+    }
+
+    @PostMapping("/posts/{id}/comments")
+    public String createComment(@PathVariable Long id, @Valid @ModelAttribute("commentForm") CommentForm commentForm,
+            BindingResult bindingResult, Model model, HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            addDetailAttributes(id, model, request);
+            return "posts/detail";
+        }
+
+        postService.createComment(id, commentForm.getAuthor(), commentForm.getBody(), commentForm.getAvatarColor());
+        return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("/posts/{postId}/comments/{commentId}/delete")
+    public String deleteComment(@PathVariable Long postId, @PathVariable Long commentId) {
+        postService.deleteComment(commentId);
+        return "redirect:/posts/" + postId;
     }
 
     @PostMapping("/posts")
@@ -118,13 +136,29 @@ public class PostController {
         model.addAttribute("avatarColors", AVATAR_COLORS);
     }
 
+    private void addDetailAttributes(Long id, Model model, HttpServletRequest request) {
+        model.addAttribute("post", postService.findPost(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("likeCount", postService.countLikes(id));
+        model.addAttribute("liked", postService.isLiked(id, clientHash(request)));
+        List<PostComment> comments = postService.findComments(id);
+        model.addAttribute("comments", comments);
+        if (!model.containsAttribute("commentForm")) {
+            model.addAttribute("commentForm", new CommentForm());
+        }
+        addAvatarColors(model);
+    }
+
     private void addPosts(Model model, List<Post> posts) {
         Map<Long, Long> likeCounts = new LinkedHashMap<>();
+        Map<Long, Long> commentCounts = new LinkedHashMap<>();
         for (Post post : posts) {
             likeCounts.put(post.getId(), postService.countLikes(post.getId()));
+            commentCounts.put(post.getId(), postService.countComments(post.getId()));
         }
         model.addAttribute("posts", posts);
         model.addAttribute("likeCounts", likeCounts);
+        model.addAttribute("commentCounts", commentCounts);
         model.addAttribute("postCount", postService.countActivePosts());
     }
 
