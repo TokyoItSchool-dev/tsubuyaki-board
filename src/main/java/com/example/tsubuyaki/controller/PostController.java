@@ -8,8 +8,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
-import org.springframework.web.util.UriUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,9 +44,8 @@ public class PostController {
     }
 
     @GetMapping("/posts/form")
-    public String newForm(@RequestParam(name = "q", required = false) String q, Model model) {
+    public String newForm(Model model) {
         model.addAttribute("postForm", new PostForm());
-        model.addAttribute("q", postService.normalizeKeyword(q));
         return "posts/form";
     }
 
@@ -61,17 +58,11 @@ public class PostController {
     }
 
     @PostMapping("/posts")
-    public String create(@Valid PostForm postForm, BindingResult bindingResult,
-            @RequestParam(name = "q", required = false) String q, Model model) {
-        String keyword = postService.normalizeKeyword(q);
+    public String create(@Valid PostForm postForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("q", keyword);
             return "posts/form";
         }
         postService.create(postForm.getAuthor(), postForm.getAvatarColor(), postForm.getBody());
-        if (StringUtils.hasText(keyword)) {
-            return "redirect:/posts?q=" + UriUtils.encodeQueryParam(keyword, StandardCharsets.UTF_8);
-        }
         return "redirect:/posts";
     }
 

@@ -130,9 +130,10 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(matchesPattern("(?s).*<nav>\\s*<a[^>]*href=\"/posts/form\"[^>]*>新規投稿</a>\\s*</nav>.*")))
                 .andExpect(content().string(matchesPattern(
                         "(?s).*<div[^>]*class=\"list-toolbar\"[^>]*>\\s*"
+                                + "<form[^>]*class=\"new-post-form\"[^>]*action=\"/posts/form\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*新規投稿\\s*</button>\\s*</form>\\s*"
                                 + "<form[^>]*class=\"toolbar\"[^>]*action=\"/posts/\"[^>]*method=\"get\"[^>]*>.*"
                                 + "<form[^>]*class=\"search-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>.*</div>.*")))
                 .andExpect(content().string(matchesPattern(
@@ -209,24 +210,28 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("投稿作成_検索中に新規投稿した場合_検索条件を維持して一覧へ戻る")
-    void 投稿作成_検索中に新規投稿した場合_検索条件を維持して一覧へ戻る() throws Exception {
+    @DisplayName("投稿作成_検索中に新規投稿した場合_検索条件を維持せず最新一覧へ戻る")
+    void 投稿作成_検索中に新規投稿した場合_検索条件を維持せず最新一覧へ戻る() throws Exception {
         mockMvc.perform(get("/posts").param("q", "共有"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(matchesPattern(
-                        "(?s).*<a[^>]*href=\"/posts/form\\?q=%E5%85%B1%E6%9C%89\"[^>]*>\\s*新規投稿\\s*</a>.*")));
+                        "(?s).*<div[^>]*class=\"list-toolbar\"[^>]*>\\s*"
+                                + "<form[^>]*class=\"new-post-form\"[^>]*action=\"/posts/form\"[^>]*method=\"get\"[^>]*>\\s*"
+                                + "<button[^>]*>\\s*新規投稿\\s*</button>\\s*</form>\\s*"
+                                + "<form[^>]*class=\"toolbar\"[^>]*action=\"/posts/\"[^>]*method=\"get\"[^>]*>.*"
+                                + "<form[^>]*class=\"search-form\"[^>]*action=\"/posts\"[^>]*method=\"get\"[^>]*>.*</div>.*")))
+                .andExpect(content().string(matchesPattern("(?s)^(?!.*href=\"/posts/form\\?q=).*$")));
 
         mockMvc.perform(get("/posts/form").param("q", "共有"))
                 .andExpect(status().isOk())
-                .andExpect(model().attribute("q", "共有"))
-                .andExpect(content().string(matchesPattern("(?s).*<input[^>]*type=\"hidden\"[^>]*name=\"q\"[^>]*value=\"共有\"[^>]*>.*")));
+                .andExpect(content().string(matchesPattern("(?s)^(?!.*<input[^>]*type=\"hidden\"[^>]*name=\"q\").*$")));
 
         mockMvc.perform(post("/posts")
                         .param("q", "共有")
                         .param("author", "alice")
                         .param("body", "共有したい内容です"))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/posts?q=%E5%85%B1%E6%9C%89"));
+                .andExpect(redirectedUrl("/posts"));
     }
 
     @Test

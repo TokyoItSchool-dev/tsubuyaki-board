@@ -9,10 +9,10 @@
 <body>
 <main>
     <h1>社内つぶやきボード</h1>
-    <nav>
-        <a th:href="${#strings.isEmpty(q)} ? @{/posts/form} : @{/posts/form(q=${q})}">新規投稿</a>
-    </nav>
     <div class="list-toolbar">
+        <form class="new-post-form" th:action="@{/posts/form}" method="get">
+            <button type="submit">新規投稿</button>
+        </form>
         <form class="toolbar" th:action="@{/posts/}" method="get">
             <button type="submit">更新</button>
         </form>

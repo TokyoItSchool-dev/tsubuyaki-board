@@ -14,7 +14,6 @@
     </nav>
 
     <form class="post-form" th:action="@{/posts}" th:object="${postForm}" method="post">
-        <input type="hidden" name="q" th:value="${q}" th:if="${!#strings.isEmpty(q)}">
         <div class="post-form__field">
             <label for="author">投稿者</label>
             <input type="text" id="author" th:field="*{author}" maxlength="30" required>
