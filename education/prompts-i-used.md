@@ -414,11 +414,13 @@ newForm_whenRequested_returnsFormViewWithPostForm と list_whenPostsExist_render
 **結果**: 部分的に効いた
 
 - 途中でフリーズしたと思って切断してしまった。（と思ったら、フリーズしていなかった。）
+- テストの観点が足らなかった。
 
 **振り返り**:
 
 - 内容によっては30分以上かかるので表示が変わらなくても待つ必要がある。
 - codexの表示が変わらないだけで裏で進行・終了していることがあるので、Ubuntuで`podman logs コンテナ名`で状況を確認することが必要。
+- 実装するテストを細かく指定する必要がある。（コード記述前にコードテストケースを考えないといけない）
 
 ---
 
@@ -458,6 +460,7 @@ newForm_whenRequested_returnsFormViewWithPostForm と list_whenPostsExist_render
 
 • Controller テストの Spring 起動ログまで進んでいます。前回と同じ位置なのでフリーズではなく実行中です。引き続き待ちます。
 ```
+- 途中で止めたことが災いしたか、操作で例外発生する。（codexの問題ではないと思うので「効いた」としている）
 
 **振り返り**:
 
@@ -468,65 +471,223 @@ newForm_whenRequested_returnsFormViewWithPostForm と list_whenPostsExist_render
 
 ## プロンプト 9
 
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
+**フェーズ**: M3 投稿の操作をしたときに例外発生
 
 **プロンプト本文**:
 
 ```
+投稿の操作をしたら以下の例外になりました。
+  2026-07-01 16:10:00.286 ERROR [http-nio-8080-exec-1] o.h.e.jdbc.spi.SqlExceptionHelper - ORA-00001: 一意制約(TSUBUYAKI.POSTS_PK)に反しています
 
+  https://docs.oracle.com/error-help/db/ora-00001/
+  2026-07-01 16:10:00.423 ERROR [http-nio-8080-exec-1] o.a.c.c.C.[.[.[.[dispatcherServlet] - Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed:
+  org.springframework.dao.DataIntegrityViolationException: could not execute statement [ORA-00001: 一意制約(TSUBUYAKI.POSTS_PK)に反しています
+
+  https://docs.oracle.com/error-help/db/ora-00001/] [insert into posts (author,body,created_at,id) values (?,?,?,?)]; SQL [insert into posts (author,body,created_at,id) values (?,?,?,?)]; constraint [TSUBUYAKI.POSTS_PK]] with root cause
+  oracle.jdbc.OracleDatabaseException: ORA-00001: 一意制約(TSUBUYAKI.POSTS_PK)に反しています
+
+          at oracle.jdbc.driver.T4CTTIoer11.processError(T4CTTIoer11.java:717)
+          at oracle.jdbc.driver.T4CTTIoer11.processError(T4CTTIoer11.java:609)
+          at oracle.jdbc.driver.T4C8Oall.processError(T4C8Oall.java:1347)
+          at oracle.jdbc.driver.T4CTTIfun.receive(T4CTTIfun.java:1100)
+          at oracle.jdbc.driver.T4CTTIfun.doRPC(T4CTTIfun.java:408)
+          at oracle.jdbc.driver.T4C8Oall.doOALL(T4C8Oall.java:499)
+          at oracle.jdbc.driver.T4CPreparedStatement.doOall8(T4CPreparedStatement.java:274)
+          at oracle.jdbc.driver.T4CPreparedStatement.executeForRows(T4CPreparedStatement.java:1484)
+          at oracle.jdbc.driver.OracleStatement.executeSQLStatement(OracleStatement.java:2008)
+          at oracle.jdbc.driver.OracleStatement.doExecuteWithTimeout(OracleStatement.java:1621)
+          at oracle.jdbc.driver.OraclePreparedStatement.executeInternal(OraclePreparedStatement.java:3955)
+          at oracle.jdbc.driver.OraclePreparedStatement.doExecuteLargeUpdate(OraclePreparedStatement.java:4314)
+          at oracle.jdbc.driver.OraclePreparedStatement.executeLargeUpdate(OraclePreparedStatement.java:4291)
+          at oracle.jdbc.driver.OraclePreparedStatement.executeUpdate(OraclePreparedStatement.java:4273)
+          at oracle.jdbc.driver.OraclePreparedStatementWrapper.executeUpdate(OraclePreparedStatementWrapper.java:997)
+          at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeUpdate(ProxyPreparedStatement.java:61)
+          at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeUpdate(HikariProxyPreparedStatement.java)
+          at org.hibernate.engine.jdbc.internal.ResultSetReturnImpl.executeUpdate(ResultSetReturnImpl.java:194)
+          at org.hibernate.engine.jdbc.mutation.internal.AbstractMutationExecutor.performNonBatchedMutation(AbstractMutationExecutor.java:134)
+          at org.hibernate.engine.jdbc.mutation.internal.MutationExecutorSingleNonBatched.performNonBatchedOperations(MutationExecutorSingleNonBatched.java:55)
+          at org.hibernate.engine.jdbc.mutation.internal.AbstractMutationExecutor.execute(AbstractMutationExecutor.java:55)
+          at org.hibernate.persister.entity.mutation.InsertCoordinatorStandard.doStaticInserts(InsertCoordinatorStandard.java:194)
+          at org.hibernate.persister.entity.mutation.InsertCoordinatorStandard.coordinateInsert(InsertCoordinatorStandard.java:132)
+          at org.hibernate.persister.entity.mutation.InsertCoordinatorStandard.insert(InsertCoordinatorStandard.java:104)
+          at org.hibernate.action.internal.EntityInsertAction.execute(EntityInsertAction.java:110)
+          at org.hibernate.engine.spi.ActionQueue.executeActions(ActionQueue.java:644)
+          at org.hibernate.engine.spi.ActionQueue.executeActions(ActionQueue.java:511)
+          at org.hibernate.event.internal.AbstractFlushingEventListener.performExecutions(AbstractFlushingEventListener.java:414)
+          at org.hibernate.event.internal.DefaultFlushEventListener.onFlush(DefaultFlushEventListener.java:41)
+          at org.hibernate.event.service.internal.EventListenerGroupImpl.fireEventOnEachListener(EventListenerGroupImpl.java:127)
+          at org.hibernate.internal.SessionImpl.doFlush(SessionImpl.java:1429)
+          at org.hibernate.internal.SessionImpl.managedFlush(SessionImpl.java:491)
+          at org.hibernate.internal.SessionImpl.flushBeforeTransactionCompletion(SessionImpl.java:2354)
+          at org.hibernate.internal.SessionImpl.beforeTransactionCompletion(SessionImpl.java:1978)
+          at org.hibernate.engine.jdbc.internal.JdbcCoordinatorImpl.beforeTransactionCompletion(JdbcCoordinatorImpl.java:439)
+          at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl.beforeCompletionCallback(JdbcResourceLocalTransactionCoordinatorImpl.java:169)
+          at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commit(JdbcResourceLocalTransactionCoordinatorImpl.java:267)
+          at org.hibernate.engine.transaction.internal.TransactionImpl.commit(TransactionImpl.java:101)
+          at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:562)
+          at org.springframework.transaction.support.AbstractPlatformTransactionManager.processCommit(AbstractPlatformTransactionManager.java:795)
+          at org.springframework.transaction.support.AbstractPlatformTransactionManager.commit(AbstractPlatformTransactionManager.java:758)
+          at org.springframework.transaction.interceptor.TransactionAspectSupport.commitTransactionAfterReturning(TransactionAspectSupport.java:698)
+          at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:416)
+          at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)
+          at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+          at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:727)
+          at com.example.tsubuyaki.service.PostService$$SpringCGLIB$$0.create(<generated>)
+          at com.example.tsubuyaki.controller.PostController.create(PostController.java:38)
+          at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+          at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+          at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:257)
+          at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:190)
+          at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+          at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+          at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+          at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+          at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1088)
+          at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:978)
+          at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+          at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+          at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+          at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+          at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:114)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+          at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+          at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+          at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+          at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+          at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+          at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+          at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+          at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+          at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+          at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+          at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+          at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+          at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+          at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+          at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+          at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+          at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+          at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+          at java.base/java.lang.Thread.run(Thread.java:1583)
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+
+- 例外は解消した。
 
 **振り返り**:
+
+- M1の動作確認をするために手動でDBにデータを投入してしまったことが原因。(シーケンスをnullで登録できなかったのでシーケンス設定されていないと思って手動でIDを採番してしまった。Oracleはpostgresとは挙動が違うのかも。)codexでデータ投入を依頼した方がよかった。
+- DB設計書を確認すればよかった。(あるのかどうかは不明) codexにIDの採番方法を確認したらよかった。
 
 ---
 
-## プロンプト 3
+## プロンプト 10
 
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
+**フェーズ**: M3 テストケース不足
 
 **プロンプト本文**:
 
 ```
-
+以下のテストがたらないので追加してください。
+- validation test 空欄の場合入力エラーになること
+- validation test 最大文字数を超える場合入力エラーになること
+- 登録のテストで最大値が登録できることを確認してください。
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+
+- 期待するケースが追加された。
 
 **振り返り**:
+
+- 指示内容の日本語が多少おかしくても実施してくれる。
 
 ---
 
-## プロンプト 3
+## プロンプト 11
 
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
+**フェーズ**: M4
 
 **プロンプト本文**:
 
 ```
+投稿詳細 GET /posts/{id} を実装する。
+- 一覧画面にて、article押下時に投稿詳細画面に遷移する。
+- posts/detail.html を表示
+- 投稿詳細画面には投稿内容の詳細を表示する。
+- 存在しない id は 404
 
+以下の観点のテストを用意してから本機能の実装を行う。
+- 存在するIDの場合、投稿詳細画面が表示できること。
+- 存在しないIDの場合、404エラーになること。
+- 一覧画面でarticle押下時、投稿詳細画面に遷移すること。
+- 投稿詳細画面に対象のIDの投稿内容が表示されること。
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 部分的に効いた
+
+- プロンプトの実行中、JUnitのタイミングでエラーになっていた。
+```
+[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:0.8.12:report (jacoco-report) on project tsubuyaki-board: An error has occurred in JaCoCo report generation. Error while creating report: Unknown block type 4b. -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+```
 
 **振り返り**:
+
+- codexとしては正常に動作しているが、環境による不具合が起きることがある。
+時間短縮のために作業終了前に実行をかけて終了したが、途中で止まってしまうこともあるので随時確認できるならした方が良い。
 
 ---
 
-## プロンプト 3
+## プロンプト 12
 
-**フェーズ**: M1 git commitをする指示が漏れていたので指示
+**フェーズ**: M4 Jacocoの不具合解消
 
 **プロンプト本文**:
 
 ```
+Jacocoがおかしくなっているのか、テストを実行すると以下のエラーになります。 `mvn clean` をして再度テスト実行してみてください。
 
+[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:0.8.12:report (jacoco-report) on project tsubuyaki-board: An error has occurred in JaCoCo report generation. Error while creating report: Unknown block type 4b. -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
 ```
 
-**結果**: 効いた / 部分的に効いた / 効かなかった
+**結果**: 効いた
+
+- mvn clean を実行してくれた。
+- JUnitが通るようになり、画面も表示できるようになった。
 
 **振り返り**:
+
+- コマンドを指定したら実施してくれる。
 
 ---
 
