@@ -20,6 +20,12 @@
                   aria-hidden="true"></span>
             <span th:text="${post.author}">投稿者</span>
         </p>
+        <div class="post__reply-authors" th:if="${!#lists.isEmpty(replies)}">
+            <p class="post__reply-author"
+               th:each="replyItem : ${replies}"
+               th:style="|--reply-depth: ${replyItem.depth}|"
+               th:text="|↳${replyItem.reply.author}|">↳返信者</p>
+        </div>
         <p class="post__body" th:text="${post.body}">本文</p>
         <time class="post__created-at"
               th:datetime="${post.createdAt}"
@@ -70,8 +76,7 @@
                      th:each="replyItem : ${replies}"
                      th:style="|--reply-depth: ${replyItem.depth}|">
                 <p class="reply__author">
-                    <span class="reply__mark" aria-hidden="true">↳</span>
-                    <span th:text="${replyItem.reply.author}">返信者</span>
+                    <span th:text="|↳${replyItem.reply.author}|">↳返信者</span>
                 </p>
                 <p class="reply__body" th:text="${replyItem.reply.body}">返信本文</p>
                 <time class="reply__created-at"
@@ -89,7 +94,6 @@
                                onchange="this.form.submit()">
                         <span>既読</span>
                     </label>
-                    <button type="submit">更新</button>
                 </form>
                 <form class="reply-form reply-form--child"
                       th:action="@{/posts/{id}/replies(id=${post.id})}"

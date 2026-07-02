@@ -203,17 +203,26 @@ class PostControllerTest {
                 new ReplyThreadItem(rootReply, 0),
                 new ReplyThreadItem(childReply, 1)));
 
-        mockMvc.perform(get("/posts/1"))
+        String html = mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("class=\"reply-form\"")))
                 .andExpect(content().string(containsString("name=\"author\"")))
                 .andExpect(content().string(containsString("name=\"body\"")))
                 .andExpect(content().string(containsString("maxlength=\"1000\"")))
-                .andExpect(content().string(containsString("↳")))
+                .andExpect(content().string(containsString("class=\"post__reply-authors\"")))
+                .andExpect(content().string(containsString("↳bob")))
+                .andExpect(content().string(containsString("↳carol")))
                 .andExpect(content().string(containsString("親返信です")))
                 .andExpect(content().string(containsString("返信への返信です")))
                 .andExpect(content().string(containsString("name=\"parentReplyId\" value=\"10\"")))
-                .andExpect(content().string(containsString("name=\"read\"")));
+                .andExpect(content().string(containsString("name=\"read\"")))
+                .andExpect(content().string(not(containsString("<button type=\"submit\">更新</button>"))))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html.indexOf("class=\"post__author\"")).isLessThan(html.indexOf("class=\"post__reply-authors\""));
+        assertThat(html.indexOf("class=\"post__reply-authors\"")).isLessThan(html.indexOf("class=\"post__body\""));
     }
 
     @Test

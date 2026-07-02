@@ -244,4 +244,22 @@ class PostListLayoutTest {
         assertThat(css).contains("word-break: break-word");
         assertThat(css).contains("margin-left: min(");
     }
+
+    @Test
+    @DisplayName("リプライ表示_詳細画面_投稿者直下に返信者を折り返して表示できる")
+    void リプライ表示_詳細画面_投稿者直下に返信者を折り返して表示できる() throws IOException {
+        String css = new ClassPathResource("static/css/app.css")
+                .getContentAsString(StandardCharsets.UTF_8);
+        String html = new ClassPathResource("templates/posts/detail.html")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html.indexOf("class=\"post__author\"")).isLessThan(html.indexOf("class=\"post__reply-authors\""));
+        assertThat(html.indexOf("class=\"post__reply-authors\"")).isLessThan(html.indexOf("class=\"post__body\""));
+        assertThat(html).contains("th:text=\"|↳${replyItem.reply.author}|\"");
+        assertThat(html).doesNotContain("<button type=\"submit\">更新</button>");
+        assertThat(css).contains(".post__reply-authors");
+        assertThat(css).contains(".post__reply-author");
+        assertThat(css).contains("padding-left: 1.75rem");
+        assertThat(css).contains("overflow-wrap: anywhere");
+    }
 }
