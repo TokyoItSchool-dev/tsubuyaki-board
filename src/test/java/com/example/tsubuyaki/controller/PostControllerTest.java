@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -266,8 +267,9 @@ class PostControllerTest {
     @Test
     @DisplayName("投稿一覧_投稿があるとき_投稿者_内容_投稿日の順に表示する")
     void 投稿一覧_投稿があるとき_投稿者_内容_投稿日の順に表示する() throws Exception {
-        List<Post> posts = List.of(
-                new Post("alice", "長い本文が折り返される", LocalDateTime.parse("2026-05-23T10:00:00")));
+        Post post = new Post("alice", "長い本文が折り返される", LocalDateTime.parse("2026-05-23T10:00:00"));
+        ReflectionTestUtils.setField(post, "id", 1L);
+        List<Post> posts = List.of(post);
         given(postService.search(null)).willReturn(posts);
 
         mockMvc.perform(get("/posts"))
@@ -277,6 +279,8 @@ class PostControllerTest {
                 .andExpect(content().string(containsString("長い本文が折り返される")))
                 .andExpect(content().string(containsString("2026-05-23 10:00")))
                 .andExpect(content().string(containsString("post__body")))
+                .andExpect(content().string(containsString("詳細")))
+                .andExpect(content().string(containsString("href=\"/posts/1\"")))
                 .andExpect(result -> {
                     String html = result.getResponse().getContentAsString();
                     assertThat(html.indexOf("alice")).isLessThan(html.indexOf("長い本文が折り返される"));
