@@ -63,6 +63,16 @@ public class PostController {
         return "redirect:/posts/" + id;
     }
 
+    @PostMapping("/posts/{id}/delete")
+    public String delete(@PathVariable Long id) {
+        try {
+            postService.deletePost(id);
+        } catch (java.util.NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "投稿が見つかりません", e);
+        }
+        return "redirect:/posts";
+    }
+
     @PostMapping("/posts")
     public String create(@Valid PostForm postForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {

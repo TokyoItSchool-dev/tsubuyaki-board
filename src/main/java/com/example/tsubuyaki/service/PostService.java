@@ -38,7 +38,7 @@ public class PostService {
     }
 
     public List<Post> findLatest50Posts() {
-        List<Post> posts = repository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> posts = repository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
         if (posts == null) {
             return List.of();
         }
@@ -51,7 +51,7 @@ public class PostService {
             return findLatest50Posts();
         }
 
-        List<Post> posts = repository.findTop50ByBodyContainingOrderByCreatedAtDesc(normalizedKeyword);
+        List<Post> posts = repository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(normalizedKeyword);
         if (posts == null) {
             return List.of();
         }
@@ -91,6 +91,13 @@ public class PostService {
     @Transactional
     public void createPost(String author, String avatarColor, String body) {
         repository.save(new Post(author, avatarColor, body, Instant.now(clock)));
+    }
+
+    @Transactional
+    public void deletePost(Long postId) {
+        Post post = repository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new NoSuchElementException("投稿が見つかりません: " + postId));
+        post.markDeleted(Instant.now(clock));
     }
 
     private static String normalizeKeyword(String keyword) {

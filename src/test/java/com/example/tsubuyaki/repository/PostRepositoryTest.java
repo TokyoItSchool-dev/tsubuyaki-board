@@ -39,7 +39,7 @@ class PostRepositoryTest {
                 .toList();
         postRepository.saveAll(posts);
 
-        List<Post> actual = postRepository.findTop50ByOrderByCreatedAtDesc();
+        List<Post> actual = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
         assertThat(actual).hasSize(50);
         assertThat(actual.getFirst().getBody()).isEqualTo("post-51");
@@ -68,10 +68,44 @@ class PostRepositoryTest {
                 new Post("bob", "リモート会議の資料を共有します", Instant.parse("2026-05-23T11:00:00Z")),
                 new Post("carol", "出社イベントのお知らせ", Instant.parse("2026-05-23T12:00:00Z"))));
 
-        List<Post> actual = postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("リモート");
+        List<Post> actual = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("リモート");
 
         assertThat(actual).extracting(Post::getBody)
                 .containsExactly("リモート会議の資料を共有します", "明日はリモート勤務です");
+    }
+
+    @Test
+    @DisplayName("投稿一覧_削除済み投稿があるとき_削除済みを除外して新着順で返す")
+    void 投稿一覧_削除済み投稿があるとき_削除済みを除外して新着順で返す() {
+        Post deletedPost = new Post("alice", "削除済み投稿", Instant.parse("2026-05-23T12:00:00Z"));
+        deletedPost.markDeleted(Instant.parse("2026-05-23T12:30:00Z"));
+        postRepository.saveAll(List.of(
+                new Post("bob", "表示する新しい投稿", Instant.parse("2026-05-23T11:00:00Z")),
+                deletedPost,
+                new Post("carol", "表示する古い投稿", Instant.parse("2026-05-23T10:00:00Z"))));
+
+        List<Post> actual = postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
+
+        assertThat(actual).extracting(Post::getBody)
+                .containsExactly("表示する新しい投稿", "表示する古い投稿")
+                .doesNotContain("削除済み投稿");
+    }
+
+    @Test
+    @DisplayName("投稿検索_削除済み投稿が一致するとき_削除済みを除外して返す")
+    void 投稿検索_削除済み投稿が一致するとき_削除済みを除外して返す() {
+        Post deletedPost = new Post("alice", "リモートの削除済み投稿", Instant.parse("2026-05-23T12:00:00Z"));
+        deletedPost.markDeleted(Instant.parse("2026-05-23T12:30:00Z"));
+        postRepository.saveAll(List.of(
+                deletedPost,
+                new Post("bob", "リモート勤務のお知らせ", Instant.parse("2026-05-23T11:00:00Z")),
+                new Post("carol", "出社イベントのお知らせ", Instant.parse("2026-05-23T10:00:00Z"))));
+
+        List<Post> actual = postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("リモート");
+
+        assertThat(actual).extracting(Post::getBody)
+                .containsExactly("リモート勤務のお知らせ")
+                .doesNotContain("リモートの削除済み投稿");
     }
 
     @Test

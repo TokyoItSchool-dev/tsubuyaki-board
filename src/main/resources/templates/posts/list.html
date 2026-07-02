@@ -41,6 +41,11 @@
                   th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-05-23 09:00</time>
             <p class="post__actions">
                 <a th:href="@{/posts/{id}(id=${post.id})}">詳細</a>
+                <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post">
+                    <input th:if="${_csrf != null}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="submit">削除</button>
+                </form>
             </p>
         </article>
     </section>

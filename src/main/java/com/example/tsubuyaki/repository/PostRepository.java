@@ -8,9 +8,9 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    List<Post> findTop50ByOrderByCreatedAtDesc();
+    List<Post> findTop50ByDeletedAtIsNullOrderByCreatedAtDesc();
 
-    List<Post> findTop50ByBodyContainingOrderByCreatedAtDesc(String keyword);
+    List<Post> findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc(String keyword);
 
     Optional<Post> findByIdAndDeletedAtIsNull(Long id);
 }

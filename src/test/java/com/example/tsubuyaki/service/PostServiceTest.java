@@ -55,7 +55,7 @@ class PostServiceTest {
         List<Post> latestPosts = List.of(
                 new Post("alice", "新しい投稿", Instant.parse("2026-05-23T10:00:00Z")),
                 new Post("bob", "古い投稿", Instant.parse("2026-05-23T09:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(latestPosts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(latestPosts);
 
         List<Post> actual = postService.findLatest50Posts();
 
@@ -66,7 +66,7 @@ class PostServiceTest {
     @DisplayName("投稿一覧_Repositoryがnullを返したとき_空リストを返す")
     void 投稿一覧_Repositoryがnullを返したとき_空リストを返す() {
         postService = new PostService(postRepository, postLikeRepository);
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(null);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(null);
 
         List<Post> actual = postService.findLatest50Posts();
 
@@ -79,7 +79,8 @@ class PostServiceTest {
         postService = new PostService(postRepository, postLikeRepository);
         List<Post> searchResults = List.of(
                 new Post("alice", "リモート勤務のお知らせ", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByBodyContainingOrderByCreatedAtDesc("リモート")).willReturn(searchResults);
+        given(postRepository.findTop50ByDeletedAtIsNullAndBodyContainingOrderByCreatedAtDesc("リモート"))
+                .willReturn(searchResults);
 
         List<Post> actual = postService.searchPosts(" リモート ");
 
@@ -92,7 +93,7 @@ class PostServiceTest {
         postService = new PostService(postRepository, postLikeRepository);
         List<Post> latestPosts = List.of(
                 new Post("alice", "最新投稿", Instant.parse("2026-05-23T10:00:00Z")));
-        given(postRepository.findTop50ByOrderByCreatedAtDesc()).willReturn(latestPosts);
+        given(postRepository.findTop50ByDeletedAtIsNullOrderByCreatedAtDesc()).willReturn(latestPosts);
 
         List<Post> actual = postService.searchPosts("   ");
 
@@ -174,5 +175,18 @@ class PostServiceTest {
 
         verify(postLikeRepository).delete(postLike);
         verify(postLikeRepository, never()).save(org.mockito.ArgumentMatchers.any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("投稿削除_投稿が存在するとき_現在時刻で論理削除する")
+    void 投稿削除_投稿が存在するとき_現在時刻で論理削除する() {
+        Instant fixedInstant = Instant.parse("2026-05-23T10:15:30Z");
+        postService = new PostService(postRepository, postLikeRepository, Clock.fixed(fixedInstant, ZoneOffset.UTC));
+        Post post = new Post("alice", "削除対象の投稿", Instant.parse("2026-05-23T10:00:00Z"));
+        given(postRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(post));
+
+        postService.deletePost(1L);
+
+        assertThat(post.getDeletedAt()).isEqualTo(fixedInstant);
     }
 }

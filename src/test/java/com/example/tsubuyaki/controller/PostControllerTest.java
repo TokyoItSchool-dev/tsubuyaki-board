@@ -222,6 +222,29 @@ class PostControllerTest {
     }
 
     @Test
+    @DisplayName("投稿削除_POST_posts_id_delete_Serviceで論理削除し一覧へリダイレクトする")
+    void 投稿削除_POST_posts_id_delete_Serviceで論理削除し一覧へリダイレクトする() throws Exception {
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/posts"));
+
+        verify(postService).deletePost(1L);
+    }
+
+    @Test
+    @DisplayName("投稿一覧_投稿があるとき_削除フォームを表示する")
+    void 投稿一覧_投稿があるとき_削除フォームを表示する() throws Exception {
+        List<Post> latestPosts = List.of(
+                new Post("alice", "削除できる投稿", Instant.parse("2026-05-23T10:00:00Z")));
+        given(postService.findLatest50Posts()).willReturn(latestPosts);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("method=\"post\"")))
+                .andExpect(content().string(containsString("削除")));
+    }
+
+    @Test
     @DisplayName("投稿作成フォーム_GET_posts_new_posts_formを表示しpostFormをビューに渡す")
     void 投稿作成フォーム_GET_posts_new_posts_formを表示しpostFormをビューに渡す() throws Exception {
         mockMvc.perform(get("/posts/new"))
